@@ -15,6 +15,8 @@ dicionario = []
 dic2 = []
 dic_whats = []
 dic_whats2 = []
+dic_teste = []
+
 
 
 token = "8c4EF9vXi8TZe6581e0af85c25"
@@ -1341,20 +1343,9 @@ def post_Visita():
     return "Cadastramento realizado com sucesso"
 #FIM DA FUNÇÃO
 
-#https://replit.taxidigital.net/Visitante
 
 
-#Inserir registros no EndPoint Visitante
-@app.route('/Visitante', methods=['POST'])
-def post_Visitante():
-    payload = request.get_json()
-    dsNome = payload ['dsNome']
-    nrTelefone = payload ['nrTelefone']
-    nrDocumento = payload ['nrDocumento']
-    dsEmail = payload ['dsEmail']
-    Inserir_TbVisitante(dsNome, nrTelefone, nrDocumento, dsEmail)
-    return "Cadastramento realizado com sucesso"
-#FIM DA FUNÇÃO
+
 
 
 @app.route('/Foto', methods=['POST'])
@@ -1365,7 +1356,7 @@ def upload_file():
     return "Upload realizado com sucesso"
 
 
+#nova alteracao
 
-
-#app.run()
-app.run(host="0.0.0.0")  # coloca o site no ar
+app.run()
+#app.run(host="0.0.0.0")  # coloca o site no ar
