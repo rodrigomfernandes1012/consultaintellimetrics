@@ -1358,5 +1358,5 @@ def upload_file():
 
 #nova alteracao
 
-app.run(port=8080, host='0.0.0.0', debug=True, threaded=True)
-#app.run(host="0.0.0.0")  # coloca o site no ar
+#app.run(port=8080, host='0.0.0.0', debug=True, threaded=True)
+app.run(host="0.0.0.0")  # coloca o site no ar
