@@ -15,7 +15,7 @@ dicionario = []
 dic2 = []
 dic_whats = []
 dic_whats2 = []
-dic_teste = []
+
 
 
 
@@ -1358,5 +1358,5 @@ def upload_file():
 
 #nova alteracao
 
-app.run()
+app.run(port=8080, host='0.0.0.0', debug=True, threaded=True)
 #app.run(host="0.0.0.0")  # coloca o site no ar
