@@ -1946,7 +1946,7 @@ def Alterar_VwTbProdutoTotalStaus(Campo, Dado, UpCampo, UpDado):
 
 
 #app.run(port=8080, host='0.0.0.0', debug=True, threaded=True)
-#app.run(host="0.0.0.0")  # coloca o site no ar
+#app.run(host="0.0.0.0")  # coloca o site no ar#
 
 def main():
     port = int(os.environ.get("PORT", 5000))
