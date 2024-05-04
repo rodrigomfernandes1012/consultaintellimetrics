@@ -1928,7 +1928,7 @@ def deletar_VwTbProdutoTotalStaus(Campo, Dado):
     comando = f'delete from DbIntelliMetrics.VwTbProdutoTotalStaus where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
-#FIM DA FUNÇÃO
+#FIM DA FUNÇÃO#
 
 
 #Alterar registros da tabela DbIntelliMetrics.VwTbProdutoTotalStaus
