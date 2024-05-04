@@ -41,6 +41,9 @@ def conecta_bd():
   return conexao
 
 ##DAQUI PRA BAIXO GERADOR DE API CONSULTAS NO BANCO
+##ATUALIZADO EM 04-05-2024
+
+
 #Selecionar registros da tabela DbIntelliMetrics.TbChamados
 def Selecionar_TbChamados():
     conexao = conecta_bd()
@@ -881,11 +884,11 @@ def Alterar_VwTbProdutoTipo(Campo, Dado, UpCampo, UpDado):
 #FIM DA FUNÇÃO
 
 
-#Selecionar registros da tabela DbIntelliMetrics.VwTbProdutoTotal
-def Selecionar_VwTbProdutoTotal():
+#Selecionar registros da tabela DbIntelliMetrics.VwTbProdutoTotalStaus
+def Selecionar_VwTbProdutoTotalStaus():
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, dsDispositivo, dsModelo, DescDispositivo, nrQtde from DbIntelliMetrics.VwTbProdutoTotal'
+    comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde from DbIntelliMetrics.VwTbProdutoTotalStaus'
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -894,40 +897,41 @@ def Selecionar_VwTbProdutoTotal():
 #FIM DA FUNÇÃO
 
 
-#Inserir registros da tabela DbIntelliMetrics.VwTbProdutoTotal
-def Inserir_VwTbProdutoTotal(dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, dsDispositivo, dsModelo, DescDispositivo, nrQtde):
+#Inserir registros da tabela DbIntelliMetrics.VwTbProdutoTotalStaus
+def Inserir_VwTbProdutoTotalStaus(dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.VwTbProdutoTotal ( dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, dsDispositivo, dsModelo, DescDispositivo, nrQtde ) values ("{dsNome}", "{dsDescricao}", "{nrCodigo}", "{nrLarg}", "{nrComp}", "{nrAlt}", "{dsDispositivo}", "{dsModelo}", "{DescDispositivo}", "{nrQtde}")'
+    comando = f'insert into DbIntelliMetrics.VwTbProdutoTotalStaus ( dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde ) values ("{dsNome}", "{dsDescricao}", "{nrCodigo}", "{nrLarg}", "{nrComp}", "{nrAlt}", "{Status}", "{nrQtde}")'
     cursor.execute(comando)
     conexao.commit()
 #FIM DA FUNÇÃO
 
 
-#Deletar registros da tabela DbIntelliMetrics.VwTbProdutoTotal
-def deletar_VwTbProdutoTotal(Campo, Dado):
+#Deletar registros da tabela DbIntelliMetrics.VwTbProdutoTotalStaus
+def deletar_VwTbProdutoTotalStaus(Campo, Dado):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.VwTbProdutoTotal where {Campo}="{Dado}"  '
+    comando = f'delete from DbIntelliMetrics.VwTbProdutoTotalStaus where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 #FIM DA FUNÇÃO
 
 
-#Alterar registros da tabela DbIntelliMetrics.VwTbProdutoTotal
-def Alterar_VwTbProdutoTotal(Campo, Dado, UpCampo, UpDado):
+#Alterar registros da tabela DbIntelliMetrics.VwTbProdutoTotalStaus
+def Alterar_VwTbProdutoTotalStaus(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.VwTbProdutoTotal set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = f'update DbIntelliMetrics.VwTbProdutoTotalStaus set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 #FIM DA FUNÇÃO
 
-## FIM DAS CONSULTAS
+## FIM DAS CONSULTAS NO BANCO
+
 
 app = Flask(__name__)  # cria o site
 CORS(app, resources={r"*": {"origins": "*"}})
 
-##COMECA A API
+##COMECA A API GERADA AUTOMATICAMENTE
 
 #https://replit.taxidigital.net/Chamados
 
@@ -1886,22 +1890,22 @@ def Alterar_VwTbProdutoTipo(Campo, Dado, UpCampo, UpDado):
     cursor.execute(comando)
     conexao.commit()
 #FIM DA FUNÇÃO
-#https://replit.taxidigital.net/TbProdutoTotal
+#https://replit.taxidigital.net/TbProdutoTotalStaus
 
 
-#Selecionar registros no EndPoint TbProdutoTotal
-@app.route("/TbProdutoTotal")
-def get_TbProdutoTotal():
-    resultado = Selecionar_VwTbProdutoTotal()
+#Selecionar registros no EndPoint TbProdutoTotalStaus
+@app.route("/TbProdutoTotalStaus")
+def get_TbProdutoTotalStaus():
+    resultado = Selecionar_VwTbProdutoTotalStaus()
     return resultado
 
 #FIM DA FUNÇÃO
 
 
 
-#Inserir registros no EndPoint TbProdutoTotal
-@app.route('/TbProdutoTotal', methods=['POST'])
-def post_TbProdutoTotal():
+#Inserir registros no EndPoint TbProdutoTotalStaus
+@app.route('/TbProdutoTotalStaus', methods=['POST'])
+def post_TbProdutoTotalStaus():
     payload = request.get_json()
     dsNome = payload ['dsNome']
     dsDescricao = payload ['dsDescricao']
@@ -1909,35 +1913,35 @@ def post_TbProdutoTotal():
     nrLarg = payload ['nrLarg']
     nrComp = payload ['nrComp']
     nrAlt = payload ['nrAlt']
-    dsDispositivo = payload ['dsDispositivo']
-    dsModelo = payload ['dsModelo']
-    DescDispositivo = payload ['DescDispositivo']
+    Status = payload ['Status']
     nrQtde = payload ['nrQtde']
-    Inserir_VwTbProdutoTotal(dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, dsDispositivo, dsModelo, DescDispositivo, nrQtde)
+    Inserir_VwTbProdutoTotalStaus(dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde)
     return "Cadastramento realizado com sucesso"
 #FIM DA FUNÇÃO
 
 
 
-#Deletar registros da tabela DbIntelliMetrics.VwTbProdutoTotal
-def deletar_VwTbProdutoTotal(Campo, Dado):
+#Deletar registros da tabela DbIntelliMetrics.VwTbProdutoTotalStaus
+def deletar_VwTbProdutoTotalStaus(Campo, Dado):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.VwTbProdutoTotal where {Campo}="{Dado}"  '
+    comando = f'delete from DbIntelliMetrics.VwTbProdutoTotalStaus where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 #FIM DA FUNÇÃO
 
 
-#Alterar registros da tabela DbIntelliMetrics.VwTbProdutoTotal
-def Alterar_VwTbProdutoTotal(Campo, Dado, UpCampo, UpDado):
+#Alterar registros da tabela DbIntelliMetrics.VwTbProdutoTotalStaus
+def Alterar_VwTbProdutoTotalStaus(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.VwTbProdutoTotal set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = f'update DbIntelliMetrics.VwTbProdutoTotalStaus set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 #FIM DA FUNÇÃO
+#Fim do Gerador de API
 
-## FIM DA API AUTOMATICA
+## atulizado em 04052024
+##  FIM DA API GERADA AUTOMATICAMENTE
 
 
 
