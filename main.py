@@ -251,7 +251,7 @@ def Alterar_TbImagens(Campo, Dado, UpCampo, UpDado):
     comando = f'update DbIntelliMetrics.TbImagens set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
-#FIM DA FUNÇÃO
+#FIM DA FUNÇÃO#
 
 
 #Selecionar registros da tabela DbIntelliMetrics.TbPosicao
