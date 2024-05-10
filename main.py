@@ -896,6 +896,18 @@ def Selecionar_VwTbProdutoTotalStaus():
     return  resultado
 #FIM DA FUNÇÃO
 
+def Selecionar_VwTbProdutoTotal():
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, nrQtde from DbIntelliMetrics.VwTbProdutoTotal'
+    cursor.execute(comando)
+    resultado = cursor.fetchall()
+    cursor.close()
+    conexao.close()
+    return  resultado
+#FIM DA FUNÇÃO
+
+
 
 #Inserir registros da tabela DbIntelliMetrics.VwTbProdutoTotalStaus
 def Inserir_VwTbProdutoTotalStaus(dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde):
@@ -1901,6 +1913,13 @@ def get_TbProdutoTotalStaus():
 
 #FIM DA FUNÇÃO
 
+#Selecionar registros no EndPoint TbProdutoTotalStaus
+@app.route("/TbProdutoTotal")
+def get_TbProdutoTotal():
+    resultado = Selecionar_VwTbProdutoTotal()
+    return resultado
+
+#FIM DA FUNÇÃO
 
 
 #Inserir registros no EndPoint TbProdutoTotalStaus
