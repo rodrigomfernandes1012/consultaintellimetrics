@@ -251,7 +251,7 @@ def Alterar_TbImagens(Campo, Dado, UpCampo, UpDado):
     comando = f'update DbIntelliMetrics.TbImagens set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
-#FIM DA FUNÇÃO
+#FIM DA FUNÇÃO#
 
 
 #Selecionar registros da tabela DbIntelliMetrics.TbPosicao
@@ -268,10 +268,10 @@ def Selecionar_TbPosicao():
 
 
 #Inserir registros da tabela DbIntelliMetrics.TbPosicao
-def Inserir_TbPosicao(dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dtRegistro):
+def Inserir_TbPosicao(dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsUser, dtRegistro):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbPosicao ( dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dtRegistro ) values ("{dsModelo}", "{dtData}", "{dtHora}", "{dsLat}", "{dsLong}", "{nrTemp}", "{nrBat}", "{nrSeq}", "{dsArquivo}", "{cdDispositivo}", "{dsEndereco}", "{dtRegistro}")'
+    comando = f'insert into DbIntelliMetrics.TbPosicao ( dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsUser, dtRegistro ) values ("{dsModelo}", "{dtData}", "{dtHora}", "{dsLat}", "{dsLong}", "{nrTemp}", "{nrBat}", "{nrSeq}", "{dsArquivo}", "{cdDispositivo}", "{dsEndereco}", "{dsUser}", "{dtRegistro}")'
     cursor.execute(comando)
     conexao.commit()
 #FIM DA FUNÇÃO
@@ -800,11 +800,11 @@ def Alterar_TbVisitante(Campo, Dado, UpCampo, UpDado):
 #FIM DA FUNÇÃO
 
 
-#Selecionar registros da tabela DbIntelliMetrics.VwTbPosicao
-def Selecionar_VwTbPosicao():
+#Selecionar registros da tabela DbIntelliMetrics.TbPosicao
+def Selecionar_TbPosicao():
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'select dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, dsEndereco from DbIntelliMetrics.VwTbPosicao'
+    comando = f'select dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, dsEndereco from DbIntelliMetrics.TbPosicao'
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -813,36 +813,28 @@ def Selecionar_VwTbPosicao():
 #FIM DA FUNÇÃO
 
 
-#Inserir registros da tabela DbIntelliMetrics.VwTbPosicao
-def Inserir_VwTbPosicao(dtHora, dsLat, dsLong, nrTemp, nrBat, dsEndereco):
+
+
+#Deletar registros da tabela DbIntelliMetrics.TbPosicao
+def deletar_TbPosicao(Campo, Dado):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.VwTbPosicao ( dtHora, dsLat, dsLong, nrTemp, nrBat, dsEndereco ) values ("{dtHora}", "{dsLat}", "{dsLong}", "{nrTemp}", "{nrBat}", "{dsEndereco}")'
+    comando = f'delete from DbIntelliMetrics.TbPosicao where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 #FIM DA FUNÇÃO
 
 
-#Deletar registros da tabela DbIntelliMetrics.VwTbPosicao
-def deletar_VwTbPosicao(Campo, Dado):
+#Alterar registros da tabela DbIntelliMetrics.TbPosicao
+def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.VwTbPosicao where {Campo}="{Dado}"  '
+    comando = f'update DbIntelliMetrics.TbPosicao set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 #FIM DA FUNÇÃO
 
 
-#Alterar registros da tabela DbIntelliMetrics.VwTbPosicao
-def Alterar_VwTbPosicao(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.VwTbPosicao set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-#FIM DA FUNÇÃO
-
-
-#Selecionar registros da tabela DbIntelliMetrics.VwTbProdutoTipo
+#Selecionar registros da tabela DbIntelliMetrics.TbProdutoTipo
 def Selecionar_VwTbProdutoTipo():
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
@@ -895,6 +887,18 @@ def Selecionar_VwTbProdutoTotalStaus():
     conexao.close()
     return  resultado
 #FIM DA FUNÇÃO
+
+def Selecionar_VwTbProdutoTotal():
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, nrQtde from DbIntelliMetrics.VwTbProdutoTotal'
+    cursor.execute(comando)
+    resultado = cursor.fetchall()
+    cursor.close()
+    conexao.close()
+    return  resultado
+#FIM DA FUNÇÃO
+
 
 
 #Inserir registros da tabela DbIntelliMetrics.VwTbProdutoTotalStaus
@@ -1214,8 +1218,9 @@ def post_Posicao():
     dsArquivo = payload ['dsArquivo']
     cdDispositivo = payload ['cdDispositivo']
     dsEndereco = payload ['dsEndereco']
+    dsUser = payload ['dsUser']
     dtRegistro = payload ['dtRegistro']
-    Inserir_TbPosicao(dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dtRegistro)
+    Inserir_TbPosicao(dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsUser ,dtRegistro)
     return "Cadastramento realizado com sucesso"
 #FIM DA FUNÇÃO
 
@@ -1795,43 +1800,31 @@ def Alterar_TbVisitante(Campo, Dado, UpCampo, UpDado):
 #Selecionar registros no EndPoint TbPosicao
 @app.route("/TbPosicao")
 def get_TbPosicao():
-    resultado = Selecionar_VwTbPosicao()
+    resultado = Selecionar_TbPosicao()
     return resultado
 
 #FIM DA FUNÇÃO
 
 
 
-#Inserir registros no EndPoint TbPosicao
-@app.route('/TbPosicao', methods=['POST'])
-def post_TbPosicao():
-    payload = request.get_json()
-    dtHora = payload ['dtHora']
-    dsLat = payload ['dsLat']
-    dsLong = payload ['dsLong']
-    nrTemp = payload ['nrTemp']
-    nrBat = payload ['nrBat']
-    dsEndereco = payload ['dsEndereco']
-    Inserir_VwTbPosicao(dtHora, dsLat, dsLong, nrTemp, nrBat, dsEndereco)
-    return "Cadastramento realizado com sucesso"
-#FIM DA FUNÇÃO
 
 
 
-#Deletar registros da tabela DbIntelliMetrics.VwTbPosicao
-def deletar_VwTbPosicao(Campo, Dado):
+
+#Deletar registros da tabela DbIntelliMetrics.TbPosicao
+def deletar_TbPosicao(Campo, Dado):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.VwTbPosicao where {Campo}="{Dado}"  '
+    comando = f'delete from DbIntelliMetrics.TbPosicao where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 #FIM DA FUNÇÃO
 
 
-#Alterar registros da tabela DbIntelliMetrics.VwTbPosicao
-def Alterar_VwTbPosicao(Campo, Dado, UpCampo, UpDado):
+#Alterar registros da tabela DbIntelliMetrics.TbPosicao
+def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.VwTbPosicao set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = f'update DbIntelliMetrics.TbPosicao set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 #FIM DA FUNÇÃO
@@ -1901,6 +1894,13 @@ def get_TbProdutoTotalStaus():
 
 #FIM DA FUNÇÃO
 
+#Selecionar registros no EndPoint TbProdutoTotalStaus
+@app.route("/TbProdutoTotal")
+def get_TbProdutoTotal():
+    resultado = Selecionar_VwTbProdutoTotal()
+    return resultado
+
+#FIM DA FUNÇÃO
 
 
 #Inserir registros no EndPoint TbProdutoTotalStaus
@@ -1950,7 +1950,7 @@ def Alterar_VwTbProdutoTotalStaus(Campo, Dado, UpCampo, UpDado):
 
 def main():
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="192.168.15.200", port=port)
 
 
 if __name__ == "__main__":
