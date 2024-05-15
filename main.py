@@ -17,20 +17,14 @@ dic2 = []
 dic_whats = []
 dic_whats2 = []
 
-
-
-
-token = "8c4EF9vXi8TZe6581e0af85c25"
-
 client = boto3.client(
     service_name='s3',
-    aws_access_key_id='',
-    aws_secret_access_key='NfcacA88Tp+M1yHch9JNuUJT3pFQ+dtecEHpMlvd',
+    aws_access_key_id='AKIA6GBMDHK6PS62WYCI',
+    aws_secret_access_key='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',
     region_name='eu-west-2' # voce pode usar qualquer regiao
 )
-def Upload_file(file_name):
-  client.upload_file(file_name, "dbfilesintellimetrics", file_name)
 
+token = "8c4EF9vXi8TZe6581e0af85c25"
 
 def conecta_bd():
   conexao = mysql.connector.connect(
@@ -39,6 +33,30 @@ def conecta_bd():
       password='IntelliMetr!c$',
       database='DbIntelliMetrics')
   return conexao
+
+
+def assinar_arquivo(arquivo):
+    url = boto3.client('s3').generate_presigned_url(
+    ClientMethod='get_object',
+    Params={'Bucket': 'dbfilesintellimetrics', 'Key': arquivo},
+    ExpiresIn=3600)
+    return url
+#assinar_arquivo()
+
+def upload_file(file_name, bucket, object_name):
+    client = boto3.client('s3')
+    try:
+        response = client.upload_file(file_name, bucket, object_name)
+    except ClientError as e:
+        logging.error(e)
+        return False
+    return True
+#bucket = "dbfilesintellimetrics"
+#object_name = "produtos/1235.jpg" #destino, devo informar a pasta e o nome que vai subir
+#arquivo = "vaoucher.jpg" #nome do arquivo original
+#upload_file(arquivo, bucket, object_name)
+
+
 
 ##DAQUI PRA BAIXO GERADOR DE API CONSULTAS NO BANCO
 ##ATUALIZADO EM 04-05-2024
@@ -1921,27 +1939,46 @@ def post_TbProdutoTotalStaus():
 
 
 
-#Deletar registros da tabela DbIntelliMetrics.VwTbProdutoTotalStaus
-def deletar_VwTbProdutoTotalStaus(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.VwTbProdutoTotalStaus where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-#FIM DA FUNÇÃO#
 
 
-#Alterar registros da tabela DbIntelliMetrics.VwTbProdutoTotalStaus
-def Alterar_VwTbProdutoTotalStaus(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.VwTbProdutoTotalStaus set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
 #FIM DA FUNÇÃO
 #Fim do Gerador de API
 
 ## atulizado em 04052024
 ##  FIM DA API GERADA AUTOMATICAMENTE###
+
+
+@app.route('/Foto', methods=['POST'])
+def post_Foto():
+    payload = request.get_json()
+    imgFoto = payload ['imgFoto']
+    dsFoto = payload['dsFoto']
+    photo_data = base64.b64decode(imgFoto)
+    with open(dsFoto, "wb") as fh:
+        fh.write(photo_data)
+    return "Cadastramento realizado com sucesso"
+#FIM DA FUNÇÃO
+
+
+@app.route('/CadastraImgProduto', methods=['POST'])
+def CadastraImgProduto():
+
+    file = request.files['arquivo']
+
+    pathfile = ( file.filename)
+    file.save(pathfile)
+    upload_file(pathfile, "dbfilesintellimetrics", "produtos/"+pathfile)
+    os.remove(pathfile)
+    return "Cadastramento realizado com sucesso"
+
+
+@app.route('/Assinada', methods=['POST'])
+def Assinada():
+    payload = request.get_json()
+    arquivo = payload['arquivo']
+    result = assinar_arquivo(arquivo)
+    return result
+
 
 
 
