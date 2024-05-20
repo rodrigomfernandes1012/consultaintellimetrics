@@ -1926,12 +1926,16 @@ def get_TbProdutoTotalStaus(codigo):
 #FIM DA FUNÇÃO
 
 #Selecionar registros no EndPoint TbProdutoTotalStaus
+
+img = []
 @app.route("/TbProdutoTotal/<codigo>")
 def get_TbProdutoTotal(codigo):
 
     resultado = Selecionar_VwTbProdutoTotal(codigo)
-
-
+    #imagens.append(resultado)
+    #imagens.append(Selecionar_TbImagens(codigo))
+    img = Selecionar_TbImagens(codigo)
+    resultado.extend(img)
     return resultado
 
 #FIM DA FUNÇÃO
