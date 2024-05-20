@@ -226,10 +226,13 @@ def Alterar_TbDispositivo(Campo, Dado, UpCampo, UpDado):
 
 
 #Selecionar registros da tabela DbIntelliMetrics.TbImagens
-def Selecionar_TbImagens():
+def Selecionar_TbImagens(codigo):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'select cdImagens, dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro from DbIntelliMetrics.TbImagens'
+    if codigo == '0':
+        comando = f'select cdImagens, dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro from DbIntelliMetrics.TbImagens'
+    else:
+        comando = f'select cdImagens, dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro from DbIntelliMetrics.TbImagens where SUBSTRING_INDEX(cdCodigo, "-", 1) ={codigo}'
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -310,10 +313,14 @@ def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
 
 
 #Selecionar registros da tabela DbIntelliMetrics.TbProduto
-def Selecionar_TbProduto():
+def Selecionar_TbProduto(codigo):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, dsUser, dtRegistro from DbIntelliMetrics.TbProduto'
+    if codigo == "0":
+        comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, dsUser, dtRegistro from DbIntelliMetrics.TbProduto'
+    else:
+        comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, dsUser, dtRegistro from DbIntelliMetrics.TbProduto where cdProduto = "{codigo}" '
+
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -848,10 +855,13 @@ def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
 
 
 #Selecionar registros da tabela DbIntelliMetrics.TbProdutoTipo
-def Selecionar_VwTbProdutoTipo():
+def Selecionar_VwTbProdutoTipo(codigo):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, cdDispositivo, dsDispositivo, dsModelo, DescDispositivo, dsObs, dsLayout, nrChip, StatusDispositivo from DbIntelliMetrics.VwTbProdutoTipo'
+    if codigo == "0":
+        comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, cdDispositivo, dsDispositivo, dsModelo, DescDispositivo, dsObs, dsLayout, nrChip, StatusDispositivo from DbIntelliMetrics.VwTbProdutoTipo'
+    else:
+        comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, cdDispositivo, dsDispositivo, dsModelo, DescDispositivo, dsObs, dsLayout, nrChip, StatusDispositivo from DbIntelliMetrics.VwTbProdutoTipo where cdProduto = "{codigo}"'
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -890,10 +900,14 @@ def Alterar_VwTbProdutoTipo(Campo, Dado, UpCampo, UpDado):
 
 
 #Selecionar registros da tabela DbIntelliMetrics.VwTbProdutoTotalStaus
-def Selecionar_VwTbProdutoTotalStaus():
+def Selecionar_VwTbProdutoTotalStaus(codigo):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde from DbIntelliMetrics.VwTbProdutoTotalStaus'
+    if codigo == 0:
+        comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde from DbIntelliMetrics.VwTbProdutoTotalStaus'
+    else:
+        comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde from DbIntelliMetrics.VwTbProdutoTotalStaus where cdProduto = {codigo}'
+
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -901,14 +915,18 @@ def Selecionar_VwTbProdutoTotalStaus():
     return  resultado
 #FIM DA FUNÇÃO
 
-def Selecionar_VwTbProdutoTotal():
+def Selecionar_VwTbProdutoTotal(codigo):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, nrQtde from DbIntelliMetrics.VwTbProdutoTotal'
+    if codigo == "0":
+        comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, nrQtde from DbIntelliMetrics.VwTbProdutoTotal'
+    else:
+        comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, nrQtde from DbIntelliMetrics.VwTbProdutoTotal where cdProduto = {codigo}'
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
     conexao.close()
+    print(comando)
     return  resultado
 #FIM DA FUNÇÃO
 
@@ -1136,7 +1154,7 @@ def post_Dispositivo():
     dsUser = payload ['dsUser']
     dtRegistro = payload ['dtRegistro']
     Inserir_TbDispositivo(dsDispositivo, dsModelo, dsDescricao, dsObs, dsLayout, nrChip, cdStatus, dsUser, dtRegistro)
-    return "Cadastramento realizado com sucesso"
+    return payload
 #FIM DA FUNÇÃO
 
 
@@ -1162,9 +1180,9 @@ def Alterar_TbDispositivo(Campo, Dado, UpCampo, UpDado):
 
 
 #Selecionar registros no EndPoint Imagens
-@app.route("/Imagens")
-def get_Imagens():
-    resultado = Selecionar_TbImagens()
+@app.route("/Imagens/<codigo>")
+def get_Imagens(codigo):
+    resultado = Selecionar_TbImagens(codigo)
     return resultado
 
 #FIM DA FUNÇÃO
@@ -1181,7 +1199,7 @@ def post_Imagens():
     dsUser = payload ['dsUser']
     dtRegistro = payload ['dtRegistro']
     Inserir_TbImagens(dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro)
-    return "Cadastramento realizado com sucesso"
+    return payload
 #FIM DA FUNÇÃO
 
 
@@ -1234,7 +1252,7 @@ def post_Posicao():
     dsUser = payload ['dsUser']
     dtRegistro = payload ['dtRegistro']
     Inserir_TbPosicao(dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsUser ,dtRegistro)
-    return "Cadastramento realizado com sucesso"
+    return payload
 #FIM DA FUNÇÃO
 
 
@@ -1260,9 +1278,9 @@ def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
 
 
 #Selecionar registros no EndPoint Produto
-@app.route("/Produto")
-def get_Produto():
-    resultado = Selecionar_TbProduto()
+@app.route("/Produto/<codigo>")
+def get_Produto(codigo):
+    resultado = Selecionar_TbProduto(codigo)
     return resultado
 
 #FIM DA FUNÇÃO
@@ -1283,7 +1301,7 @@ def post_Produto():
     dsUser = payload ['dsUser']
     dtRegistro = payload ['dtRegistro']
     Inserir_TbProduto(dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, dsUser, dtRegistro)
-    return "Cadastramento realizado com sucesso"
+    return payload
 #FIM DA FUNÇÃO
 
 
@@ -1330,7 +1348,7 @@ def post_Relacionamento():
     dsUser = payload ['dsUser']
     dtRegistro = payload ['dtRegistro']
     Inserir_TbRelacionamento(cdPai, cdFilho, cdTipo, dsDescricao, cdStatus, dsUser, dtRegistro)
-    return "Cadastramento realizado com sucesso"
+    return payload
 #FIM DA FUNÇÃO
 
 
@@ -1378,7 +1396,7 @@ def post_Sensor():
     dsUser = payload ['dsUser']
     dtRegistro = payload ['dtRegistro']
     Inserir_TbSensor(dsNome, cdTipo, dsDescricao, cdUnidade, nrUnidadeIni, nrUnidadeFim, dsUser, dtRegistro)
-    return "Cadastramento realizado com sucesso"
+    return payload
 #FIM DA FUNÇÃO
 
 
@@ -1421,7 +1439,7 @@ def post_Status():
     dsUser = payload ['dsUser']
     dtRegistro = payload ['dtRegistro']
     Inserir_TbStatus(dsStatus, dsUser, dtRegistro)
-    return "Cadastramento realizado com sucesso"
+    return payload
 #FIM DA FUNÇÃO
 
 
@@ -1465,7 +1483,7 @@ def post_Tag():
     dsUser = payload ['dsUser']
     dtRegistro = payload ['dtRegistro']
     Inserir_TbTag(dsDescricao, dsConteudo, dsUser, dtRegistro)
-    return "Cadastramento realizado com sucesso"
+    return payload
 #FIM DA FUNÇÃO
 
 
@@ -1512,7 +1530,7 @@ def post_Ticket():
     dsUser = payload ['dsUser']
     dtRegistro = payload ['dtRegistro']
     Inserir_TbTicket(dtOperacao, dsAtendimento, nrAbertos, nrFechados, nrPendentes, dsUser, dtRegistro)
-    return "Cadastramento realizado com sucesso"
+    return payload
 #FIM DA FUNÇÃO
 
 
@@ -1561,7 +1579,7 @@ def post_TicketResumo():
     dsUser = payload ['dsUser']
     dtRegistro = payload ['dtRegistro']
     Inserir_TbTicketResumo(dtOperacao, dsAtendimento, dsNaoAtribuido, dsSemResolucao, dsAtualizado, dsPendente, dsResolvido, dsUser, dtRegistro)
-    return "Cadastramento realizado com sucesso"
+    return payload
 #FIM DA FUNÇÃO
 
 
@@ -1604,7 +1622,7 @@ def post_Tipo():
     dsUser = payload ['dsUser']
     dtRegistro = payload ['dtRegistro']
     Inserir_TbTipo(dsDescricao, dsUser, dtRegistro)
-    return "Cadastramento realizado com sucesso"
+    return payload
 #FIM DA FUNÇÃO
 
 
@@ -1648,7 +1666,7 @@ def post_Unidade():
     dsUser = payload ['dsUser']
     dtRegistro = payload ['dtRegistro']
     Inserir_TbUnidade(dsUnidade, dsSimbolo, dsUser, dtRegistro)
-    return "Cadastramento realizado com sucesso"
+    return payload
 #FIM DA FUNÇÃO
 
 
@@ -1694,7 +1712,7 @@ def post_Usuario():
     dsUser = payload ['dsUser']
     dtRegistro = payload ['dtRegistro']
     Inserir_TbUsuario(dsNome, dsLogin, dsSenha, cdPerfil, dsUser, dtRegistro)
-    return "Cadastramento realizado com sucesso"
+    return payload
 #FIM DA FUNÇÃO
 
 
@@ -1739,7 +1757,7 @@ def post_Visita():
     dsUser = payload ['dsUser']
     dtRegistro = payload ['dtRegistro']
     Inserir_TbVisita(cdCliente, cdVisitante, dtData, dsUser, dtRegistro)
-    return "Cadastramento realizado com sucesso"
+    return payload
 #FIM DA FUNÇÃO
 
 
@@ -1785,7 +1803,7 @@ def post_Visitante():
     dsUser = payload ['dsUser']
     dtRegistro = payload ['dtRegistro']
     Inserir_TbVisitante(dsNome, nrTelefone, nrDocumento, dsEmail, dsUser, dtRegistro)
-    return "Cadastramento realizado com sucesso"
+    return payload
 #FIM DA FUNÇÃO
 
 
@@ -1845,9 +1863,9 @@ def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
 
 
 #Selecionar registros no EndPoint TbProdutoTipo
-@app.route("/TbProdutoTipo")
-def get_TbProdutoTipo():
-    resultado = Selecionar_VwTbProdutoTipo()
+@app.route("/TbProdutoTipo/<codigo>")
+def get_TbProdutoTipo(codigo):
+    resultado = Selecionar_VwTbProdutoTipo(codigo)
     return resultado
 
 #FIM DA FUNÇÃO
@@ -1874,7 +1892,7 @@ def post_TbProdutoTipo():
     nrChip = payload ['nrChip']
     StatusDispositivo = payload ['StatusDispositivo']
     Inserir_VwTbProdutoTipo(dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, cdDispositivo, dsDispositivo, dsModelo, DescDispositivo, dsObs, dsLayout, nrChip, StatusDispositivo)
-    return "Cadastramento realizado com sucesso"
+    return payload
 #FIM DA FUNÇÃO
 
 
@@ -1900,24 +1918,27 @@ def Alterar_VwTbProdutoTipo(Campo, Dado, UpCampo, UpDado):
 
 
 #Selecionar registros no EndPoint TbProdutoTotalStaus
-@app.route("/TbProdutoTotalStaus")
-def get_TbProdutoTotalStaus():
-    resultado = Selecionar_VwTbProdutoTotalStaus()
+@app.route("/TbProdutoTotalStaus/<codigo>")
+def get_TbProdutoTotalStaus(codigo):
+    resultado = Selecionar_VwTbProdutoTotalStaus(codigo)
     return resultado
 
 #FIM DA FUNÇÃO
 
 #Selecionar registros no EndPoint TbProdutoTotalStaus
-@app.route("/TbProdutoTotal")
-def get_TbProdutoTotal():
-    resultado = Selecionar_VwTbProdutoTotal()
+@app.route("/TbProdutoTotal/<codigo>")
+def get_TbProdutoTotal(codigo):
+
+    resultado = Selecionar_VwTbProdutoTotal(codigo)
+
+
     return resultado
 
 #FIM DA FUNÇÃO
 
 
 #Inserir registros no EndPoint TbProdutoTotalStaus
-@app.route('/TbProdutoTotalStaus', methods=['POST'])
+@app.route('/TbProdutoTotalStaus/', methods=['POST'])
 def post_TbProdutoTotalStaus():
     payload = request.get_json()
     dsNome = payload ['dsNome']
@@ -1929,7 +1950,7 @@ def post_TbProdutoTotalStaus():
     Status = payload ['Status']
     nrQtde = payload ['nrQtde']
     Inserir_VwTbProdutoTotalStaus(dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde)
-    return "Cadastramento realizado com sucesso"
+    return payload
 #FIM DA FUNÇÃO
 
 
@@ -1951,7 +1972,7 @@ def post_Foto():
     photo_data = base64.b64decode(imgFoto)
     with open(dsFoto, "wb") as fh:
         fh.write(photo_data)
-    return "Cadastramento realizado com sucesso"
+    return payload
 #FIM DA FUNÇÃO
 
 
@@ -1964,7 +1985,7 @@ def CadastraImgProduto():
     file.save(pathfile)
     upload_file(pathfile, "dbfilesintellimetrics", "produtos/"+pathfile)
     os.remove(pathfile)
-    return "Cadastramento realizado com sucesso"
+    return payload
 
 
 @app.route('/Assinada', methods=['POST'])
