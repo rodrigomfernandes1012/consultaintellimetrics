@@ -1,5 +1,5 @@
 # SERVER API
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, redirect, url_for
 from flask_cors import CORS
 import json
 import mysql.connector
@@ -1985,7 +1985,9 @@ def CadastraImgProduto():
     file.save(pathfile)
     upload_file(pathfile, "dbfilesintellimetrics", "produtos/"+pathfile)
     os.remove(pathfile)
-    return "Cadastro ok "
+    return "produto cadastrado com sucesso"
+
+    #return "Cadastro ok "
 
 
 @app.route('/Assinada', methods=['POST'])
