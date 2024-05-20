@@ -903,7 +903,7 @@ def Alterar_VwTbProdutoTipo(Campo, Dado, UpCampo, UpDado):
 def Selecionar_VwTbProdutoTotalStaus(codigo):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    if codigo == 0:
+    if codigo == "0":
         comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde from DbIntelliMetrics.VwTbProdutoTotalStaus'
     else:
         comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde from DbIntelliMetrics.VwTbProdutoTotalStaus where cdProduto = {codigo}'
