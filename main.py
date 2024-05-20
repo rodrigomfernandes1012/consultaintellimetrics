@@ -1985,7 +1985,7 @@ def CadastraImgProduto():
     file.save(pathfile)
     upload_file(pathfile, "dbfilesintellimetrics", "produtos/"+pathfile)
     os.remove(pathfile)
-    return payload
+    return file
 
 
 @app.route('/Assinada', methods=['POST'])
