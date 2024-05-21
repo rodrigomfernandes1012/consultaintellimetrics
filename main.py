@@ -1,4 +1,6 @@
 # SERVER API
+import datetime
+
 from flask import Flask, jsonify, request, redirect, url_for
 from flask_cors import CORS
 import json
@@ -1927,15 +1929,16 @@ def get_TbProdutoTotalStaus(codigo):
 
 #Selecionar registros no EndPoint TbProdutoTotalStaus
 
-img = []
+img = {"Imagens":[]}
+#alunos = {"alunos": []}
 @app.route("/TbProdutoTotal/<codigo>")
 def get_TbProdutoTotal(codigo):
 
     resultado = Selecionar_VwTbProdutoTotal(codigo)
     #imagens.append(resultado)
     #imagens.append(Selecionar_TbImagens(codigo))
-    img = Selecionar_TbImagens(codigo)
-    resultado.extend(img)
+    img["Imagens"] = Selecionar_TbImagens(codigo)
+    resultado.append(img)
     return resultado
 
 #FIM DA FUNÇÃO
@@ -1989,6 +1992,7 @@ def CadastraImgProduto():
     file.save(pathfile)
     upload_file(pathfile, "dbfilesintellimetrics", "produtos/"+pathfile)
     os.remove(pathfile)
+    Inserir_TbImagens("produtos/", pathfile, "10", "TESTE", datetime.datetime.now())
     return "produto cadastrado com sucesso"
 
     #return "Cadastro ok "
