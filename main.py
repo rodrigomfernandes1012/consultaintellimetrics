@@ -1993,7 +1993,7 @@ def CadastraImgProduto():
     upload_file(pathfile, "dbfilesintellimetrics", "produtos/"+pathfile)
     os.remove(pathfile)
     Inserir_TbImagens("produtos/", pathfile, "10", "TESTE", datetime.datetime.now())
-    return "produto cadastrado com sucesso"
+    return pathfile
 
     #return "Cadastro ok "
 
