@@ -1614,7 +1614,18 @@ def get_Tipo():
 
 #FIM DA FUNÇÃO
 
-
+def Selecionar_NrImagensMaior(codigo):
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    if codigo == '0':
+        comando = f'select  SUBSTRING_INDEX(cdCodigo, "-",1) as cdProduto, max(SUBSTRING_INDEX(SUBSTRING_INDEX(cdCodigo, "-",-1),".",1)) as nrMaior from DbIntelliMetrics.TbImagens where cdTipo = 10  group by cdProduto order by cdProduto'
+    else:
+        comando = f'select  SUBSTRING_INDEX(cdCodigo, "-",1) as cdProduto, max(SUBSTRING_INDEX(SUBSTRING_INDEX(cdCodigo, "-",-1),".",1)) as nrMaior from DbIntelliMetrics.TbImagens where cdTipo = 10 and cdCodigo = {codigo} group by cdProduto'
+    cursor.execute(comando)
+    resultado = cursor.fetchall()
+    cursor.close()
+    conexao.close()
+    return  resultado
 
 #Inserir registros no EndPoint Tipo
 @app.route('/Tipo', methods=['POST'])
@@ -2005,7 +2016,12 @@ def Assinada():
     result = assinar_arquivo(arquivo)
     return result
 
+#Selecionar_NrImagensMaior
 
+@app.route("/NrImagensMaior/<codigo>")
+def get_NrImagensMaior(codigo):
+    resultado = Selecionar_NrImagensMaior(codigo)
+    return resultado
 
 
 #app.run(port=8080, host='0.0.0.0', debug=True, threaded=True)
