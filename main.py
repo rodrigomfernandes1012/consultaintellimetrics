@@ -1,4 +1,5 @@
 # SERVER API
+import base64
 import datetime
 
 from flask import Flask, jsonify, request, redirect, url_for
@@ -906,10 +907,9 @@ def Selecionar_VwTbProdutoTotalStaus(codigo):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
     if codigo == "0":
-        comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde from DbIntelliMetrics.VwTbProdutoTotalStaus'
+        comando = f'select Status, nrQtde from DbIntelliMetrics.VwTbProdutoTotalStaus order by Status'
     else:
-        comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde from DbIntelliMetrics.VwTbProdutoTotalStaus where cdProduto = {codigo}'
-
+        comando = f'select Status, nrQtde from DbIntelliMetrics.VwTbProdutoTotalStaus where cdProduto = {codigo} order by Status'
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -1941,6 +1941,7 @@ def get_TbProdutoTotalStaus(codigo):
 #Selecionar registros no EndPoint TbProdutoTotalStaus
 
 img = {"Imagens":[]}
+status = {"Status":[]}
 #alunos = {"alunos": []}
 @app.route("/TbProdutoTotal/<codigo>")
 def get_TbProdutoTotal(codigo):
@@ -1948,7 +1949,9 @@ def get_TbProdutoTotal(codigo):
     resultado = Selecionar_VwTbProdutoTotal(codigo)
     #imagens.append(resultado)
     #imagens.append(Selecionar_TbImagens(codigo))
+    status["Status"] = Selecionar_VwTbProdutoTotalStaus(codigo)
     img["Imagens"] = Selecionar_TbImagens(codigo)
+    resultado.append(status)
     resultado.append(img)
     return resultado
 
@@ -1998,7 +2001,6 @@ def post_Foto():
 def CadastraImgProduto():
 
     file = request.files['arquivo']
-
     pathfile = (file.filename)
     file.save(pathfile)
     upload_file(pathfile, "dbfilesintellimetrics", "produtos/"+pathfile)
