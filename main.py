@@ -60,6 +60,52 @@ def upload_file(file_name, bucket, object_name):
 ##ATUALIZADO EM 04-05-2024
 
 
+#Selecionar registros da tabela DbIntelliMetrics.VwTbPosicaoAtual
+def Selecionar_VwTbPosicaoAtual():
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    comando = f'select cdDispositivo, dsLat, dsLong, dtData, dtHora from DbIntelliMetrics.VwTbPosicaoAtual'
+    cursor.execute(comando)
+    resultado = cursor.fetchall()
+    cursor.close()
+    conexao.close()
+    return  resultado
+#FIM DA FUNÇÃO
+
+
+#Inserir registros da tabela DbIntelliMetrics.VwTbPosicaoAtual
+def Inserir_VwTbPosicaoAtual(dsLat, dsLong, dtData, dtHora):
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    comando = f'insert into DbIntelliMetrics.VwTbPosicaoAtual ( dsLat, dsLong, dtData, dtHora ) values ("{dsLat}", "{dsLong}", "{dtData}", "{dtHora}")'
+    cursor.execute(comando)
+    conexao.commit()
+#FIM DA FUNÇÃO
+
+
+#Deletar registros da tabela DbIntelliMetrics.VwTbPosicaoAtual
+def deletar_VwTbPosicaoAtual(Campo, Dado):
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    comando = f'delete from DbIntelliMetrics.VwTbPosicaoAtual where {Campo}="{Dado}"  '
+    cursor.execute(comando)
+    conexao.commit()
+#FIM DA FUNÇÃO
+
+
+#Alterar registros da tabela DbIntelliMetrics.VwTbPosicaoAtual
+def Alterar_VwTbPosicaoAtual(Campo, Dado, UpCampo, UpDado):
+    conexao = conecta_bd()
+    comando = f'update DbIntelliMetrics.VwTbPosicaoAtual set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    cursor.execute(comando)
+    conexao.commit()
+#FIM DA FUNÇÃO
+
+
+
+
+
+
 #Selecionar registros da tabela DbIntelliMetrics.TbChamados
 def Selecionar_TbChamados():
     conexao = conecta_bd()
@@ -961,6 +1007,48 @@ def Alterar_VwTbProdutoTotalStaus(Campo, Dado, UpCampo, UpDado):
     cursor.execute(comando)
     conexao.commit()
 #FIM DA FUNÇÃO
+
+#Selecionar registros da tabela DbIntelliMetrics.TbFuncionario
+def Selecionar_TbFuncionario():
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    comando = f'select cdFuncionario, dsBairro, dsCidade, dsComplemento, dsFuncao, dsLogradouro, dsNomeEmpregado, dsNumCasa, dsUser, dtRegistro, nrCodEmpregado, TbFuncionariocol from DbIntelliMetrics.TbFuncionario'
+    cursor.execute(comando)
+    resultado = cursor.fetchall()
+    cursor.close()
+    conexao.close()
+    return  resultado
+#FIM DA FUNÇÃO
+
+
+#Inserir registros da tabela DbIntelliMetrics.TbFuncionario
+def Inserir_TbFuncionario(dsBairro, dsCidade, dsComplemento, dsFuncao, dsLogradouro, dsNomeEmpregado, dsNumCasa, dsUser, dtRegistro, nrCodEmpregado, TbFuncionariocol):
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    comando = f'insert into DbIntelliMetrics.TbFuncionario ( dsBairro, dsCidade, dsComplemento, dsFuncao, dsLogradouro, dsNomeEmpregado, dsNumCasa, dsUser, dtRegistro, nrCodEmpregado, TbFuncionariocol ) values ("{dsBairro}", "{dsCidade}", "{dsComplemento}", "{dsFuncao}", "{dsLogradouro}", "{dsNomeEmpregado}", "{dsNumCasa}", "{dsUser}", "{dtRegistro}", "{nrCodEmpregado}", "{TbFuncionariocol}")'
+    cursor.execute(comando)
+    conexao.commit()
+#FIM DA FUNÇÃO
+
+
+#Deletar registros da tabela DbIntelliMetrics.TbFuncionario
+def deletar_TbFuncionario(Campo, Dado):
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    comando = f'delete from DbIntelliMetrics.TbFuncionario where {Campo}="{Dado}"  '
+    cursor.execute(comando)
+    conexao.commit()
+#FIM DA FUNÇÃO
+
+
+#Alterar registros da tabela DbIntelliMetrics.TbFuncionario
+def Alterar_TbFuncionario(Campo, Dado, UpCampo, UpDado):
+    conexao = conecta_bd()
+    comando = f'update DbIntelliMetrics.TbFuncionario set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    cursor.execute(comando)
+    conexao.commit()
+#FIM DA FUNÇÃO
+
 
 ## FIM DAS CONSULTAS NO BANCO
 
@@ -1942,20 +2030,39 @@ def get_TbProdutoTotalStaus(codigo):
 
 img = {"Imagens":[]}
 status = {"Status":[]}
+produto = {"Produto":[]}
+resultado = []
 #alunos = {"alunos": []}
 @app.route("/TbProdutoTotal/<codigo>")
 def get_TbProdutoTotal(codigo):
 
-    resultado = Selecionar_VwTbProdutoTotal(codigo)
-    #imagens.append(resultado)
-    #imagens.append(Selecionar_TbImagens(codigo))
+    #resultado = Selecionar_VwTbProdutoTotal(codigo)
+    produto["Produto"] = Selecionar_VwTbProdutoTotal(codigo)
     status["Status"] = Selecionar_VwTbProdutoTotalStaus(codigo)
     img["Imagens"] = Selecionar_TbImagens(codigo)
+    resultado.append(produto)
     resultado.append(status)
     resultado.append(img)
     return resultado
 
 #FIM DA FUNÇÃO
+
+#https://replit.taxidigital.net/TbPosicaoAtual
+
+
+#Selecionar registros no EndPoint TbPosicaoAtual
+@app.route("/TbPosicaoAtual")
+def get_TbPosicaoAtual():
+    resultado = Selecionar_VwTbPosicaoAtual()
+    return resultado
+
+#FIM DA FUNÇÃO
+
+
+
+
+
+
 
 
 #Inserir registros no EndPoint TbProdutoTotalStaus
@@ -1973,6 +2080,39 @@ def post_TbProdutoTotalStaus():
     Inserir_VwTbProdutoTotalStaus(dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde)
     return payload
 #FIM DA FUNÇÃO
+
+#https://replit.taxidigital.net/Funcionario
+
+
+#Selecionar registros no EndPoint Funcionario
+@app.route("/Funcionario")
+def get_Funcionario():
+    resultado = Selecionar_TbFuncionario()
+    return resultado
+
+#FIM DA FUNÇÃO
+
+
+
+#Inserir registros no EndPoint Funcionario
+@app.route('/Funcionario', methods=['POST'])
+def post_Funcionario():
+    payload = request.get_json()
+    dsBairro = payload ['dsBairro']
+    dsCidade = payload ['dsCidade']
+    dsComplemento = payload ['dsComplemento']
+    dsFuncao = payload ['dsFuncao']
+    dsLogradouro = payload ['dsLogradouro']
+    dsNomeEmpregado = payload ['dsNomeEmpregado']
+    dsNumCasa = payload ['dsNumCasa']
+    dsUser = payload ['dsUser']
+    dtRegistro = payload ['dtRegistro']
+    nrCodEmpregado = payload ['nrCodEmpregado']
+    TbFuncionariocol = payload ['TbFuncionariocol']
+    Inserir_TbFuncionario(dsBairro, dsCidade, dsComplemento, dsFuncao, dsLogradouro, dsNomeEmpregado, dsNumCasa, dsUser, dtRegistro, nrCodEmpregado, TbFuncionariocol)
+    return payload
+#FIM DA FUNÇÃO
+
 
 
 
@@ -2007,6 +2147,35 @@ def CadastraImgProduto():
     os.remove(pathfile)
     Inserir_TbImagens("produtos/", pathfile, "10", "TESTE", datetime.datetime.now())
     return pathfile
+
+@app.route('/upload', methods=['POST'])
+def upload():
+    # Verifica se há algum arquivo enviado na requisição
+    if 'images' not in request.files:
+        return 'Nenhum arquivo enviado', 400
+
+    # Obtém a lista de arquivos enviados
+    images = request.files.getlist('images')
+
+    # Percorre a lista de arquivos
+    for image in images:
+        # Verifica se o arquivo é uma imagem válida
+        if image.filename == '':
+            return 'Nome de arquivo inválido', 400
+        if not allowed_file(image.filename):
+            return 'Tipo de arquivo inválido', 400
+
+        # Grava a imagem no S3
+        client = boto3.client('s3')
+        client.upload_fileobj(image, 'dbfilesintellimetrics/produtos', image.filename)
+
+    return 'Upload realizado com sucesso'
+
+# Função auxiliar para verificar o tipo de arquivo permitido
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+    return '.' in filename and \
+        filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
     #return "Cadastro ok "
 
