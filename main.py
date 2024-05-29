@@ -2399,8 +2399,8 @@ def keep_alive():
 #app.run(host="0.0.0.0")  # coloca o site no ar#
 
 def main():
-    port = int(os.environ.get("PORT", 3000))
-    app.run(host="192.168.15.200", port=port)
+    port = int(os.environ.get("PORT", 80))
+    app.run(host="0.0.0.0", port=port)
 
 
 if __name__ == "__main__":
