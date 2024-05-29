@@ -1,7 +1,6 @@
 # SERVER API
 import base64
 import datetime
-
 from flask import Flask, jsonify, request, redirect, url_for
 from flask_cors import CORS
 import json
@@ -9,6 +8,8 @@ import mysql.connector
 import requests
 import boto3
 import os
+import ast
+import time
 
 
 
@@ -57,7 +58,51 @@ def upload_file(file_name, bucket, object_name):
 
 
 ##DAQUI PRA BAIXO GERADOR DE API CONSULTAS NO BANCO
-##ATUALIZADO EM 04-05-2024
+##ATUALIZADO EM 29-05-2024
+
+
+#Selecionar registros da tabela DbIntelliMetrics.TbAcessoIntelBras
+def Selecionar_TbAcessoIntelBras():
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    comando = f'select cdAcessoIntelBras, dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc from DbIntelliMetrics.TbAcessoIntelBras'
+    cursor.execute(comando)
+    resultado = cursor.fetchall()
+    cursor.close()
+    conexao.close()
+    return  resultado
+#FIM DA FUNÇÃO
+
+
+#Inserir registros da tabela DbIntelliMetrics.TbAcessoIntelBras
+def Inserir_TbAcessoIntelBras(dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc):
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    comando = f'insert into DbIntelliMetrics.TbAcessoIntelBras ( dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc ) values ("{dsCardName}", "{dsCardNo}", "{dsDoor}", "{dsEntry}", "{dsErrorCode}", "{dsMethod}", "{dsPassword}", "{dsReaderID}", "{dsStatus}", "{dsType}", "{dsUserId}", "{dsUserType}", "{dsUtc}")'
+    cursor.execute(comando)
+    conexao.commit()
+#FIM DA FUNÇÃO
+
+
+#Deletar registros da tabela DbIntelliMetrics.TbAcessoIntelBras
+def deletar_TbAcessoIntelBras(Campo, Dado):
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    comando = f'delete from DbIntelliMetrics.TbAcessoIntelBras where {Campo}="{Dado}"  '
+    cursor.execute(comando)
+    conexao.commit()
+#FIM DA FUNÇÃO
+
+
+#Alterar registros da tabela DbIntelliMetrics.TbAcessoIntelBras
+def Alterar_TbAcessoIntelBras(Campo, Dado, UpCampo, UpDado):
+    conexao = conecta_bd()
+    comando = f'update DbIntelliMetrics.TbAcessoIntelBras set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    cursor.execute(comando)
+    conexao.commit()
+#FIM DA FUNÇÃO
+
+
 
 
 #Selecionar registros da tabela DbIntelliMetrics.VwTbPosicaoAtual
@@ -2194,12 +2239,167 @@ def get_NrImagensMaior(codigo):
     resultado = Selecionar_NrImagensMaior(codigo)
     return resultado
 
+#https://replit.taxidigital.net/AcessoIntelBras
+
+
+#Selecionar registros no EndPoint AcessoIntelBras
+@app.route("/AcessoIntelBras")
+def get_AcessoIntelBras():
+    resultado = Selecionar_TbAcessoIntelBras()
+    return resultado
+
+#FIM DA FUNÇÃO
+
+
+
+#Inserir registros no EndPoint AcessoIntelBras
+@app.route('/AcessoIntelBras', methods=['POST'])
+def post_AcessoIntelBras():
+    payload = request.get_json()
+    dsCardName = payload ['dsCardName']
+    dsCardNo = payload ['dsCardNo']
+    dsDoor = payload ['dsDoor']
+    dsEntry = payload ['dsEntry']
+    dsErrorCode = payload ['dsErrorCode']
+    dsMethod = payload ['dsMethod']
+    dsPassword = payload ['dsPassword']
+    dsReaderID = payload ['dsReaderID']
+    dsStatus = payload ['dsStatus']
+    dsType = payload ['dsType']
+    dsUserId = payload ['dsUserId']
+    dsUserType = payload ['dsUserType']
+    dsUtc = payload ['dsUtc']
+    TbAcessoIntelBrascol = payload ['TbAcessoIntelBrascol']
+    Inserir_TbAcessoIntelBras(dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc, TbAcessoIntelBrascol)
+    return "Cadastramento realizado com sucesso"
+#FIM DA FUNÇÃO
+
+
+@app.route('/notification', methods=['POST'])
+def event_receiver():
+    if request.method == 'POST':
+
+        res = request.data
+        data_list = res.split(b"--myboundary\r\n")
+
+        if data_list:
+            for a_info in data_list:
+                if b"Content-Type" in a_info:
+                    lines = a_info.split(b"\r\n")
+                    a_type = lines[0].split(b": ")[1]
+
+                    if a_type == b"image/jpeg":
+                        image_data = b"\r\n".join(lines[3:-3])
+                    else:
+                        text_data = b"\r\n".join(lines[3:-1])
+
+        evento_str = text_data.decode("utf-8")
+        evento_dict = ast.literal_eval(evento_str.replace("--myboundary--", " "))
+        json_object = json.dumps(evento_dict, indent=4)
+        resp_dict = json.loads(json_object)
+
+        print(resp_dict)
+
+        event_code = resp_dict.get("Events")[0].get('Code')
+        print("################## ", event_code, " ##################")
+
+        if event_code == "AccessControl":
+            event_data = resp_dict.get("Events")[0].get('Data')
+
+            card_name = event_data.get('CardName')
+            card_no = event_data.get('CardNo')
+            card_type = event_data.get('CardType')
+            door = event_data.get('Door')
+            error_code = event_data.get('ErrorCode')
+            method = event_data.get('Method')
+            reader_id = event_data.get('ReaderID')
+            event_status = event_data.get('Status')
+            event_type = event_data.get('Type')
+            event_entry = event_data.get('Entry')
+            event_utc = event_data.get('UTC')
+            user_id = event_data.get('UserID')
+            user_type = event_data.get('UserType')
+            pwd = event_data.get('DynPWD')
+
+            print("UserID: ", user_id)
+            print("UserType", user_type)
+            print("CardName: ", card_name)
+            print("CardNo: ", card_no)
+            print("CardType: ", card_type)
+            print("Password: ", pwd)
+            print("Door: ", door)
+            print("ErrorCode: ", error_code)
+            print("Method: ", method)
+            print("ReaderID: ", reader_id)
+            print("Status: ", event_status)
+            print("Type: ", event_type)
+            print("Entry: ", event_entry)
+            print("UTC: ", event_utc)
+            print(49 * "#")
+            Inserir_TbAcessoIntelBras(card_name, card_no, door, event_entry, error_code, method, pwd, reader_id, event_status, event_type, user_id, user_type, event_utc)
+
+            # Exemplo de regras que podem ser implementadas
+            time.sleep(1)
+            if user_id == 1:
+                return jsonify({"message": "Pagamento não realizado!", "code": "200", "auth": "false"})
+            elif card_no in ["EC56D271", "09201802"]:  # Caso o código do cartão esteja listado libera o acesso
+                return jsonify({"message": "Bem vindo !", "code": "200", "auth": "true"})
+            elif pwd != None:
+                if int(pwd) == 222333:
+                    return jsonify({"message": "Acesso Liberado", "code": "200", "auth": "true"})
+
+        elif event_code == "DoorStatus":
+            event_data = resp_dict.get("Events")[0].get('Data')
+
+            door_status = event_data.get('Status')
+            door_utc = event_data.get('UTC')
+
+            print("Door Status: ", door_status)
+            print("UTC", door_utc)
+            print(20 * "#")
+            return jsonify({"message": "", "code": "200", "auth": "false"})
+
+        elif event_code == "BreakIn":
+            event_data = resp_dict.get("Events")[0].get('Data')
+
+            door_name = event_data.get('Name')
+            door_utc = event_data.get('UTC')
+
+            print("Door Name: ", door_name)
+            print("UTC", door_utc)
+            print(49 * "#")
+            return jsonify({"message": "", "code": "200", "auth": "false"})
+
+    return jsonify({"message": "acesso ok entra", "code": "200", "auth": "false"})
+
+    '''
+    O retorno deverá ser um JSON, contendo as informações:
+
+    "message": "", // Mensagem que será exibida no display
+    "code": "200", // Codigo sempre é 200.
+    "auth": "", Boolean, corresponde se a porta irá ser acionada ou não. 
+
+    '''
+
+
+@app.route('/keepalive', methods=['GET'])
+def keep_alive():
+    return "OK"
+
+    '''
+    Deverá ser retornado uma request que contenha código 200.
+
+    '''
+
+
+
+
 
 #app.run(port=8080, host='0.0.0.0', debug=True, threaded=True)
 #app.run(host="0.0.0.0")  # coloca o site no ar#
 
 def main():
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 3000))
     app.run(host="192.168.15.200", port=port)
 
 
