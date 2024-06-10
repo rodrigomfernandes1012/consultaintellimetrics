@@ -2289,7 +2289,9 @@ def event_receiver():
                     a_type = lines[0].split(b": ")[1]
 
                     if a_type == b"image/jpeg":
-                        image_data = b"\r\n".join(lines[3:-3])
+                        #image_data = b"\r\n".join(lines[3:-3])
+                        image_data = (lines[3:-3])
+                        print(image_data)
                     else:
                         text_data = b"\r\n".join(lines[3:-1])
 
@@ -2340,8 +2342,8 @@ def event_receiver():
 
             # Exemplo de regras que podem ser implementadas
             time.sleep(1)
-            if user_id == 1:
-                return jsonify({"message": "Pagamento não realizado!", "code": "200", "auth": "false"})
+            if user_id == 19:
+                return jsonify({"message": "Pagamento não realizado!", "code": "200", "auth": "true"})
             elif card_no in ["EC56D271", "09201802"]:  # Caso o código do cartão esteja listado libera o acesso
                 return jsonify({"message": "Bem vindo !", "code": "200", "auth": "true"})
             elif pwd != None:
@@ -2357,7 +2359,7 @@ def event_receiver():
             print("Door Status: ", door_status)
             print("UTC", door_utc)
             print(20 * "#")
-            return jsonify({"message": "", "code": "200", "auth": "false"})
+            return jsonify({"message": "xxxxxxx", "code": "200", "auth": "false"})
 
         elif event_code == "BreakIn":
             event_data = resp_dict.get("Events")[0].get('Data')
@@ -2400,7 +2402,7 @@ def keep_alive():
 
 def main():
     port = int(os.environ.get("PORT", 80))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="192.168.15.200", port=port)
 
 
 if __name__ == "__main__":
