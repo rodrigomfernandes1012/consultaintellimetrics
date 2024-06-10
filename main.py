@@ -410,16 +410,68 @@ def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
 def Selecionar_TbProduto(codigo):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    if codigo == "0":
-        comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, dsUser, dtRegistro from DbIntelliMetrics.TbProduto'
-    else:
-        comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, dsUser, dtRegistro from DbIntelliMetrics.TbProduto where cdProduto = "{codigo}" '
-
+    # Consulta os dados da tabela produtos
+    comando = f"SELECT cdProduto, dsDescricao, dsNome, nrAlt, nrCodigo, nrComp, nrLarg, nrQtde, dsStatus FROM VwTbProdutoTotalStaus where cdProduto = {codigo}"
     cursor.execute(comando)
-    resultado = cursor.fetchall()
+    produtos = cursor.fetchall()
+
+    # Array para armazenar os resultados
+    produtos_json = []
+
+    # Percorre os produtos
+    for produto in produtos:
+        cdProduto, dsDescricao, dsNome, nrAlt, nrCodigo, nrComp, nrLarg, nrQtde, dsStatus = produto
+
+        # Consulta os dados da tabela imagens para o produto atual
+        comando = f"SELECT cdCodigo, dsCaminho  FROM TbImagens WHERE cdProduto = {codigo}"
+        # query = "SELECT cdCodigo, dsCaminho  FROM TbImagens WHERE cdImagens = 26"
+        cursor.execute(comando)
+        imagens = cursor.fetchall()
+
+
+        # Array para armazenar as imagens
+        imagens_array = []
+
+        # Percorre as imagens e adiciona ao array
+        for imagem in imagens:
+            cdCodigo, dsCaminho = imagem
+            imagens_array.append({
+                'cdImagens': cdCodigo,
+                'dsCaminho': dsCaminho
+            })
+
+        # Cria um dicionário com os dados do produto e o array de imagens
+        produto_json = {
+            'cdProduto': cdProduto,
+            'dsDescricao': dsDescricao,
+            'dsNome': dsNome,
+            'nrAlt': nrAlt,
+            'nrCodigo': nrCodigo,
+            'nrComp': nrComp,
+            'nrLarg': nrLarg,
+            'nrQtde': nrQtde,
+            'dsStatus': dsStatus,
+            'imagens': imagens_array
+        }
+        #produtos_json.append(produto_json)
+        produtos_json.append(produto)
+        produtos_json.append(imagens_array)
+
+    # Fecha a conexão com o banco de dados
     cursor.close()
     conexao.close()
-    return  resultado
+
+
+    ##if codigo == "0":
+    ##    comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, dsUser, dtRegistro from DbIntelliMetrics.TbProduto'
+    ##else:
+    ##    comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, dsUser, dtRegistro from DbIntelliMetrics.TbProduto where cdProduto = "{codigo}" '
+
+    ##cursor.execute(comando)
+    ##resultado = cursor.fetchall()
+    ##cursor.close()
+    ##conexao.close()
+    return jsonify(produtos_json)
 #FIM DA FUNÇÃO
 
 
@@ -1099,6 +1151,7 @@ def Alterar_TbFuncionario(Campo, Dado, UpCampo, UpDado):
 
 
 app = Flask(__name__)  # cria o site
+app.json.sort_keys = False
 CORS(app, resources={r"*": {"origins": "*"}})
 
 ##COMECA A API GERADA AUTOMATICAMENTE
