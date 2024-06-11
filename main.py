@@ -336,10 +336,11 @@ def Selecionar_TbImagens(codigo):
 
 
 #Inserir registros da tabela DbIntelliMetrics.TbImagens
-def Inserir_TbImagens(dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro):
+def Inserir_TbImagens(dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro, cdProduto, nrImagem):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbImagens ( dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro ) values ("{dsCaminho}", "{cdCodigo}", "{cdTipo}", "{dsUser}", "{dtRegistro}")'
+    comando = f'insert into DbIntelliMetrics.TbImagens ( dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro, cdProduto, nrImagem ) values ("{dsCaminho}", "{cdCodigo}", "{cdTipo}", "{dsUser}", "{dtRegistro}", "{cdProduto}", "{nrImagem}")'
+    #print(comando)
     cursor.execute(comando)
     conexao.commit()
 #FIM DA FUNÇÃO
@@ -482,6 +483,7 @@ def Inserir_TbProduto(dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdSt
     comando = f'insert into DbIntelliMetrics.TbProduto ( dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, dsUser, dtRegistro ) values ("{dsNome}", "{dsDescricao}", "{nrCodigo}", "{nrLarg}", "{nrComp}", "{nrAlt}", "{cdStatus}", "{dsUser}", "{dtRegistro}")'
     cursor.execute(comando)
     conexao.commit()
+    return cursor.lastrowid
 #FIM DA FUNÇÃO
 
 
@@ -1047,17 +1049,93 @@ def Alterar_VwTbProdutoTipo(Campo, Dado, UpCampo, UpDado):
 
 #Selecionar registros da tabela DbIntelliMetrics.VwTbProdutoTotalStaus
 def Selecionar_VwTbProdutoTotalStaus(codigo):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    if codigo == "0":
-        comando = f'select Status, nrQtde from DbIntelliMetrics.VwTbProdutoTotalStaus order by Status'
-    else:
-        comando = f'select Status, nrQtde from DbIntelliMetrics.VwTbProdutoTotalStaus where cdProduto = {codigo} order by Status'
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return  resultado
+    #conexao = conecta_bd()
+    #cursor = conexao.cursor(dictionary=True)
+    #if codigo == "0":
+    #    comando = f'select Status, nrQtde from DbIntelliMetrics.VwTbProdutoTotalStaus order by Status'
+    #else:
+    #    comando = f'select Status, nrQtde from DbIntelliMetrics.VwTbProdutoTotalStaus where cdProduto = {codigo} order by Status'
+    #cursor.execute(comando)
+    #resultado = cursor.fetchall()
+    #cursor.close()
+    #conexao.close()
+    #return  resultado
+    try:
+        # Conecta ao banco de dados
+        conexao = conecta_bd()
+        cursor = conexao.cursor()  # (dictionary=True)
+
+        # Consulta os dados da tabela produtos
+        if codigo == "0":
+            comando = f"SELECT cdProduto, dsDescricao, dsNome, nrAlt, nrCodigo, nrComp, nrLarg FROM TbProduto"
+        else:
+            comando = f"SELECT cdProduto, dsDescricao, dsNome, nrAlt, nrCodigo, nrComp, nrLarg FROM TbProduto where cdProduto = {codigo}"
+        cursor.execute(comando)
+        produtos = cursor.fetchall()
+
+        # Array para armazenar os resultados
+        produtos_json = []
+
+        # Percorre os produtos
+        for produto in produtos:
+            cdProduto, dsDescricao, dsNome, nrAlt, nrCodigo, nrComp, nrLarg = produto
+            codigo = cdProduto
+            # Status
+            # Consulta os dados da tabela imagens para o produto atual
+            comando = f"SELECT dsStatus, nrQtde  FROM VwTbProdutoTotalStaus WHERE cdProduto = {codigo}"
+            cursor.execute(comando)
+            status = cursor.fetchall()
+
+            # Array para armazenar as imagens
+            status_array = []
+
+            # Percorre as imagens e adiciona ao array
+            for statu in status:
+                dsStatus, nrQtde = statu
+                status_array.append({
+                    'dsStatus': dsStatus,
+                    'nrQtde': nrQtde
+                })
+            # fim Status
+
+            # Consulta os dados da tabela imagens para o produto atual
+            comando = f"SELECT cdCodigo, dsCaminho  FROM TbImagens WHERE cdProduto = {codigo}"
+            cursor.execute(comando)
+            imagens = cursor.fetchall()
+            # Array para armazenar as imagens
+            imagens_array = []
+
+            # Percorre as imagens e adiciona ao array
+            for imagem in imagens:
+                cdCodigo, dsCaminho = imagem
+                imagens_array.append({
+                    'cdImagens': cdCodigo,
+                    'dsCaminho': dsCaminho
+                })
+
+            # Cria um dicionário com os dados do produto e o array de imagens
+            produto_json = {
+                'cdProduto': cdProduto,
+                'dsDescricao': dsDescricao,
+                'dsNome': dsNome,
+                'nrAlt': nrAlt,
+                'nrCodigo': nrCodigo,
+                'nrComp': nrComp,
+                'nrLarg': nrLarg,
+                'imagens': imagens_array,
+                'status': status_array
+            }
+            produtos_json.append(produto_json)
+
+        # Fecha a conexão com o banco de dados
+        cursor.close()
+        conexao.close()
+        return jsonify(produtos_json)
+
+    except mysql.connector.Error as error:
+        return jsonify({'error': f'Erro ao acessar o banco de dados: {error}'})
+
+
 #FIM DA FUNÇÃO
 
 def Selecionar_VwTbProdutoTotal(codigo):
@@ -1386,7 +1464,9 @@ def post_Imagens():
     cdTipo = payload ['cdTipo']
     dsUser = payload ['dsUser']
     dtRegistro = payload ['dtRegistro']
-    Inserir_TbImagens(dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro)
+    cdProduto = payload ['cdProduto']
+    nrImagem = payload ['nrImagem']
+    Inserir_TbImagens(dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro, cdProduto, nrImagem)
     return payload
 #FIM DA FUNÇÃO
 
@@ -1474,6 +1554,7 @@ def get_Produto(codigo):
 #FIM DA FUNÇÃO
 
 
+cd = []
 
 #Inserir registros no EndPoint Produto
 @app.route('/Produto', methods=['POST'])
@@ -1488,8 +1569,8 @@ def post_Produto():
     cdStatus = payload ['cdStatus']
     dsUser = payload ['dsUser']
     dtRegistro = payload ['dtRegistro']
-    Inserir_TbProduto(dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, dsUser, dtRegistro)
-    return payload
+    cd = (Inserir_TbProduto(dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, dsUser, dtRegistro))
+    return jsonify(cd)
 #FIM DA FUNÇÃO
 
 
@@ -2240,10 +2321,13 @@ def CadastraImgProduto():
 
     file = request.files['arquivo']
     pathfile = (file.filename)
+    cdProduto = pathfile.split("-")[0]
+    nrImagem = pathfile.split("-")[1]
+    nrImagem = nrImagem.split(".")[0]
     file.save(pathfile)
     upload_file(pathfile, "dbfilesintellimetrics", "produtos/"+pathfile)
     os.remove(pathfile)
-    Inserir_TbImagens("produtos/", pathfile, "10", "TESTE", datetime.datetime.now())
+    Inserir_TbImagens("produtos/", pathfile, "10", "TESTE", datetime.datetime.now(), cdProduto, nrImagem)
     return pathfile
 
 @app.route('/upload', methods=['POST'])
