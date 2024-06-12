@@ -1570,7 +1570,7 @@ def post_Produto():
     dsUser = payload ['dsUser']
     dtRegistro = payload ['dtRegistro']
     cd = (Inserir_TbProduto(dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, dsUser, dtRegistro))
-    return jsonify(cd)
+    return jsonify({ "cdProduto": cd })
 #FIM DA FUNÇÃO
 
 
