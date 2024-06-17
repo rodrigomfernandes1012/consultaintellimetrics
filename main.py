@@ -1,6 +1,8 @@
 # SERVER API
 import base64
 import datetime
+from random import random
+
 from flask import Flask, jsonify, request, redirect, url_for
 from flask_cors import CORS
 import json
@@ -1228,6 +1230,47 @@ def Alterar_TbFuncionario(Campo, Dado, UpCampo, UpDado):
 ## FIM DAS CONSULTAS NO BANCO
 
 
+#Pegar Medidas da Cubadora
+def Pegar_Medidas():
+
+    nrLargura = float(random.randrange(1,80))
+    nrAltura = float(random.randrange(10,100))
+    nrComprimento = float(random.randrange(1,80))
+    nrPeso = float(random.randrange(1,50))
+    nrCubado = round((nrLargura * nrAltura * nrComprimento)/ 167,2)
+    medidas = { 'nrLargura': nrLargura, 'nrAltura': nrAltura, 'nrComprimento': nrComprimento, 'nrPeso':nrPeso,  'nrCubado':nrCubado }
+    return medidas
+
+#FIM DA FUNÇÃO
+
+
+#Selecionar registros da tabela DbIntelliMetrics.TbFuncionario
+def Selecionar_TbEtiqueta(dsEtiqueta):
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    if dsEtiqueta == "0":
+        comando = f'select dsEtiqueta, nrFator, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, dsUser, dtRegistro from DbIntelliMetrics.TbEtiqueta'
+    else:
+        comando = f'select dsEtiqueta, nrFator, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, dsUser, dtRegistro from DbIntelliMetrics.TbEtiqueta where dsEtiqueta ={dsEtiqueta}'
+    cursor.execute(comando)
+    resultado = cursor.fetchall()
+    cursor.close()
+    conexao.close()
+    return  resultado
+#FIM DA FUNÇÃO
+
+
+#Inserir registros da tabela DbIntelliMetrics.TbEtiqueta
+def Inserir_TbEtiqueta(dsEtiqueta, nrFator, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, dsUser, dtRegistro):
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    comando = f'insert into DbIntelliMetrics.TbProduto (dsEtiqueta, nrFator, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, dsUser, dtRegistro) values ("{dsEtiqueta}", "{nrFator}", "{nrLargura}", "{nrAltura}", "{nrComprimento}", "{nrPeso}", "{nrCubado}", "{dsUser}", "{dtRegistro}")'
+    cursor.execute(comando)
+    conexao.commit()
+    return cursor.lastrowid
+#FIM DA FUNÇÃO
+
+
 app = Flask(__name__)  # cria o site
 app.json.sort_keys = False
 CORS(app, resources={r"*": {"origins": "*"}})
@@ -1572,6 +1615,39 @@ def post_Produto():
     cd = (Inserir_TbProduto(dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, dsUser, dtRegistro))
     return jsonify({ "cdProduto": cd })
 #FIM DA FUNÇÃO
+
+
+@app.route("/Produto/<codigo>")
+def get_Produto(codigo):
+    resultado = Selecionar_TbProduto(codigo)
+    return resultado
+
+
+
+@app.route('/Medidas/<dsEtiqueta>', methods=['GET'])
+def get_Etiqueta(dsEtiqueta):
+    resultado = Selecionar_TbEtiqueta(dsEtiqueta)
+    return resultado
+#FIM DA FUNÇÃO
+
+@app.route('/Etiqueta/<dsEtiqueta>', methods=['GET'])
+def get_Etiqueta(dsEtiqueta):
+    resultado = Selecionar_TbEtiqueta(dsEtiqueta)
+    return resultado
+#FIM DA FUNÇÃO
+
+
+@app.route('/Etiqueta', methods=['POST'])
+def post_Etiqueta():
+    payload = request.get_json()
+    dsEtiqueta = payload ['dsEtiqueta']
+    nrFator = payload ['nrFator']
+    dsUser = payload ['dsUser']
+    dtRegistro = payload ['dtRegistro']
+    cd = (Inserir_TbEtiqueta(dsEtiqueta, nrFator, dsUser, dtRegistro))
+    return jsonify({ "dsEtiqueta": cd })
+#FIM DA FUNÇÃO
+
 
 
 
