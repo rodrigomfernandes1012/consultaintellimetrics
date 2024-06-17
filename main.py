@@ -1633,14 +1633,18 @@ def get_Etiqueta(dsEtiqueta):
 #FIM DA FUNÇÃO
 
 
-@app.route('/Etiqueta', methods=['POST'])
+@app.route('/TbEtiqueta', methods=['POST'])
 def post_Etiqueta():
     payload = request.get_json()
-    dsEtiqueta = payload ['dsEtiqueta']
+    nrLargura = payload ['nrLargura']
+    nrAltura = payload ['nrAltura']
+    nrComprimento = payload ['nrComprimento']
+    nrPeso = payload ['nrPeso']
+    nrCubado = payload ['nrCubado']
     nrFator = payload ['nrFator']
     dsUser = payload ['dsUser']
     dtRegistro = payload ['dtRegistro']
-    cd = (Inserir_TbEtiqueta(dsEtiqueta, nrFator, dsUser, dtRegistro))
+    cd = (Inserir_TbEtiqueta(nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, nrFator, dsUser, dtRegistro))
     return jsonify({ "dsEtiqueta": cd })
 #FIM DA FUNÇÃO
 
