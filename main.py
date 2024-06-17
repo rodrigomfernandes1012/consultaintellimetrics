@@ -1264,7 +1264,7 @@ def Selecionar_TbEtiqueta(dsEtiqueta):
 def Inserir_TbEtiqueta(dsEtiqueta, nrFator, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, dsUser, dtRegistro):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbProduto (dsEtiqueta, nrFator, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, dsUser, dtRegistro) values ("{dsEtiqueta}", "{nrFator}", "{nrLargura}", "{nrAltura}", "{nrComprimento}", "{nrPeso}", "{nrCubado}", "{dsUser}", "{dtRegistro}")'
+    comando = f'insert into DbIntelliMetrics.TbEtiqueta (dsEtiqueta, nrFator, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, dsUser, dtRegistro) values ("{dsEtiqueta}", "{nrFator}", "{nrLargura}", "{nrAltura}", "{nrComprimento}", "{nrPeso}", "{nrCubado}", "{dsUser}", "{dtRegistro}")'
     cursor.execute(comando)
     conexao.commit()
     return cursor.lastrowid
@@ -1636,6 +1636,7 @@ def get_Etiqueta(dsEtiqueta):
 @app.route('/TbEtiqueta', methods=['POST'])
 def post_Etiqueta():
     payload = request.get_json()
+    dsEtiqueta = payload ['dsEtiqueta']
     nrLargura = payload ['nrLargura']
     nrAltura = payload ['nrAltura']
     nrComprimento = payload ['nrComprimento']
@@ -1644,8 +1645,9 @@ def post_Etiqueta():
     nrFator = payload ['nrFator']
     dsUser = payload ['dsUser']
     dtRegistro = payload ['dtRegistro']
-    cd = (Inserir_TbEtiqueta(nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, nrFator, dsUser, dtRegistro))
-    return jsonify({ "dsEtiqueta": cd })
+    cd = (Inserir_TbEtiqueta(dsEtiqueta, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, nrFator, dsUser, dtRegistro))
+    return payload
+    #return jsonify({ "dsEtiqueta": cd })
 #FIM DA FUNÇÃO
 
 
