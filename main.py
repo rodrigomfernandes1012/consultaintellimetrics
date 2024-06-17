@@ -1588,11 +1588,6 @@ def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
 #https://replit.taxidigital.net/Produto
 
 
-#Selecionar registros no EndPoint Produto
-@app.route("/Produto/<codigo>")
-def get_Produto(codigo):
-    resultado = Selecionar_TbProduto(codigo)
-    return resultado
 
 #FIM DA FUNÇÃO
 
@@ -1622,13 +1617,14 @@ def get_Produto(codigo):
     resultado = Selecionar_TbProduto(codigo)
     return resultado
 
-
-
-@app.route('/Medidas/<dsEtiqueta>', methods=['GET'])
-def get_Etiqueta(dsEtiqueta):
-    resultado = Selecionar_TbEtiqueta(dsEtiqueta)
+@app.route('/Medidas', methods=['GET'])
+def get_Medidas():
+    resultado = Pegar_Medidas()
     return resultado
 #FIM DA FUNÇÃO
+
+
+
 
 @app.route('/Etiqueta/<dsEtiqueta>', methods=['GET'])
 def get_Etiqueta(dsEtiqueta):
