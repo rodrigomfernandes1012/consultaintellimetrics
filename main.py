@@ -111,7 +111,7 @@ def Alterar_TbAcessoIntelBras(Campo, Dado, UpCampo, UpDado):
 def Selecionar_VwTbPosicaoAtual():
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'select cdDispositivo, dsLat, dsLong, dtData, dtHora from DbIntelliMetrics.VwTbPosicaoAtual'
+    comando = f'select dtData, dtHora, cdDispositivo, cdProduto, nrCodigo, nrBat, dsNome, dsDescricao, dsEndereco, dsLat, dsLong from DbIntelliMetrics.VwTbPosicaoAtual'
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
