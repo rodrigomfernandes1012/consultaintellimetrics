@@ -1069,9 +1069,9 @@ def Selecionar_VwTbProdutoTotalStaus(codigo):
 
         # Consulta os dados da tabela produtos
         if codigo == "0":
-            comando = f"SELECT cdProduto, dsDescricao, dsNome, nrAlt, nrCodigo, nrComp, nrLarg FROM TbProduto"
+            comando = f"SELECT cdProduto, dsDescricao, dsNome, nrAlt, nrCodigo, nrComp, nrLarg, QtdeTotal FROM VwTbProdutoTotalStaus"
         else:
-            comando = f"SELECT cdProduto, dsDescricao, dsNome, nrAlt, nrCodigo, nrComp, nrLarg FROM TbProduto where cdProduto = {codigo}"
+            comando = f"SELECT cdProduto, dsDescricao, dsNome, nrAlt, nrCodigo, nrComp, nrLarg, QtdeTotal FROM VwTbProdutoTotalStaus where cdProduto = {codigo}"
         cursor.execute(comando)
         produtos = cursor.fetchall()
 
@@ -1080,7 +1080,7 @@ def Selecionar_VwTbProdutoTotalStaus(codigo):
 
         # Percorre os produtos
         for produto in produtos:
-            cdProduto, dsDescricao, dsNome, nrAlt, nrCodigo, nrComp, nrLarg = produto
+            cdProduto, dsDescricao, dsNome, nrAlt, nrCodigo, nrComp, nrLarg, QtdeTotal = produto
             codigo = cdProduto
             # Status
             # Consulta os dados da tabela imagens para o produto atual
@@ -1124,8 +1124,10 @@ def Selecionar_VwTbProdutoTotalStaus(codigo):
                 'nrCodigo': nrCodigo,
                 'nrComp': nrComp,
                 'nrLarg': nrLarg,
+                'QtdeTotal': QtdeTotal,
                 'imagens': imagens_array,
                 'status': status_array
+
             }
             produtos_json.append(produto_json)
 
