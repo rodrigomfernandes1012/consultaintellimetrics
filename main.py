@@ -1648,8 +1648,8 @@ def post_Etiqueta():
     dsUser = payload ['dsUser']
     dtRegistro = payload ['dtRegistro']
     cd = (Inserir_TbEtiqueta(dsEtiqueta, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, nrFator, dsUser, dtRegistro))
-    return payload
-    #return jsonify({ "dsEtiqueta": cd })
+    #return payload
+    return jsonify({ "cdCodigo": cd, "dsEtiqueta":dsEtiqueta,"nrLargura":nrLargura,"nrAltura":nrAltura,"nrComprimento": nrComprimento, "nrPeso": nrPeso, "nrCubado": nrCubado,"nrFator": nrFator, "dsUser": dsUser, "dtRegistro": dtRegistro })
 #FIM DA FUNÇÃO
 
 
