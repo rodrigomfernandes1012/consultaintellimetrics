@@ -95,7 +95,7 @@ def Pegar_Medidas():
 
     medidas = {'nrLargura': nrLargura, 'nrAltura': nrAltura, 'nrComprimento': nrComprimento, 'nrPeso': nrPeso,
                'nrCubado': nrCubado}
-    
+
     return medidas
 
 
