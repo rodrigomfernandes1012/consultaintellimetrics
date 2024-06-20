@@ -24,6 +24,7 @@ dicionario = []
 dic2 = []
 dic_whats = []
 dic_whats2 = []
+dic_altura = []
 
 
 
@@ -63,6 +64,40 @@ def upload_file(file_name, bucket, object_name):
 
 ##DAQUI PRA BAIXO GERADOR DE API CONSULTAS NO BANCO
 ##ATUALIZADO EM 29-05-2024
+
+def guarda_medidas(altura, largura, comprimento, pesoreal, cubado):
+    with open('cubagem.txt', 'w') as arquivo:
+        altura = str(altura).ljust(10)
+        largura = str(largura).ljust(10)
+        comprimento = str(comprimento).ljust(10)
+        cubado = str(cubado).ljust(10)
+        pesoreal = str(pesoreal).ljust(10)
+        #linha = f"'altura':{altura}, 'largura':{largura}, 'comprimento':{comprimento}, 'pesoreal':{pesoreal}, 'cubado':{cubado}"
+        linha = f"{altura}{comprimento}{cubado}{largura}{pesoreal}"
+        arquivo.write(linha)
+    arquivo.close()
+
+
+def Pegar_Medidas():
+    #nrLargura = float(random.randrange(1, 80))
+    #nrAltura = float(random.randrange(10, 100))
+    #nrComprimento = float(random.randrange(1, 80))
+    #nrPeso = float(random.randrange(1, 50))
+    #nrCubado = round((nrLargura * nrAltura * nrComprimento) / 167, 2)
+    with open("cubagem.txt", "r") as arquivo:
+        linhas = arquivo.readlines()
+        for linha in linhas:
+            nrAltura = float(linha[00:10])
+            nrComprimento = float(linha[10:20])
+            nrCubado = float(linha[20:30])
+            nrLargura = float(linha[30:40])
+            nrPeso = float(linha[40:50])
+
+    medidas = {'nrLargura': nrLargura, 'nrAltura': nrAltura, 'nrComprimento': nrComprimento, 'nrPeso': nrPeso,
+               'nrCubado': nrCubado}
+    
+    return medidas
+
 
 
 #Selecionar registros da tabela DbIntelliMetrics.TbAcessoIntelBras
@@ -1235,17 +1270,7 @@ def Alterar_TbFuncionario(Campo, Dado, UpCampo, UpDado):
 
 
 #Pegar Medidas da Cubadora
-def Pegar_Medidas():
 
-    nrLargura = float(random.randrange(1,80))
-    nrAltura = float(random.randrange(10,100))
-    nrComprimento = float(random.randrange(1,80))
-    nrPeso = float(random.randrange(1,50))
-    nrCubado = round((nrLargura * nrAltura * nrComprimento)/ 167,2)
-    medidas = { 'nrLargura': nrLargura, 'nrAltura': nrAltura, 'nrComprimento': nrComprimento, 'nrPeso':nrPeso,  'nrCubado':nrCubado }
-
-
-    return medidas
 
 #FIM DA FUNÇÃO
 
@@ -1623,11 +1648,7 @@ def get_Produto(codigo):
     resultado = Selecionar_TbProduto(codigo)
     return resultado
 
-@app.route('/Medidas', methods=['GET'])
-def get_Medidas():
-    resultado = Pegar_Medidas()
-    return resultado
-#FIM DA FUNÇÃO
+
 
 
 
@@ -2639,7 +2660,29 @@ def whats_post():
         #if re.search('\\bVUC\\b', dic_whats['message_body'], re.IGNORECASE):
          #  print(dic_whats['message_body'])
     return
+@app.route('/Medidas', methods=['GET'])
+def get_Medidas():
+    medidas = Pegar_Medidas()
+    resultado = medidas
 
+    return resultado
+#FIM DA FUNÇÃO
+
+@app.route('/medidassensor', methods=['GET', 'POST'])
+def dados():
+    payload = request.get_json()
+    altura = payload['altura']
+    largura = payload['largura']
+    comprimento = payload['comprimento']
+    pesoreal = payload['pesoreal']
+    cubado = payload['cubado']
+    #print(altura, largura,comprimento, pesoreal, cubado)
+    guarda_medidas(altura, largura, comprimento, pesoreal, cubado)
+    dic_altura = {'altura':altura, 'largura':largura, 'comprimento':comprimento, 'pesoreal':pesoreal, 'cubado':cubado}
+    #print(dic_altura)
+    return dic_altura
+
+#FIM DA FUNÇÃO
 
 
 #app.run(port=8080, host='0.0.0.0', debug=True, threaded=True)
