@@ -1241,6 +1241,8 @@ def Pegar_Medidas():
     nrPeso = float(random.randrange(1,50))
     nrCubado = round((nrLargura * nrAltura * nrComprimento)/ 167,2)
     medidas = { 'nrLargura': nrLargura, 'nrAltura': nrAltura, 'nrComprimento': nrComprimento, 'nrPeso':nrPeso,  'nrCubado':nrCubado }
+
+
     return medidas
 
 #FIM DA FUNÇÃO
@@ -2609,8 +2611,19 @@ def keep_alive():
     Deverá ser retornado uma request que contenha código 200.
 
     '''
-
-
+dic_whats2 = []
+@app.route("/whats", methods=['POST'])
+def whats_post():
+  dic_whats = request.get_json()
+  dic = json.dumps(dic_whats)
+  dic0 = json.loads(dic)
+  dic_whats2.append(dic0)
+  resultado = dic_whats2
+  print(dic_whats)
+  print(dic)
+  print(dic0)
+  print(dic_whats2)
+  return resultado
 
 
 
