@@ -12,6 +12,8 @@ import boto3
 import os
 import ast
 import time
+import re
+import pandas as pd
 
 
 
@@ -1253,7 +1255,7 @@ def Selecionar_TbEtiqueta(dsEtiqueta):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
     if dsEtiqueta == "0":
-        comando = f'select dsEtiqueta, nrFator, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, dsUser, dtRegistro from DbIntelliMetrics.TbEtiqueta'
+        comando = f'select dsEtiqueta, nrFator, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, dsUser, dtRegistro from DbIntelliMetrics.TbEtiqueta order by cdEtiqueta desc'
     else:
         comando = f'select dsEtiqueta, nrFator, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, dsUser, dtRegistro from DbIntelliMetrics.TbEtiqueta where dsEtiqueta ={dsEtiqueta}'
     cursor.execute(comando)
@@ -2612,18 +2614,31 @@ def keep_alive():
 
     '''
 dic_whats2 = []
+dic_linha = []
 @app.route("/whats", methods=['GET','POST'])
 def whats_post():
-  dic_whats = request.get_json()
-  dic = json.dumps(dic_whats)
-  dic0 = json.loads(dic)
-  dic_whats2.append(dic0)
-  resultado = dic_whats2
-  print(dic_whats)
-  print(dic)
-  print(dic0)
-  print(dic_whats2)
-  return resultado
+    dic_whats = request.get_json()
+    dic = json.dumps(dic_whats)
+    dic0 = json.loads(dic)
+    dic_whats2.append(dic0)
+    resultado = dic_whats2
+    #print(dic_whats)
+    #print(dic)
+    #print(dic0)
+    #print(dic_whats2)
+    dataframe = pd.DataFrame(dic_whats2)
+    print(dataframe.head(0))
+    ##for campos in dic_whats:
+      #print (campos)
+     ##   if campos == 'contact_phone_number':
+     ##       print(dic_whats['contact_phone_number'])
+     ##   if campos == 'message_body':
+     ##       dataframe = pd.read_json(dic0['message_body'])
+     ##       print(dataframe)
+       # print(dic_whats['message_body'])
+        #if re.search('\\bVUC\\b', dic_whats['message_body'], re.IGNORECASE):
+         #  print(dic_whats['message_body'])
+    return
 
 
 
