@@ -2612,7 +2612,7 @@ def keep_alive():
 
     '''
 dic_whats2 = []
-@app.route("/whats", methods=['POST'])
+@app.route("/whats", methods=['GET','POST'])
 def whats_post():
   dic_whats = request.get_json()
   dic = json.dumps(dic_whats)
