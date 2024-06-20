@@ -82,7 +82,7 @@ def Pegar_Medidas():
     #nrLargura = float(random.randrange(1, 80))
     #nrAltura = float(random.randrange(10, 100))
     #nrComprimento = float(random.randrange(1, 80))
-    #nrPeso = float(random.randrange(1, 50))
+    nrPeso = float(random.randrange(1, 50))
     #nrCubado = round((nrLargura * nrAltura * nrComprimento) / 167, 2)
     with open("cubagem.txt", "r") as arquivo:
         linhas = arquivo.readlines()
@@ -91,7 +91,7 @@ def Pegar_Medidas():
             nrComprimento = float(linha[10:20])
             nrCubado = float(linha[20:30])
             nrLargura = float(linha[30:40])
-            nrPeso = float(linha[40:50])
+            #nrPeso = float(linha[40:50])
 
     medidas = {'nrLargura': nrLargura, 'nrAltura': nrAltura, 'nrComprimento': nrComprimento, 'nrPeso': nrPeso,
                'nrCubado': nrCubado}
