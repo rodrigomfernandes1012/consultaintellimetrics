@@ -2711,9 +2711,9 @@ def whats_post():
                 dados_json.append(dados)
 
             for campos in dados_json:
-                if 'truck' in (campos['veiculo']).lower() and 500 > int(campos['km']):
+                if 'fiorino' in (campos['veiculo']).lower() and 400 > int(campos['km']):
                     msg = ("Rota " + campos['rota'] + " Veiculo " + campos['veiculo'] + " Km " + (campos['km']) + " Valor " + (campos["valor"]))
-                    envia_whatstexto("ola eu quero essa ! " + msg)
+                    envia_whatstexto("Olá eu quero essa viagem ! " + msg)
                     print(msg)
             # Converter a lista de dados JSON em uma string JSON formatada
             json_str = json.dumps(dados_json, indent=4)
