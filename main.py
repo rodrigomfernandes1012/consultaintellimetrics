@@ -2642,24 +2642,14 @@ def whats_post():
     dic = json.dumps(dic_whats)
     dic0 = json.loads(dic)
     dic_whats2.append(dic0)
-    resultado = dic_whats2
-    #print(dic_whats)
-    #print(dic)
-    #print(dic0)
-    #print(dic_whats2)
-    dataframe = pd.DataFrame(dic_whats2)
-    print(dataframe.head(0))
-    ##for campos in dic_whats:
-      #print (campos)
-     ##   if campos == 'contact_phone_number':
-     ##       print(dic_whats['contact_phone_number'])
-     ##   if campos == 'message_body':
-     ##       dataframe = pd.read_json(dic0['message_body'])
-     ##       print(dataframe)
-       # print(dic_whats['message_body'])
-        #if re.search('\\bVUC\\b', dic_whats['message_body'], re.IGNORECASE):
-         #  print(dic_whats['message_body'])
-    return
+
+    for campos in dic_whats:
+        #print (campos)
+        if campos == 'contact_phone_number':
+            print(dic_whats['contact_phone_number'])
+        if campos == 'message_body':
+           print(dic_whats['message_body'])
+    return dic_whats2
 @app.route('/Medidas', methods=['GET'])
 def get_Medidas():
     medidas = Pegar_Medidas()
