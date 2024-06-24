@@ -47,7 +47,7 @@ def envia_whatstexto(msg):
     payload = json.dumps({
         "apikey": "fea4fe42-3cd6-4002-bd33-31badb5074dc",
         "phone_number": "5511945480370",
-        "contact_phone_number": "5511953618668",
+        "contact_phone_number": "5511987674750",
         "message_custom_id": "yoursoftwareid",
         "message_type": "text",
         "message_body": msg,
@@ -2673,7 +2673,7 @@ def whats_post():
             print(dic_whats['contact_phone_number'])
         if campos == 'message_body':
             #string_dados = "RT\tCidades\tEnt\tVeículo / OBS.\tM³  Do Carro\tCarregar\tRegião\tPeso R\tKM\t Valor da Tabela \tM³ Real\tManifesto\n1\tSÃO GONÇALO - SÃO PEDRO ALDEIA / \t2\t3/4 - 4M DE COMP - GAIOLAS - NOVA MUNDIAL\t25M\t GLP  MUNDIAL (GP1  GLP )\tSUDESTE\t857\t563\t R$ 1.995,74 \t26M\t22255\n2\t NOVA IGUAÇU\t2\tTRUCK - 7M DE COMP - GAIOLAS - NOVA MUNDIAL\t60M\t GLP  MUNDIAL (GLP GP1  )\tSUDESTE\t571\t368\t R$ 2.047,68 \t18M\t22259\n3\t LAGOA STA - PEDRO LEOPOLDO\t3\tTRUCK - 16 PALETS - GAIOLAS - NOVA MUNDIAL   MATRIZ\t60M\t MUNDIAL (GP1   )\tSUDESTE\t855\t648\t R$ 2.881,28 \t26M\t22260\n4\t RJ - REALENGO - VICENTE CARVALHO - MARE\t3\tTRUCK - 16 PALETS - GAIOLAS - NOVA MUNDIAL\t60M\t MUNDIAL (GP1   )\tSUDESTE\t1045\t408\t R$ 2.198,08 \t32M\t22262\n5\t RJ - STA CRUZ - DUQUE CAXIAS\t3\tTRUCK - 16 PALETS - GAIOLAS - NOVA MUNDIAL\t60M\t MUNDIAL (GP1   )\tSUDESTE\t1140\t407\t R$ 2.194,32 \t34M\t22263\n6\t PORTO ALEGRE\t1\tTRUCK - 14 PALETS - PALETIZADO\t60M\t MUNDIAL (GP1   )\tSUL\t3994\t1171\t R$ 3.674,66 \t59M\t22264\n10\t NOVA FRIBURGO - SERRA\t2\tVUC - 1 GAIOLA - DEMAIS BATIDAS\t15M\t MUNDIAL (GP1 GP2  )\tSUDESTE\t580\t934\t R$ 1.871,08 \t5M\t22270\n11\t BH\t6\tCARRETA - 18 GAIOLAS - NOVA MATRIZ\t95M\t MUNDIAL (GP1   )\tSUDESTE\t1710\t587\t R$ 5.379,54 \t51M\t22271\n12\t CONTAGEM - BETIM - STA LUZIA - VESPASIANO\t7\tCARRETA - 17 GAIOLAS - NOVA MATRIZ   GLP\t95M\t GLP  MUNDIAL (GLP GP1  )\tSUDESTE\t1616\t659\t R$ 6.069,78 \t49M\t22272\n13\t SABARA -RIBEIRAO DAS NEVES\t2\tTRUCK - 7M DE COMP - GAIOLAS - NOVA MUNDIAL\t60M\t MUNDIAL (GP1   )\tSUDESTE\t570\t664\t R$ 2.935,04 \t17M\t22273"
-            string_dados = dic_whats['contact_phone_number']
+            string_dados = dic_whats['message_body']
             linhas = string_dados.split("\n")  # Dividir a string em linhas
 
             dados_json = []
@@ -2681,14 +2681,17 @@ def whats_post():
             for linha in linhas:
                 campos = linha.split("\t")  # Dividir cada linha em campos usando o separador de tabulação
                 rota = (campos[0])
+                print(rota)
                 cidade = campos[1]
                 entrega = campos[2]
                 veiculo = campos[3]
+               # print(veiculo)
                 metro = campos[4]
                 carregar = campos[5]
                 regiao = campos[6]
                 peso = campos[7]
                 km = campos[8]
+                #print(km)
                 valor = campos[9]
                 mreal = campos[10]
                 manifesto = campos[11]
@@ -2710,16 +2713,22 @@ def whats_post():
                 }
                 dados_json.append(dados)
 
-            for campos in dados_json:
-                if 'fiorino' in (campos['veiculo']).lower() and 400 > int(campos['km']):
-                    msg = ("Rota " + campos['rota'] + " Veiculo " + campos['veiculo'] + " Km " + (campos['km']) + " Valor " + (campos["valor"]))
-                    envia_whatstexto("Olá eu quero essa viagem ! " + msg)
-                    print(msg)
+
+                for campos in dados_json:
+
+                    print(campos['veiculo'])
+                    print(campos['km'])
+
+                    if 'fiorino' in (campos['veiculo']).lower() and 400 > int(campos['km']):
+                        print("to aqui")
+                        msg = ("Rota " + campos['rota'] + " Veiculo " + campos['veiculo'] + " Km " + (campos['km']) + " Valor " + (campos["valor"]))
+                        envia_whatstexto("Olá eu quero essa viagem ! " + msg)
+                        print(msg)
             # Converter a lista de dados JSON em uma string JSON formatada
             json_str = json.dumps(dados_json, indent=4)
 
         #print(dic_whats['message_body'])
-    return "ok"
+    return "msg"
 @app.route('/Medidas', methods=['GET'])
 def get_Medidas():
     medidas = Pegar_Medidas()
