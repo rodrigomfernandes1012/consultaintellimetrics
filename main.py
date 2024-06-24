@@ -2719,7 +2719,7 @@ def whats_post():
             json_str = json.dumps(dados_json, indent=4)
 
         #print(dic_whats['message_body'])
-    return msg
+    return "ok"
 @app.route('/Medidas', methods=['GET'])
 def get_Medidas():
     medidas = Pegar_Medidas()
