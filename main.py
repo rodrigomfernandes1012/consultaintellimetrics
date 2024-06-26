@@ -1111,90 +1111,62 @@ def Alterar_VwTbProdutoTipo(Campo, Dado, UpCampo, UpDado):
 
 #Selecionar registros da tabela DbIntelliMetrics.VwTbProdutoTotalStaus
 def Selecionar_VwTbProdutoTotalStaus(codigo):
-    #conexao = conecta_bd()
-    #cursor = conexao.cursor(dictionary=True)
-    #if codigo == "0":
-    #    comando = f'select Status, nrQtde from DbIntelliMetrics.VwTbProdutoTotalStaus order by Status'
-    #else:
-    #    comando = f'select Status, nrQtde from DbIntelliMetrics.VwTbProdutoTotalStaus where cdProduto = {codigo} order by Status'
-    #cursor.execute(comando)
-    #resultado = cursor.fetchall()
-    #cursor.close()
-    #conexao.close()
-    #return  resultado
     try:
         # Conecta ao banco de dados
         conexao = conecta_bd()
-        cursor = conexao.cursor()  # (dictionary=True)
-
+        cursor = conexao.cursor(dictionary=True)
+        
         # Consulta os dados da tabela produtos
-        if codigo == "0":
-            comando = f"SELECT cdProduto, dsDescricao, dsNome, nrAlt, nrCodigo, nrComp, nrLarg, QtdeTotal FROM VwTbProdutoTotalStaus"
-        else:
-            comando = f"SELECT cdProduto, dsDescricao, dsNome, nrAlt, nrCodigo, nrComp, nrLarg, QtdeTotal FROM VwTbProdutoTotalStaus where cdProduto = {codigo}"
-        cursor.execute(comando)
-        produtos = cursor.fetchall()
+        comandoProduto = "SELECT cdProduto, dsDescricao, dsNome, nrAlt, nrCodigo, nrComp, nrLarg, dsStatus, nrQtde, QtdeTotal FROM VwTbProdutoTotalStaus"
+        comandoImagem = "SELECT cdCodigo, dsCaminho, cdProduto FROM TbImagens"
 
-        # Array para armazenar os resultados
-        produtos_json = []
+        if codigo != "0":
+            comandoProduto = comandoProduto + f" where cdProduto = {codigo}"
+            comandoImagem = comandoImagem + f" WHERE cdProduto = {codigo}"
+            
+        cursor.execute(comandoProduto)
+        produtos = cursor.fetchall()
+        
+        cursor.execute(comandoImagem)
+        imagens = cursor.fetchall()
+
+        # dicionario para armazenar os resultados
+        produtos_json = {}
 
         # Percorre os produtos
         for produto in produtos:
-            cdProduto, dsDescricao, dsNome, nrAlt, nrCodigo, nrComp, nrLarg, QtdeTotal = produto
-            codigo = cdProduto
-            # Status
-            # Consulta os dados da tabela imagens para o produto atual
-            comando = f"SELECT dsStatus, nrQtde  FROM VwTbProdutoTotalStaus WHERE cdProduto = {codigo}"
-            cursor.execute(comando)
-            status = cursor.fetchall()
+            cdProduto = produto['cdProduto']
+            
+            # cria produto no dicionario se ainda nao existe
+            if cdProduto not in produtos_json:
+                produtos_json[cdProduto] = {
+                    'cdProduto': produto['cdProduto'],
+                    'dsDescricao': produto['dsDescricao'],
+                    'dsNome': produto['dsNome'],
+                    'nrAlt': produto['nrAlt'],
+                    'nrCodigo': produto['nrCodigo'],
+                    'nrComp': produto['nrComp'],
+                    'nrLarg': produto['nrLarg'],
+                    'QtdeTotal': produto['QtdeTotal'],
+                    'status': [],
+                    'imagens': []
+                }
+                
+            # adiciona status no array
+            if produto['nrQtde'] and produto['dsStatus']:
+                produtos_json[cdProduto]['status'].append({'dsStatus': produto['dsStatus'], 'nrQtde': produto['nrQtde']})
 
-            # Array para armazenar as imagens
-            status_array = []
-
-            # Percorre as imagens e adiciona ao array
-            for statu in status:
-                dsStatus, nrQtde = statu
-                status_array.append({
-                    'dsStatus': dsStatus,
-                    'nrQtde': nrQtde
-                })
-            # fim Status
-
-            # Consulta os dados da tabela imagens para o produto atual
-            comando = f"SELECT cdCodigo, dsCaminho  FROM TbImagens WHERE cdProduto = {codigo}"
-            cursor.execute(comando)
-            imagens = cursor.fetchall()
-            # Array para armazenar as imagens
-            imagens_array = []
-
-            # Percorre as imagens e adiciona ao array
-            for imagem in imagens:
-                cdCodigo, dsCaminho = imagem
-                imagens_array.append({
-                    'cdImagens': cdCodigo,
-                    'dsCaminho': dsCaminho
-                })
-
-            # Cria um dicionário com os dados do produto e o array de imagens
-            produto_json = {
-                'cdProduto': cdProduto,
-                'dsDescricao': dsDescricao,
-                'dsNome': dsNome,
-                'nrAlt': nrAlt,
-                'nrCodigo': nrCodigo,
-                'nrComp': nrComp,
-                'nrLarg': nrLarg,
-                'QtdeTotal': QtdeTotal,
-                'imagens': imagens_array,
-                'status': status_array
-
-            }
-            produtos_json.append(produto_json)
-
+        # adiciona imagens nos produtos corretos
+        for img in imagens:
+            cdProduto = img['cdProduto']
+            if cdProduto in produtos_json:
+                produtos_json[cdProduto]['imagens'].append(img)
+        
         # Fecha a conexão com o banco de dados
         cursor.close()
         conexao.close()
-        return jsonify(produtos_json)
+        
+        return jsonify(list(produtos_json.values()))
 
     except mysql.connector.Error as error:
         return jsonify({'error': f'Erro ao acessar o banco de dados: {error}'})
