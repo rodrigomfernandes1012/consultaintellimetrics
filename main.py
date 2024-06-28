@@ -78,10 +78,7 @@ def upload_file(file_name, bucket, object_name):
         logging.error(e)
         return False
     return True
-#bucket = "dbfilesintellimetrics"
-#object_name = "produtos/1235.jpg" #destino, devo informar a pasta e o nome que vai subir
-#arquivo = "vaoucher.jpg" #nome do arquivo original
-#upload_file(arquivo, bucket, object_name)
+
 
 
 
@@ -102,9 +99,7 @@ def guarda_medidas(altura, largura, comprimento, pesoreal, cubado):
 
 
 def Pegar_Medidas():
-    #nrLargura = float(random.randrange(1, 80))
-    #nrAltura = float(random.randrange(10, 100))
-    #nrComprimento = float(random.randrange(1, 80))
+
     nrPeso = float(random.randrange(1, 50))
     #nrCubado = round((nrLargura * nrAltura * nrComprimento) / 167, 2)
     with open("cubagem.txt", "r") as arquivo:
@@ -210,10 +205,6 @@ def Alterar_VwTbPosicaoAtual(Campo, Dado, UpCampo, UpDado):
     cursor.execute(comando)
     conexao.commit()
 #FIM DA FUNÇÃO
-
-
-
-
 
 
 #Selecionar registros da tabela DbIntelliMetrics.TbChamados
@@ -526,17 +517,6 @@ def Selecionar_TbProduto(codigo):
     # Fecha a conexão com o banco de dados
     cursor.close()
     conexao.close()
-
-
-    ##if codigo == "0":
-    ##    comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, dsUser, dtRegistro from DbIntelliMetrics.TbProduto'
-    ##else:
-    ##    comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, dsUser, dtRegistro from DbIntelliMetrics.TbProduto where cdProduto = "{codigo}" '
-
-    ##cursor.execute(comando)
-    ##resultado = cursor.fetchall()
-    ##cursor.close()
-    ##conexao.close()
     return jsonify(produtos_json)
 #FIM DA FUNÇÃO
 
@@ -561,14 +541,6 @@ def deletar_TbProduto(Campo, Dado):
     conexao.commit()
 #FIM DA FUNÇÃO
 
-
-#Alterar registros da tabela DbIntelliMetrics.TbProduto
-def Alterar_TbProduto(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbProduto set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-#FIM DA FUNÇÃO
 
 
 #Selecionar registros da tabela DbIntelliMetrics.TbRelacionamento
@@ -1263,16 +1235,6 @@ def Alterar_TbFuncionario(Campo, Dado, UpCampo, UpDado):
     conexao.commit()
 #FIM DA FUNÇÃO
 
-
-## FIM DAS CONSULTAS NO BANCO
-
-
-#Pegar Medidas da Cubadora
-
-
-#FIM DA FUNÇÃO
-
-
 #Selecionar registros da tabela DbIntelliMetrics.TbFuncionario
 def Selecionar_TbEtiqueta(dsEtiqueta):
     conexao = conecta_bd()
@@ -1306,8 +1268,6 @@ CORS(app, resources={r"*": {"origins": "*"}})
 
 ##COMECA A API GERADA AUTOMATICAMENTE
 
-#https://replit.taxidigital.net/Chamados
-
 
 #Selecionar registros no EndPoint Chamados
 @app.route("/Chamados")
@@ -1316,8 +1276,6 @@ def get_Chamados():
     return resultado
 
 #FIM DA FUNÇÃO
-
-
 
 #Inserir registros no EndPoint Chamados
 @app.route('/Chamados', methods=['POST'])
@@ -1616,11 +1574,6 @@ def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
 #FIM DA FUNÇÃO
 #https://replit.taxidigital.net/Produto
 
-
-
-#FIM DA FUNÇÃO
-
-
 cd = []
 
 #Inserir registros no EndPoint Produto
@@ -1646,7 +1599,32 @@ def get_Produto(codigo):
     resultado = Selecionar_TbProduto(codigo)
     return resultado
 
+@app.route('/Produto/<codigo>', methods=['PUT'])
+def update_Produto(codigo):
 
+    data = request.get_json()
+    #Campo, Dado, UpCampo, UpDado
+    for campos in data:
+        Campo = "cdProduto"
+        Dado = codigo
+        UpCampo = campos
+        UpDado = data[campos]
+        #print(campo, data[campo])
+        #print(data[campo])
+        Alterar_TbProduto (Campo, Dado, UpCampo, UpDado)
+    return jsonify({'message': 'Produto atualizado com sucesso'})
+
+
+
+
+
+@app.route('/Produto/<codigo>', methods=['DELETE'])
+def delete_Produto(codigo):
+
+    deletar_TbProduto("cdProduto", codigo)
+    return jsonify({'message': 'Produto deletado com sucesso'})
+
+#FIM DA FUNÇÃO
 
 
 
@@ -1675,9 +1653,6 @@ def post_Etiqueta():
     return jsonify({ "cdCodigo": cd, "dsEtiqueta":dsEtiqueta,"nrLargura":nrLargura,"nrAltura":nrAltura,"nrComprimento": nrComprimento, "nrPeso": nrPeso, "nrCubado": nrCubado,"nrFator": nrFator, "dsUser": dsUser, "dtRegistro": dtRegistro })
 #FIM DA FUNÇÃO
 
-
-
-
 #Deletar registros da tabela DbIntelliMetrics.TbProduto
 def deletar_TbProduto(Campo, Dado):
     conexao = conecta_bd()
@@ -1691,11 +1666,21 @@ def deletar_TbProduto(Campo, Dado):
 #Alterar registros da tabela DbIntelliMetrics.TbProduto
 def Alterar_TbProduto(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
+    cursor = conexao.cursor()
     comando = f'update DbIntelliMetrics.TbProduto set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 #FIM DA FUNÇÃO
 #https://replit.taxidigital.net/Relacionamento
+#mycursor = mydb.cursor()
+#sql = "UPDATE customers SET address = 'Canyon 123' WHERE address = 'Valley 345'"
+
+#mycursor.execute(sql)
+
+#mydb.commit()
+
+
+
 
 
 #Selecionar registros no EndPoint Relacionamento
@@ -1705,8 +1690,6 @@ def get_Relacionamento():
     return resultado
 
 #FIM DA FUNÇÃO
-
-
 
 #Inserir registros no EndPoint Relacionamento
 @app.route('/Relacionamento', methods=['POST'])
@@ -1722,8 +1705,6 @@ def post_Relacionamento():
     Inserir_TbRelacionamento(cdPai, cdFilho, cdTipo, dsDescricao, cdStatus, dsUser, dtRegistro)
     return payload
 #FIM DA FUNÇÃO
-
-
 
 #Deletar registros da tabela DbIntelliMetrics.TbRelacionamento
 def deletar_TbRelacionamento(Campo, Dado):
@@ -1754,7 +1735,6 @@ def get_Sensor():
 #FIM DA FUNÇÃO
 
 
-
 #Inserir registros no EndPoint Sensor
 @app.route('/Sensor', methods=['POST'])
 def post_Sensor():
@@ -1770,8 +1750,6 @@ def post_Sensor():
     Inserir_TbSensor(dsNome, cdTipo, dsDescricao, cdUnidade, nrUnidadeIni, nrUnidadeFim, dsUser, dtRegistro)
     return payload
 #FIM DA FUNÇÃO
-
-
 
 #Deletar registros da tabela DbIntelliMetrics.TbSensor
 def deletar_TbSensor(Campo, Dado):
@@ -2008,8 +1986,6 @@ def post_Tipo():
     return payload
 #FIM DA FUNÇÃO
 
-
-
 #Deletar registros da tabela DbIntelliMetrics.TbTipo
 def deletar_TbTipo(Campo, Dado):
     conexao = conecta_bd()
@@ -2037,8 +2013,6 @@ def get_Unidade():
     return resultado
 
 #FIM DA FUNÇÃO
-
-
 
 #Inserir registros no EndPoint Unidade
 @app.route('/Unidade', methods=['POST'])
@@ -2082,8 +2056,6 @@ def get_Usuario():
 
 #FIM DA FUNÇÃO
 
-
-
 #Inserir registros no EndPoint Usuario
 @app.route('/Usuario', methods=['POST'])
 def post_Usuario():
@@ -2097,8 +2069,6 @@ def post_Usuario():
     Inserir_TbUsuario(dsNome, dsLogin, dsSenha, cdPerfil, dsUser, dtRegistro)
     return payload
 #FIM DA FUNÇÃO
-
-
 
 #Deletar registros da tabela DbIntelliMetrics.TbUsuario
 def deletar_TbUsuario(Campo, Dado):
@@ -2128,8 +2098,6 @@ def get_Visita():
 
 #FIM DA FUNÇÃO
 
-
-
 #Inserir registros no EndPoint Visita
 @app.route('/Visita', methods=['POST'])
 def post_Visita():
@@ -2143,8 +2111,6 @@ def post_Visita():
     return payload
 #FIM DA FUNÇÃO
 
-
-
 #Deletar registros da tabela DbIntelliMetrics.TbVisita
 def deletar_TbVisita(Campo, Dado):
     conexao = conecta_bd()
@@ -2153,7 +2119,6 @@ def deletar_TbVisita(Campo, Dado):
     cursor.execute(comando)
     conexao.commit()
 #FIM DA FUNÇÃO
-
 
 #Alterar registros da tabela DbIntelliMetrics.TbVisita
 def Alterar_TbVisita(Campo, Dado, UpCampo, UpDado):
@@ -2220,11 +2185,6 @@ def get_TbPosicao():
 #FIM DA FUNÇÃO
 
 
-
-
-
-
-
 #Deletar registros da tabela DbIntelliMetrics.TbPosicao
 def deletar_TbPosicao(Campo, Dado):
     conexao = conecta_bd()
@@ -2252,6 +2212,8 @@ def get_TbProdutoTipo(codigo):
     return resultado
 
 #FIM DA FUNÇÃO
+
+
 
 
 
@@ -2341,12 +2303,6 @@ def get_TbPosicaoAtual(codigo):
 #FIM DA FUNÇÃO
 
 
-
-
-
-
-
-
 #Inserir registros no EndPoint TbProdutoTotalStaus
 @app.route('/TbProdutoTotalStaus/', methods=['POST'])
 def post_TbProdutoTotalStaus():
@@ -2395,12 +2351,6 @@ def post_Funcionario():
     return payload
 #FIM DA FUNÇÃO
 
-
-
-
-
-
-#FIM DA FUNÇÃO
 #Fim do Gerador de API
 
 ## atulizado em 04052024
@@ -2614,24 +2564,11 @@ def event_receiver():
 
     return jsonify({"message": "acesso ok entra", "code": "200", "auth": "false"})
 
-    '''
-    O retorno deverá ser um JSON, contendo as informações:
-
-    "message": "", // Mensagem que será exibida no display
-    "code": "200", // Codigo sempre é 200.
-    "auth": "", Boolean, corresponde se a porta irá ser acionada ou não. 
-
-    '''
-
 
 @app.route('/keepalive', methods=['GET'])
 def keep_alive():
     return "OK"
 
-    '''
-    Deverá ser retornado uma request que contenha código 200.
-
-    '''
 
 @app.route("/whats", methods=['GET','POST'])
 def whats_post():
