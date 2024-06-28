@@ -168,10 +168,13 @@ def Alterar_TbAcessoIntelBras(Campo, Dado, UpCampo, UpDado):
 
 
 #Selecionar registros da tabela DbIntelliMetrics.VwTbPosicaoAtual
-def Selecionar_VwTbPosicaoAtual():
+def Selecionar_VwTbPosicaoAtual(codigo):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'select dtData, dtHora, cdDispositivo, cdProduto, nrCodigo, nrBat, dsNome, dsDescricao, dsEndereco, dsLat, dsLong from DbIntelliMetrics.VwTbPosicaoAtual'
+    if codigo == '0':
+        comando = f'select dtData, dtHora, cdDispositivo, cdProduto, nrCodigo, nrBat, dsNome, dsDescricao, dsEndereco, dsLat, dsLong from DbIntelliMetrics.VwTbPosicaoAtual'
+    else:
+        comando = f'select dtData, dtHora, cdDispositivo, cdProduto, nrCodigo, nrBat, dsNome, dsDescricao, dsEndereco, dsLat, dsLong from DbIntelliMetrics.VwTbPosicaoAtual where cdDispositivo = {codigo}'
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -2330,9 +2333,9 @@ def get_TbProdutoTotal(codigo):
 
 
 #Selecionar registros no EndPoint TbPosicaoAtual
-@app.route("/TbPosicaoAtual")
-def get_TbPosicaoAtual():
-    resultado = Selecionar_VwTbPosicaoAtual()
+@app.route("/TbPosicaoAtual<codigo>")
+def get_TbPosicaoAtual(codigo):
+    resultado = Selecionar_VwTbPosicaoAtual(codigo)
     return resultado
 
 #FIM DA FUNÇÃO
