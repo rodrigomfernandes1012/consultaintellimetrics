@@ -2333,7 +2333,7 @@ def get_TbProdutoTotal(codigo):
 
 
 #Selecionar registros no EndPoint TbPosicaoAtual
-@app.route("/TbPosicaoAtual<codigo>")
+@app.route("/TbPosicaoAtual/<codigo>")
 def get_TbPosicaoAtual(codigo):
     resultado = Selecionar_VwTbPosicaoAtual(codigo)
     return resultado
