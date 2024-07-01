@@ -1601,21 +1601,9 @@ def get_Produto(codigo):
 
 @app.route('/Produto/<codigo>', methods=['PUT'])
 def update_Produto(codigo):
-
     data = request.get_json()
-    #Campo, Dado, UpCampo, UpDado
-    for campos in data:
-        Campo = "cdProduto"
-        Dado = codigo
-        UpCampo = campos
-        UpDado = data[campos]
-        #print(campo, data[campo])
-        #print(data[campo])
-        Alterar_TbProduto (Campo, Dado, UpCampo, UpDado)
+    Alterar_TbProduto ("cdProduto", codigo, data)
     return jsonify({'message': 'Produto atualizado com sucesso'})
-
-
-
 
 
 @app.route('/Produto/<codigo>', methods=['DELETE'])
@@ -1663,11 +1651,21 @@ def deletar_TbProduto(Campo, Dado):
 #FIM DA FUNÇÃO
 
 
+
+    
+
 #Alterar registros da tabela DbIntelliMetrics.TbProduto
-def Alterar_TbProduto(Campo, Dado, UpCampo, UpDado):
+def Alterar_TbProduto(Campo, Dado, UpData):
+    comando = 'update DbIntelliMetrics.TbProduto set'
+    
+    for campos in UpData:
+        comando += f' {campos}="{UpData[campos]}",'
+        
+    comando = comando[:-1]
+    comando += f' where {Campo}="{Dado}"'
+        
     conexao = conecta_bd()
     cursor = conexao.cursor()
-    comando = f'update DbIntelliMetrics.TbProduto set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 #FIM DA FUNÇÃO
