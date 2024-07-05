@@ -14,6 +14,8 @@ import ast
 import time
 import re
 import pandas as pd
+from geopy.geocoders import Nominatim
+from geopy.distance import geodesic
 
 
 
@@ -303,6 +305,18 @@ def Selecionar_TbDestinatario():
     return  resultado
 #FIM DA FUNÇÃO
 
+def Selecionar_Lat_Long_Destinatario(codigo):
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    comando = f'SELECT cdDestinatario, dsLat, dsLong, cdFilho FROM DbIntelliMetrics.VwTbDestinatarioDispositivo where cdFilho ={codigo}'
+    cursor.execute(comando)
+    resultado = cursor.fetchall()
+    cursor.close()
+    conexao.close()
+    return resultado
+
+#print(Selecionar_Lat_Long_Destinatario(2))
+
 
 #Inserir registros da tabela DbIntelliMetrics.TbDestinatario
 def Inserir_TbDestinatario(dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsLat, dsLong, nrRaio, dsUser, dtRegistro):
@@ -422,10 +436,14 @@ def Alterar_TbImagens(Campo, Dado, UpCampo, UpDado):
 
 
 #Selecionar registros da tabela DbIntelliMetrics.TbPosicao
-def Selecionar_TbPosicao():
+def Selecionar_TbPosicao(codigo):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'select cdPosicao, dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dtRegistro from DbIntelliMetrics.TbPosicao'
+
+    if codigo == '0':
+        comando = f'select cdPosicao, dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dtRegistro from DbIntelliMetrics.TbPosicao'
+    else:
+        comando = f'select cdPosicao, dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dtRegistro from DbIntelliMetrics.TbPosicao where cdDispositivo={codigo}'
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -433,6 +451,7 @@ def Selecionar_TbPosicao():
     return  resultado
 #FIM DA FUNÇÃO
 
+#Selecionar_TbDestinatario()
 
 #Inserir registros da tabela DbIntelliMetrics.TbPosicao
 def Inserir_TbPosicao(dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsUser, dtRegistro):
@@ -1006,10 +1025,14 @@ def Alterar_TbVisitante(Campo, Dado, UpCampo, UpDado):
 
 
 #Selecionar registros da tabela DbIntelliMetrics.TbPosicao
-def Selecionar_TbPosicao():
+def Selecionar_TbPosicao(codigo):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'select dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, dsEndereco from DbIntelliMetrics.TbPosicao'
+    if codigo == '0':
+        comando = f'select dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, dsEndereco from DbIntelliMetrics.TbPosicao'
+    else:
+        comando = f'select dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, dsEndereco from DbIntelliMetrics.TbPosicao where cdDispositivo="{codigo}"'
+
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -1523,9 +1546,9 @@ def Alterar_TbImagens(Campo, Dado, UpCampo, UpDado):
 
 
 #Selecionar registros no EndPoint Posicao
-@app.route("/Posicao")
-def get_Posicao():
-    resultado = Selecionar_TbPosicao()
+@app.route("/Posicao/<codigo>")
+def get_Posicao(codigo):
+    resultado = Selecionar_TbPosicao(codigo)
     return resultado
 
 #FIM DA FUNÇÃO
@@ -1677,6 +1700,15 @@ def Alterar_TbProduto(Campo, Dado, UpData):
 
 #mydb.commit()
 
+def calcular_distancia(lat1, lon1, lat2, lon2):
+    geolocator = Nominatim(user_agent="my_app")
+    distancia = geodesic((lat1, lon1), (lat2, lon2)).kilometers
+
+    return distancia
+
+
+# distancia = calcular_distancia("-23.5006347","-46.4884689","-23.5331802","-46.4659015")
+#distancia = calcular_distancia(lat1, lon1, lat2, lon2)
 
 
 
@@ -1704,24 +1736,6 @@ def post_Relacionamento():
     return payload
 #FIM DA FUNÇÃO
 
-#Deletar registros da tabela DbIntelliMetrics.TbRelacionamento
-def deletar_TbRelacionamento(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbRelacionamento where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-#FIM DA FUNÇÃO
-
-
-#Alterar registros da tabela DbIntelliMetrics.TbRelacionamento
-def Alterar_TbRelacionamento(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbRelacionamento set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-#FIM DA FUNÇÃO
-#https://replit.taxidigital.net/Sensor
 
 
 #Selecionar registros no EndPoint Sensor
@@ -1749,24 +1763,6 @@ def post_Sensor():
     return payload
 #FIM DA FUNÇÃO
 
-#Deletar registros da tabela DbIntelliMetrics.TbSensor
-def deletar_TbSensor(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbSensor where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-#FIM DA FUNÇÃO
-
-
-#Alterar registros da tabela DbIntelliMetrics.TbSensor
-def Alterar_TbSensor(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbSensor set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-#FIM DA FUNÇÃO
-#https://replit.taxidigital.net/Status
 
 
 #Selecionar registros no EndPoint Status
@@ -1792,24 +1788,6 @@ def post_Status():
 
 
 
-#Deletar registros da tabela DbIntelliMetrics.TbStatus
-def deletar_TbStatus(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbStatus where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-#FIM DA FUNÇÃO
-
-
-#Alterar registros da tabela DbIntelliMetrics.TbStatus
-def Alterar_TbStatus(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbStatus set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-#FIM DA FUNÇÃO
-#https://replit.taxidigital.net/Tag
 
 
 #Selecionar registros no EndPoint Tag
@@ -1836,24 +1814,7 @@ def post_Tag():
 
 
 
-#Deletar registros da tabela DbIntelliMetrics.TbTag
-def deletar_TbTag(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbTag where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-#FIM DA FUNÇÃO
 
-
-#Alterar registros da tabela DbIntelliMetrics.TbTag
-def Alterar_TbTag(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbTag set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-#FIM DA FUNÇÃO
-#https://replit.taxidigital.net/Ticket
 
 
 #Selecionar registros no EndPoint Ticket
@@ -1883,24 +1844,6 @@ def post_Ticket():
 
 
 
-#Deletar registros da tabela DbIntelliMetrics.TbTicket
-def deletar_TbTicket(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbTicket where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-#FIM DA FUNÇÃO
-
-
-#Alterar registros da tabela DbIntelliMetrics.TbTicket
-def Alterar_TbTicket(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbTicket set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-#FIM DA FUNÇÃO
-#https://replit.taxidigital.net/TicketResumo
 
 
 #Selecionar registros no EndPoint TicketResumo
@@ -1931,25 +1874,6 @@ def post_TicketResumo():
 #FIM DA FUNÇÃO
 
 
-
-#Deletar registros da tabela DbIntelliMetrics.TbTicketResumo
-def deletar_TbTicketResumo(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbTicketResumo where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-#FIM DA FUNÇÃO
-
-
-#Alterar registros da tabela DbIntelliMetrics.TbTicketResumo
-def Alterar_TbTicketResumo(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbTicketResumo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-#FIM DA FUNÇÃO
-#https://replit.taxidigital.net/Tipo
 
 
 #Selecionar registros no EndPoint Tipo
@@ -2026,14 +1950,6 @@ def post_Unidade():
 
 
 
-#Deletar registros da tabela DbIntelliMetrics.TbUnidade
-def deletar_TbUnidade(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbUnidade where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-#FIM DA FUNÇÃO
 
 
 #Alterar registros da tabela DbIntelliMetrics.TbUnidade
