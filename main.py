@@ -436,19 +436,19 @@ def Alterar_TbImagens(Campo, Dado, UpCampo, UpDado):
 
 
 #Selecionar registros da tabela DbIntelliMetrics.TbPosicao
-def Selecionar_TbPosicao(codigo):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
+# def Selecionar_TbPosicao(codigo):
+#     conexao = conecta_bd()
+#     cursor = conexao.cursor(dictionary=True)
 
-    if codigo == '0':
-        comando = f'select cdPosicao, dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dtRegistro from DbIntelliMetrics.TbPosicao'
-    else:
-        comando = f'select cdPosicao, dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dtRegistro from DbIntelliMetrics.TbPosicao where cdDispositivo={codigo}'
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return  resultado
+#     if codigo == '0':
+#         comando = f'select cdPosicao, dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dtRegistro from DbIntelliMetrics.TbPosicao'
+#     else:
+#         comando = f'select cdPosicao, dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dtRegistro from DbIntelliMetrics.TbPosicao where cdDispositivo={codigo}'
+#     cursor.execute(comando)
+#     resultado = cursor.fetchall()
+#     cursor.close()
+#     conexao.close()
+#     return  resultado
 #FIM DA FUNÇÃO
 
 #Selecionar_TbDestinatario()
@@ -1025,13 +1025,17 @@ def Alterar_TbVisitante(Campo, Dado, UpCampo, UpDado):
 
 
 #Selecionar registros da tabela DbIntelliMetrics.TbPosicao
-def Selecionar_TbPosicao(codigo):
+def Selecionar_TbPosicao(filtros):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    if codigo == '0':
-        comando = f'select dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, dsEndereco from DbIntelliMetrics.TbPosicao'
-    else:
-        comando = f'select dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, dsEndereco from DbIntelliMetrics.TbPosicao where cdDispositivo="{codigo}"'
+    
+    # Inicializa a consulta SQL básica
+    comando = "SELECT dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, dsEndereco FROM DbIntelliMetrics.TbPosicao WHERE 1=1"
+    # Adiciona condições à consulta SQL com base nos filtros fornecidos
+    for campo, valor in filtros.items():
+        comando += f" AND {campo} = '{valor}'"
+        
+    print(comando)
 
     cursor.execute(comando)
     resultado = cursor.fetchall()
@@ -1548,7 +1552,24 @@ def Alterar_TbImagens(Campo, Dado, UpCampo, UpDado):
 #Selecionar registros no EndPoint Posicao
 @app.route("/Posicao/<codigo>")
 def get_Posicao(codigo):
-    resultado = Selecionar_TbPosicao(codigo)
+    filtros = {
+        "dtData": request.args.get('dtData'),
+        "dtHora": request.args.get('dtHora'),
+        "dsLat": request.args.get('dsLat'),
+        "dsLong": request.args.get('dsLong'),
+        "nrTemp": request.args.get('nrTemp'),
+        "nrBat": request.args.get('nrBat'),
+        "dsEndereco": request.args.get('dsEndereco')
+    }
+    
+    # Remove filtros que nao tem valor
+    filtros = {k: v for k, v in filtros.items() if v is not None}
+    
+    # Adiciona o codigo como um filtro se for diferente de 0
+    if codigo != '0':
+        filtros['cdDispositivo'] = codigo
+    
+    resultado = Selecionar_TbPosicao(filtros)
     return resultado
 
 #FIM DA FUNÇÃO
@@ -2088,15 +2109,6 @@ def Alterar_TbVisitante(Campo, Dado, UpCampo, UpDado):
     conexao.commit()
 #FIM DA FUNÇÃO
 #https://replit.taxidigital.net/TbPosicao
-
-
-#Selecionar registros no EndPoint TbPosicao
-@app.route("/TbPosicao")
-def get_TbPosicao():
-    resultado = Selecionar_TbPosicao()
-    return resultado
-
-#FIM DA FUNÇÃO
 
 
 #Deletar registros da tabela DbIntelliMetrics.TbPosicao
