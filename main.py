@@ -294,10 +294,13 @@ def Alterar_TbCliente(Campo, Dado, UpCampo, UpDado):
 
 
 #Selecionar registros da tabela DbIntelliMetrics.TbDestinatario
-def Selecionar_TbDestinatario():
+def Selecionar_TbDestinatario(codigo):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'select cdDestinatario, dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsLat, dsLong, nrRaio, dsUser, dtRegistro from DbIntelliMetrics.TbDestinatario'
+    if codigo == '0':
+        comando =  f'select cdDestinatario, dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsLat, dsLong, nrRaio, dsUser, dtRegistro from DbIntelliMetrics.TbDestinatario'
+    else:
+        comando = f'select cdDestinatario, dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsLat, dsLong, nrRaio, dsUser, dtRegistro from DbIntelliMetrics.TbDestinatario where cdDestinatario ={codigo}'
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -348,10 +351,14 @@ def Alterar_TbDestinatario(Campo, Dado, UpCampo, UpDado):
 
 
 #Selecionar registros da tabela DbIntelliMetrics.TbDispositivo
-def Selecionar_TbDispositivo():
+def Selecionar_TbDispositivo(codigo):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'select cdDispositivo, dsDispositivo, dsModelo, dsDescricao, dsObs, dsLayout, nrChip, cdStatus, dsUser, dtRegistro from DbIntelliMetrics.TbDispositivo'
+    if codigo == 0:
+        comando = f'select cdDispositivo, dsDispositivo, dsModelo, dsDescricao, dsObs, dsLayout, nrChip, cdStatus, dsUser, dtRegistro from DbIntelliMetrics.TbDispositivo'
+    else:
+        comando = f'select cdDispositivo, dsDispositivo, dsModelo, dsDescricao, dsObs, dsLayout, nrChip, cdStatus, dsUser, dtRegistro from DbIntelliMetrics.TbDispositivo where cdDispositivo={codigo}'
+
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -1396,9 +1403,9 @@ def Alterar_TbCliente(Campo, Dado, UpCampo, UpDado):
 
 
 #Selecionar registros no EndPoint Destinatario
-@app.route("/Destinatario")
-def get_Destinatario():
-    resultado = Selecionar_TbDestinatario()
+@app.route("/Destinatario/<codigo>")
+def get_Destinatario(codigo):
+    resultado = Selecionar_TbDestinatario(codigo)
     return resultado
 
 #FIM DA FUNÇÃO
@@ -1454,9 +1461,9 @@ def Alterar_TbDestinatario(Campo, Dado, UpCampo, UpDado):
 
 
 #Selecionar registros no EndPoint Dispositivo
-@app.route("/Dispositivo")
-def get_Dispositivo():
-    resultado = Selecionar_TbDispositivo()
+@app.route("/Dispositivo/<codigo>")
+def get_Dispositivo(codigo):
+    resultado = Selecionar_TbDispositivo(codigo)
     return resultado
 
 #FIM DA FUNÇÃO
