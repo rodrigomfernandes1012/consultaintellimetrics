@@ -1077,7 +1077,7 @@ def Selecionar_VwRelHistoricoDispositivoProduto(codigo):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
     if codigo == "0":
-        comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, cdDispositivo, dsDispositivo, dsModelo, DescDispositivo, dsObs, dsLayout, nrChip, StatusDispositivo from VwRelHistoricoDispositivoProduto'
+        comando = f'select cdProduto, nrCodigo, dsDescricao, dtRegistro, dtHora, cdDispositivo, dsNome, dsEndereco, nrBatPercentual, nrPorta, nrTemperatura, nrQtdItens, nrQtdVendidas, dsStatus from VwRelHistoricoDispositivoProduto'
     else:
         comando = f'select cdProduto, nrCodigo, dsDescricao, dtRegistro, dtHora, cdDispositivo, dsNome, dsEndereco, nrBatPercentual, nrPorta, nrTemperatura, nrQtdItens, nrQtdVendidas, dsStatus from VwRelHistoricoDispositivoProduto where cdDispositivo = "{codigo}"'
     cursor.execute(comando)
