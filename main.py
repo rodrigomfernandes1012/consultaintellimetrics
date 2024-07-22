@@ -1073,6 +1073,20 @@ def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
 #FIM DA FUNÇÃO
 
 
+def Selecionar_VwRelHistoricoDispositivoProduto(codigo):
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    if codigo == "0":
+        comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, cdDispositivo, dsDispositivo, dsModelo, DescDispositivo, dsObs, dsLayout, nrChip, StatusDispositivo from VwRelHistoricoDispositivoProduto'
+    else:
+        comando = f'select cdProduto, nrCodigo, dsDescricao, dtRegistro, dtHora, cdDispositivo, dsNome, dsEndereco, nrBatPercentual, nrPorta, nrTemperatura, nrQtdItens, nrQtdVendidas, dsStatus from VwRelHistoricoDispositivoProduto where cdDispositivo = "{codigo}"'
+    cursor.execute(comando)
+    resultado = cursor.fetchall()
+    cursor.close()
+    conexao.close()
+    return  resultado
+
+
 #Selecionar registros da tabela DbIntelliMetrics.TbProdutoTipo
 def Selecionar_VwTbProdutoTipo(codigo):
     conexao = conecta_bd()
@@ -2194,7 +2208,10 @@ def Alterar_VwTbProdutoTipo(Campo, Dado, UpCampo, UpDado):
 #FIM DA FUNÇÃO
 #https://replit.taxidigital.net/TbProdutoTotalStaus
 
-
+@app.route("/VwRelHistoricoDispositivoProduto/<codigo>")
+def get_RelHistoricoDispositivoProduto(codigo):
+    resultado = Selecionar_VwRelHistoricoDispositivoProduto(codigo)
+    return resultado
 #Selecionar registros no EndPoint TbProdutoTotalStaus
 @app.route("/TbProdutoTotalStaus/<codigo>")
 def get_TbProdutoTotalStaus(codigo):
