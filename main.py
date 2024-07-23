@@ -461,10 +461,10 @@ def Alterar_TbImagens(Campo, Dado, UpCampo, UpDado):
 #Selecionar_TbDestinatario()
 
 #Inserir registros da tabela DbIntelliMetrics.TbPosicao
-def Inserir_TbPosicao(dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsUser, dtRegistro):
+def Inserir_TbPosicao(dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco,  dsUF, dsCep, dsPais, dsUser):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbPosicao ( dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsUser, dtRegistro ) values ("{dsModelo}", "{dtData}", "{dtHora}", "{dsLat}", "{dsLong}", "{nrTemp}", "{nrBat}", "{nrSeq}", "{dsArquivo}", "{cdDispositivo}", "{dsEndereco}", "{dsUser}", "{dtRegistro}")'
+    comando = f'insert into DbIntelliMetrics.TbPosicao ( dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco,  dsUF, dsCep, dsPais, dsUser ) values ("{dsModelo}", "{dtData}", "{dtHora}", "{dsLat}", "{dsLong}", "{nrTemp}", "{nrBat}", "{nrSeq}", "{dsArquivo}", "{cdDispositivo}", "{dsEndereco}", "{dsUF}", "{dsCep}","{dsPais}", "{dsUser}")'
     cursor.execute(comando)
     conexao.commit()
 #FIM DA FUNÇÃO
@@ -1612,9 +1612,14 @@ def post_Posicao():
     dsArquivo = payload ['dsArquivo']
     cdDispositivo = payload ['cdDispositivo']
     dsEndereco = payload ['dsEndereco']
+    dsBairro = payload['dsBairro'],
+    dsCidade = payload['dsCidade'],
+    dsUF = payload['dsUF'],
+    dsCep = payload['dsCep'],
+    dsPais = payload['dsPais'],
     dsUser = payload ['dsUser']
-    dtRegistro = payload ['dtRegistro']
-    Inserir_TbPosicao(dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsUser ,dtRegistro)
+
+    Inserir_TbPosicao(dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsBairro, dsCidade, dsUF, dsCep, dsPais, dsUser)
     return payload
 #FIM DA FUNÇÃO
 
