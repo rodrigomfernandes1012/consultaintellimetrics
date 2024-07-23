@@ -460,13 +460,47 @@ def Alterar_TbImagens(Campo, Dado, UpCampo, UpDado):
 
 #Selecionar_TbDestinatario()
 
+def get_endereco_coordenada(lat, long):
+    payload = (
+        f'http://osm.taxidigital.net:4000/v1/reverse?point.lon={long}&point.lat={lat}&layers=address&sources=oa&size=1&cdFilial=0&cdTipoOrigem=0')
+    requisicao = (requests.get(payload))
+    dic = (requisicao.json())
+    adress = (dic['features'])
+
+    for campos in adress:
+        dados = (campos['properties'])
+        dsLogradoruro = (dados.get("street"))
+        dsNum = (dados.get("housenumber"))
+        dsBairro = (dados.get("neighbourhood"))
+        dsCidade = (dados.get("locality"))
+        dsUF = (dados.get("region_a"))
+        dsCep = (dados.get("postalcode"))
+        dsPais = (dados.get("country_code"))
+        return (dsLogradoruro, dsNum, dsBairro, dsCidade, dsUF, dsCep, dsPais)
+
+
+#get_endereco_coordenada(lat, long)
+
+
 #Inserir registros da tabela DbIntelliMetrics.TbPosicao
-def Inserir_TbPosicao(dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco,  dsUF, dsCep, dsPais, dsUser):
+def Inserir_TbPosicao(dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsNum, dsBairro, dsCidade,  dsUF, dsCep, dsPais, dsUser):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbPosicao ( dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco,  dsUF, dsCep, dsPais, dsUser ) values ("{dsModelo}", "{dtData}", "{dtHora}", "{dsLat}", "{dsLong}", "{nrTemp}", "{nrBat}", "{nrSeq}", "{dsArquivo}", "{cdDispositivo}", "{dsEndereco}", "{dsUF}", "{dsCep}","{dsPais}", "{dsUser}")'
+    comando = f'insert into DbIntelliMetrics.TbPosicao ( dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsNum, dsBairro, dsCidade,  dsUF, dsCep, dsPais, dsUser ) values ("{dsModelo}", "{dtData}", "{dtHora}", "{dsLat}", "{dsLong}", "{nrTemp}", "{nrBat}", "{nrSeq}", "{dsArquivo}", "{cdDispositivo}", "{dsEndereco}", "{dsNum}", "{dsBairro}", "{dsCidade}", "{dsUF}", "{dsCep}","{dsPais}", "{dsUser}")'
     cursor.execute(comando)
     conexao.commit()
+    return cursor.lastrowid
+
+def Inserir_TbSensorRegistro(cdDispositivo, cdSensor, cdPosicao, nrValor):
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    comando = f'insert into DbIntelliMetrics.TbSensorRegistro (cdDispositivo, cdSensor, cdPosicao, nrValor) values ("{cdDispositivo}", "{cdSensor}", "{cdPosicao}", "{nrValor}")'
+    cursor.execute(comando)
+    conexao.commit()
+    return cursor.lastrowid
+
+
+
 #FIM DA FUNÇÃO
 
 
@@ -1601,6 +1635,7 @@ def get_Posicao(codigo):
 @app.route('/Posicao', methods=['POST'])
 def post_Posicao():
     payload = request.get_json()
+    print(payload)
     dsModelo = payload ['dsModelo']
     dtData = payload ['dtData']
     dtHora = payload ['dtHora']
@@ -1611,16 +1646,38 @@ def post_Posicao():
     nrSeq = payload ['nrSeq']
     dsArquivo = payload ['dsArquivo']
     cdDispositivo = payload ['cdDispositivo']
-    dsEndereco = payload ['dsEndereco']
-    dsBairro = payload['dsBairro'],
-    dsCidade = payload['dsCidade'],
-    dsUF = payload['dsUF'],
-    dsCep = payload['dsCep'],
-    dsPais = payload['dsPais'],
-    dsUser = payload ['dsUser']
+    #dsEndereco = payload ['dsEndereco']
+    #dsBairro = payload['dsBairro']
+    #dsCidade = payload['dsCidade']
+    #dsUF = payload['dsUF']
+    #dsCep = payload['dsCep']
+    #dsPais = payload['dsPais']
+    dsUser = payload['dsUser']
+    dic = get_endereco_coordenada(dsLat, dsLong)
+    #print(dic)
+    dsEndereco = dic[0]
+    dsNum = dic[1]
+    dsBairro = dic[2]
+    dsCidade = dic[3]
+    dsUF = dic[4]
+    dsCep = dic[5]
+    dsPais = dic[6]
+    print(payload['sensores'])
 
-    Inserir_TbPosicao(dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsBairro, dsCidade, dsUF, dsCep, dsPais, dsUser)
-    return payload
+    cd = Inserir_TbPosicao(dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsNum, dsBairro, dsCidade, dsUF, dsCep, dsPais, dsUser)
+
+
+    for dado in payload['sensores']:
+        cdDispositivo = dado['cdDispositivo']
+        cdSensore = dado['cdSensor']
+        cdPosicao = cd
+        nrValor = dado['nrValor']
+        Inserir_TbSensorRegistro(cdDispositivo, cdSensore, cdPosicao, nrValor)
+
+    return jsonify({ "cdPosicao": cd })
+
+
+
 #FIM DA FUNÇÃO
 
 
