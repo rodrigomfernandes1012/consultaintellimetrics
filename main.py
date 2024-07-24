@@ -165,13 +165,15 @@ def Alterar_TbAcessoIntelBras(Campo, Dado, UpCampo, UpDado):
 
 
 #Selecionar registros da tabela DbIntelliMetrics.VwTbPosicaoAtual
-def Selecionar_VwTbPosicaoAtual(codigo):
+def Selecionar_VwTbPosicaoAtual(filtros):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    if codigo == '0':
-        comando = f'select dtData, dtHora, cdDispositivo, cdProduto, nrCodigo, nrBat, dsNome, dsDescricao, dsEndereco, dsLat, dsLong from DbIntelliMetrics.VwTbPosicaoAtual'
-    else:
-        comando = f'select dtData, dtHora, cdDispositivo, cdProduto, nrCodigo, nrBat, dsNome, dsDescricao, dsEndereco, dsLat, dsLong from DbIntelliMetrics.VwTbPosicaoAtual where cdDispositivo = {codigo}'
+    
+    comando = f'select dtData, dtHora, cdDispositivo, cdProduto, nrCodigo, nrBat, dsNome, dsDescricao, dsEndereco, dsLat, dsLong from DbIntelliMetrics.VwTbPosicaoAtual WHERE 1=1'
+    
+    for campo, valor in filtros.items():
+        comando += f" AND {campo} = '{valor}'"
+    
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -2309,7 +2311,18 @@ def get_TbProdutoTotal(codigo):
 #Selecionar registros no EndPoint TbPosicaoAtual
 @app.route("/TbPosicaoAtual/<codigo>")
 def get_TbPosicaoAtual(codigo):
-    resultado = Selecionar_VwTbPosicaoAtual(codigo)
+    filtros = {
+        "cdProduto": request.args.get('cdProduto')
+    }
+    
+    # Remove filtros que nao tem valor
+    filtros = {k: v for k, v in filtros.items() if v is not None}
+    
+    # Adiciona o codigo como um filtro se for diferente de 0
+    if codigo != '0':
+        filtros['cdDispositivo'] = codigo
+    
+    resultado = Selecionar_VwTbPosicaoAtual(filtros)
     return resultado
 
 #FIM DA FUNÇÃO
