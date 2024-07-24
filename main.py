@@ -1648,15 +1648,8 @@ def post_Posicao():
     nrSeq = payload ['nrSeq']
     dsArquivo = payload ['dsArquivo']
     cdDispositivo = payload ['cdDispositivo']
-    #dsEndereco = payload ['dsEndereco']
-    #dsBairro = payload['dsBairro']
-    #dsCidade = payload['dsCidade']
-    #dsUF = payload['dsUF']
-    #dsCep = payload['dsCep']
-    #dsPais = payload['dsPais']
     dsUser = payload['dsUser']
     dic = get_endereco_coordenada(dsLat, dsLong)
-    #print(dic)
     dsEndereco = dic[0]
     dsNum = dic[1]
     dsBairro = dic[2]
@@ -1664,20 +1657,14 @@ def post_Posicao():
     dsUF = dic[4]
     dsCep = dic[5]
     dsPais = dic[6]
-    print(payload['sensores'])
-
+    dic_sensores = payload['sensores']
     cd = Inserir_TbPosicao(dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsNum, dsBairro, dsCidade, dsUF, dsCep, dsPais, dsUser)
-
-
-    for dado in payload['sensores']:
-        cdDispositivo = dado['cdDispositivo']
-        cdSensore = dado['cdSensor']
-        cdPosicao = cd
-        nrValor = dado['nrValor']
-        Inserir_TbSensorRegistro(cdDispositivo, cdSensore, cdPosicao, nrValor)
-
+    cdSensor = dic_sensores['cdSensor']
+    cdPosicao = cd
+    nrValor = dic_sensores['nrValor']
+    #print(nome)  # Saída: Carlos
+    Inserir_TbSensorRegistro(cdDispositivo, cdSensor, cdPosicao, nrValor)
     return jsonify({ "cdPosicao": cd })
-
 
 
 #FIM DA FUNÇÃO
