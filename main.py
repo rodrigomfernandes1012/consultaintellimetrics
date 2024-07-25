@@ -27,6 +27,7 @@ dic_whats2 = []
 dic_altura = []
 
 
+
 token = "8c4EF9vXi8TZe6581e0af85c25"
 
 
@@ -140,6 +141,16 @@ def Selecionar_TbAcessoIntelBras():
     conexao.close()
     return resultado
 
+def Selecionar_VwTbDestinatarioDispositivo(codigoDisp):
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    comando = f"select cdDestinatario, dsLat, dsLong, nrRaio, cdFilho from DbIntelliMetrics.VwTbDestinatarioDispositivo where cdFilho ={codigoDisp} "
+    cursor.execute(comando)
+    resultado = cursor.fetchall()
+    cursor.close()
+    conexao.close()
+    return (resultado)
+
 
 # FIM DA FUNÇÃO
 
@@ -191,6 +202,19 @@ def Alterar_TbAcessoIntelBras(Campo, Dado, UpCampo, UpDado):
 
 
 # FIM DA FUNÇÃO
+
+def calcular_distancia(lat1, lon1, lat2, lon2):
+    geolocator = Nominatim(user_agent="my_app")
+    distancia = geodesic((lat1, lon1), (lat2, lon2)).kilometers
+    return distancia
+# distancia = calcular_distancia("-23.5006347","-46.4884689","-23.5331802","-46.4659015")
+# distancia = calcular_distancia(lat1, lon1, lat2, lon2)
+
+
+
+
+
+
 
 
 # Selecionar registros da tabela DbIntelliMetrics.VwTbPosicaoAtual
@@ -647,11 +671,16 @@ def Inserir_TbPosicao(
     dsUF,
     dsCep,
     dsPais,
-    dsUser,
+    dsLatPdv,
+    dsLongPdv,
+    nrRaio,
+
+    dsUser
 ):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbPosicao ( dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsNum, dsBairro, dsCidade,  dsUF, dsCep, dsPais, dsUser ) values ("{dsModelo}", "{dtData}", "{dtHora}", "{dsLat}", "{dsLong}", "{nrTemp}", "{nrBat}", "{nrSeq}", "{dsArquivo}", "{cdDispositivo}", "{dsEndereco}", "{dsNum}", "{dsBairro}", "{dsCidade}", "{dsUF}", "{dsCep}","{dsPais}", "{dsUser}")'
+    comando = f'insert into DbIntelliMetrics.TbPosicao ( dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsNum, dsBairro, dsCidade,  dsUF, dsCep, dsPais,  dsLatPdv, dsLongPdv, nrRaio,  dsUser ) values ("{dsModelo}", "{dtData}", "{dtHora}", "{dsLat}", "{dsLong}", "{nrTemp}", "{nrBat}", "{nrSeq}", "{dsArquivo}", "{cdDispositivo}", "{dsEndereco}", "{dsNum}", "{dsBairro}", "{dsCidade}", "{dsUF}", "{dsCep}","{dsPais}", "{dsLatPdv}", "{dsLongPdv}", "{nrRaio}",  "{dsUser}")'
+   # print(comando)
     cursor.execute(comando)
     conexao.commit()
     return cursor.lastrowid
@@ -2081,6 +2110,7 @@ def get_Posicao(codigo):
 
 # FIM DA FUNÇÃO
 
+dic_endereco_pdv = []
 
 # Inserir registros no EndPoint Posicao
 @app.route("/Posicao", methods=["POST"])
@@ -2106,8 +2136,16 @@ def post_Posicao():
     dsUF = dic[4]
     dsCep = dic[5]
     dsPais = dic[6]
+    dic_endereco_pdv = Selecionar_VwTbDestinatarioDispositivo(cdDispositivo )
+    print(dic_endereco_pdv)
+    dic_endereco_pdv = dict(dic_endereco_pdv[0])
+    cdDestinatario =dic_endereco_pdv['cdDestinatario']
+    dsLatPdv = dic_endereco_pdv['dsLat']
+    dsLongPdv = dic_endereco_pdv['dsLong']
+    nrRaio = dic_endereco_pdv['nrRaio']
+   
     dic_sensores = payload['sensores']
-    cd = Inserir_TbPosicao(dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsNum, dsBairro, dsCidade, dsUF, dsCep, dsPais, dsUser)
+    cd = Inserir_TbPosicao(dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsNum, dsBairro, dsCidade, dsUF, dsCep, dsPais,  dsLatPdv, dsLongPdv, nrRaio,  dsUser)
     cdSensor = dic_sensores['cdSensor']
     cdPosicao = cd
     nrValor = dic_sensores['nrValor']
@@ -2288,15 +2326,6 @@ def Alterar_TbProduto(Campo, Dado, UpData):
 # mydb.commit()
 
 
-def calcular_distancia(lat1, lon1, lat2, lon2):
-    geolocator = Nominatim(user_agent="my_app")
-    distancia = geodesic((lat1, lon1), (lat2, lon2)).kilometers
-
-    return distancia
-
-
-# distancia = calcular_distancia("-23.5006347","-46.4884689","-23.5331802","-46.4659015")
-# distancia = calcular_distancia(lat1, lon1, lat2, lon2)
 
 
 # Selecionar registros no EndPoint Relacionamento
