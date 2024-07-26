@@ -676,13 +676,14 @@ def Inserir_TbPosicao(
     dsLatPdv,
     dsLongPdv,
     nrRaio,
-
+    blArea,
+    nrDistancia,
     dsUser
 ):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbPosicao ( dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsNum, dsBairro, dsCidade,  dsUF, dsCep, dsPais,  dsLatPdv, dsLongPdv, nrRaio,  dsUser ) values ("{dsModelo}", "{dtData}", "{dtHora}", "{dsLat}", "{dsLong}", "{nrTemp}", "{nrBat}", "{nrSeq}", "{dsArquivo}", "{cdDispositivo}", "{dsEndereco}", "{dsNum}", "{dsBairro}", "{dsCidade}", "{dsUF}", "{dsCep}","{dsPais}", "{dsLatPdv}", "{dsLongPdv}", "{nrRaio}",  "{dsUser}")'
-   # print(comando)
+    comando = f'insert into DbIntelliMetrics.TbPosicao ( dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsNum, dsBairro, dsCidade,  dsUF, dsCep, dsPais,  dsLatPdv, dsLongPdv, nrRaio, blArea, nrDistancia, dsUser ) values ("{dsModelo}", "{dtData}", "{dtHora}", "{dsLat}", "{dsLong}", "{nrTemp}", "{nrBat}", "{nrSeq}", "{dsArquivo}", "{cdDispositivo}", "{dsEndereco}", "{dsNum}", "{dsBairro}", "{dsCidade}", "{dsUF}", "{dsCep}","{dsPais}", "{dsLatPdv}", "{dsLongPdv}", "{nrRaio}", "{blArea}", "{nrDistancia}", "{dsUser}")'
+    # print(comando)
     cursor.execute(comando)
     conexao.commit()
     return cursor.lastrowid
@@ -2115,8 +2116,6 @@ def get_Posicao(codigo):
 # FIM DA FUNÇÃO
 
 dic_endereco_pdv = []
-
-# Inserir registros no EndPoint Posicao
 @app.route("/Posicao", methods=["POST"])
 def post_Posicao():
     payload = request.get_json()
@@ -2129,6 +2128,7 @@ def post_Posicao():
     nrTemp = payload ['nrTemp']
     nrBat = payload ['nrBat']
     nrSeq = payload ['nrSeq']
+
     dsArquivo = payload ['dsArquivo']
     cdDispositivo = payload ['cdDispositivo']
     dsUser = payload['dsUser']
@@ -2141,22 +2141,28 @@ def post_Posicao():
     dsCep = dic[5]
     dsPais = dic[6]
     dic_endereco_pdv = Selecionar_VwTbDestinatarioDispositivo(cdDispositivo )
-    print(dic_endereco_pdv)
+    #print(dic_endereco_pdv)
     dic_endereco_pdv = dict(dic_endereco_pdv[0])
-    cdDestinatario =dic_endereco_pdv['cdDestinatario']
     dsLatPdv = dic_endereco_pdv['dsLat']
     dsLongPdv = dic_endereco_pdv['dsLong']
     nrRaio = dic_endereco_pdv['nrRaio']
-   
+    DistanciaArea = calcular_distancia (dsLat, dsLong, dsLatPdv, dsLongPdv)
+    nrDistancia = DistanciaArea
+    # print(nrRaio)
+    if float(DistanciaArea) > float(nrRaio):
+        blArea = 0
+    else:
+        blArea = 1
     dic_sensores = payload['sensores']
-    cd = Inserir_TbPosicao(dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsNum, dsBairro, dsCidade, dsUF, dsCep, dsPais,  dsLatPdv, dsLongPdv, nrRaio,  dsUser)
+    #print(dic_sensores)
+    cd = Inserir_TbPosicao (dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsNum, dsBairro, dsCidade, dsUF, dsCep, dsPais,  dsLatPdv, dsLongPdv, nrRaio, blArea, nrDistancia,  dsUser)
     cdSensor = dic_sensores['cdSensor']
     cdPosicao = cd
     nrValor = dic_sensores['nrValor']
     #print(nome)  # Saída: Carlos
     Inserir_TbSensorRegistro(cdDispositivo, cdSensor, cdPosicao, nrValor)
-    return jsonify({ "cdPosicao": cd })
 
+    return jsonify({ "cdPosicao": cd })
 
 #FIM DA FUNÇÃO
 
@@ -3399,8 +3405,8 @@ def dados():
 
 
 def main():
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host="127.0.0.1", port=port)
+    port = int(os.environ.get("PORT", 80))
+    app.run(host="192.168.15.200", port=port)
 
 
 if __name__ == "__main__":
