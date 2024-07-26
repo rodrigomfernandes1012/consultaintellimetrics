@@ -1407,14 +1407,17 @@ def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
 # FIM DA FUNÇÃO
 
 
-def Selecionar_VwRelHistoricoDispositivoProduto(codigo):
+def Selecionar_VwRelHistoricoDispositivoProduto(filtros):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
     
     comando = f"select cdProduto, nrCodigo, dsDescricao, dtRegistro, cdDispositivo, dsNome, dsEndereco, nrBatPercentual, nrPorta, nrTemperatura, dsProdutoItem, nrQtdItens, dsStatus, dsStatusDispositivo from VwRelHistoricoDispositivoProduto where 1=1"
-    
-    if codigo != "0":
-        comando = f'{comando} AND cdDispositivo = "{codigo}"'
+    # Adiciona condições à consulta SQL com base nos filtros fornecidos
+    for campo, valor in filtros.items():
+        if campo == "dtRegistro":
+            campo = f"DATE({campo})"
+            valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
+        comando += f" AND {campo} = '{valor}'"
     
     cursor.execute(comando)
     resultado = cursor.fetchall()
@@ -2850,7 +2853,18 @@ def Alterar_VwTbProdutoTipo(Campo, Dado, UpCampo, UpDado):
 
 @app.route("/VwRelHistoricoDispositivoProduto/<codigo>")
 def get_RelHistoricoDispositivoProduto(codigo):
-    resultado = Selecionar_VwRelHistoricoDispositivoProduto(codigo)
+    filtros = {
+        "dtRegistro": request.args.get("dtRegistro"),
+    }
+
+    # Remove filtros que nao tem valor
+    filtros = {k: v for k, v in filtros.items() if v is not None}
+
+    # Adiciona o codigo como um filtro se for diferente de 0
+    if codigo != "0":
+        filtros["cdDispositivo"] = codigo
+        
+    resultado = Selecionar_VwRelHistoricoDispositivoProduto(filtros)
     return resultado
 
 
