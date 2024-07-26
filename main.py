@@ -1401,12 +1401,13 @@ def Selecionar_TbPosicao(filtros):
     cursor = conexao.cursor(dictionary=True)
 
     # Inicializa a consulta SQL básica
-    comando = "SELECT dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, dsEndereco FROM DbIntelliMetrics.TbPosicao WHERE 1=1"
+    comando = "SELECT dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, dsEndereco, dtRegistro FROM DbIntelliMetrics.TbPosicao WHERE 1=1"
     # Adiciona condições à consulta SQL com base nos filtros fornecidos
     for campo, valor in filtros.items():
+        if campo == "dtRegistro":
+            campo = f"DATE({campo})"
+            valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
         comando += f" AND {campo} = '{valor}'"
-
-    print(comando)
 
     cursor.execute(comando)
     resultado = cursor.fetchall()
@@ -2097,6 +2098,7 @@ def get_Posicao(codigo):
         "nrTemp": request.args.get("nrTemp"),
         "nrBat": request.args.get("nrBat"),
         "dsEndereco": request.args.get("dsEndereco"),
+        "dtRegistro": request.args.get("dtRegistro"),
     }
 
     # Remove filtros que nao tem valor
@@ -3397,8 +3399,8 @@ def dados():
 
 
 def main():
-    port = int(os.environ.get("PORT", 80))
-    app.run(host="192.168.15.200", port=port)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="127.0.0.1", port=port)
 
 
 if __name__ == "__main__":
