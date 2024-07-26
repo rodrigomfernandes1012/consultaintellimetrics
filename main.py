@@ -1410,10 +1410,12 @@ def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
 def Selecionar_VwRelHistoricoDispositivoProduto(codigo):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    if codigo == "0":
-        comando = f"select cdProduto, nrCodigo, dsDescricao, dtRegistro, dtHora, cdDispositivo, dsNome, dsEndereco, nrBatPercentual, nrPorta, nrTemperatura, nrQtdItens, nrQtdVendidas, dsStatus from VwRelHistoricoDispositivoProduto"
-    else:
-        comando = f'select cdProduto, nrCodigo, dsDescricao, dtRegistro, dtHora, cdDispositivo, dsNome, dsEndereco, nrBatPercentual, nrPorta, nrTemperatura, nrQtdItens, nrQtdVendidas, dsStatus from VwRelHistoricoDispositivoProduto where cdDispositivo = "{codigo}"'
+    
+    comando = f"select cdProduto, nrCodigo, dsDescricao, dtRegistro, cdDispositivo, dsNome, dsEndereco, nrBatPercent, nrPorta, nrTemperatura, dsProdutoItem, nrQtdItens, dsStatus, dsStatusDispositivo from VwRelHistoricoDispositivoProduto where 1=1"
+    
+    if codigo != "0":
+        comando = f'{comando} AND cdDispositivo = "{codigo}"'
+    
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
