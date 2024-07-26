@@ -239,7 +239,9 @@ def Selecionar_VwTbPosicaoAtual(filtros):
     nrCodigo,\
     cdProduto,\
     dsProduto,\
-    dsDescricao\
+    dsDescricao,\
+    dsStatus,\
+    blArea\
     from DbIntelliMetrics.VwTbPosicaoAtual WHERE 1=1"
 
     for campo, valor in filtros.items():
