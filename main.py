@@ -1411,7 +1411,7 @@ def Selecionar_VwRelHistoricoDispositivoProduto(codigo):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
     
-    comando = f"select cdProduto, nrCodigo, dsDescricao, dtRegistro, cdDispositivo, dsNome, dsEndereco, nrBatPercent, nrPorta, nrTemperatura, dsProdutoItem, nrQtdItens, dsStatus, dsStatusDispositivo from VwRelHistoricoDispositivoProduto where 1=1"
+    comando = f"select cdProduto, nrCodigo, dsDescricao, dtRegistro, cdDispositivo, dsNome, dsEndereco, nrBatPercentual, nrPorta, nrTemperatura, dsProdutoItem, nrQtdItens, dsStatus, dsStatusDispositivo from VwRelHistoricoDispositivoProduto where 1=1"
     
     if codigo != "0":
         comando = f'{comando} AND cdDispositivo = "{codigo}"'
