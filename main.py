@@ -223,9 +223,8 @@ def Selecionar_VwTbPosicaoAtual(filtros):
     cursor = conexao.cursor(dictionary=True)
 
     comando = f"select cdPosicao, \
-    dtData, \
-    dtHora, \
-    cdDispositivo, \
+    dtRegistro,\
+    cdDispositivo,\
     dsLat,\
     dsLong,\
     dsEndereco,\
@@ -252,41 +251,6 @@ def Selecionar_VwTbPosicaoAtual(filtros):
     cursor.close()
     conexao.close()
     return resultado
-
-
-# FIM DA FUNÇÃO
-
-
-# Inserir registros da tabela DbIntelliMetrics.VwTbPosicaoAtual
-def Inserir_VwTbPosicaoAtual(dsLat, dsLong, dtData, dtHora):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.VwTbPosicaoAtual ( dsLat, dsLong, dtData, dtHora ) values ("{dsLat}", "{dsLong}", "{dtData}", "{dtHora}")'
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.VwTbPosicaoAtual
-def deletar_VwTbPosicaoAtual(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.VwTbPosicaoAtual where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.VwTbPosicaoAtual
-def Alterar_VwTbPosicaoAtual(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.VwTbPosicaoAtual set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
 
 
 # FIM DA FUNÇÃO
