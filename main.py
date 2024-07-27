@@ -1425,6 +1425,23 @@ def Selecionar_VwRelHistoricoDispositivoProduto(filtros):
     conexao.close()
     return resultado
 
+def Selecionar_VwRelDadosDispositivo(filtros):
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    
+    comando = f"select cdProduto, dsNome, cdDispositivo, nrBat, dsNomeDest, dsEnderecoDest, nrNumeroDest, dsBairroDest, dsCidadeDest, dsUfDest, dsCepDest, dsLatDest, dsLongDest, dsRaio, dsEnderecoAtual, dsNumeroAtual, dsBairroAtual, dsCidadeAtual, dsUFAtual, dsCEPAtual, dsLatAtual, dsLongAtual, blArea, dtRegistro, dtCadastro from VwRelDadosDispositivo where 1=1"
+    # Adiciona condições à consulta SQL com base nos filtros fornecidos
+    for campo, valor in filtros.items():
+        if campo == "dtRegistro":
+            campo = f"DATE({campo})"
+            valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
+        comando += f" AND {campo} = '{valor}'"
+    
+    cursor.execute(comando)
+    resultado = cursor.fetchall()
+    cursor.close()
+    conexao.close()
+    return resultado
 
 # Selecionar registros da tabela DbIntelliMetrics.TbProdutoTipo
 def Selecionar_VwTbProdutoTipo(codigo):
@@ -2867,6 +2884,22 @@ def get_RelHistoricoDispositivoProduto(codigo):
     resultado = Selecionar_VwRelHistoricoDispositivoProduto(filtros)
     return resultado
 
+@app.route("/VwRelDadosDispositivo/<codigo>")
+def get_RelVwRelDadosDispositivo(codigo):
+    filtros = {
+        "dtRegistro": request.args.get("dtRegistro"),
+    }
+
+    # Remove filtros que nao tem valor
+    filtros = {k: v for k, v in filtros.items() if v is not None}
+
+    # Adiciona o codigo como um filtro se for diferente de 0
+    if codigo != "0":
+        filtros["cdDispositivo"] = codigo
+        
+    resultado = Selecionar_VwRelDadosDispositivo(filtros)
+    return resultado
+
 
 # Selecionar registros no EndPoint TbProdutoTotalStaus
 @app.route("/TbProdutoTotalStaus/<codigo>")
@@ -3385,8 +3418,8 @@ def dados():
 
 
 def main():
-    port = int(os.environ.get("PORT", 80))
-    app.run(host="192.168.15.200", port=port)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="127.0.0.1", port=port)
 
 
 if __name__ == "__main__":
