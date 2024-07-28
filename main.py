@@ -3428,10 +3428,10 @@ def dados():
 
 
 def main():
-   # port = int(os.environ.get("PORT", 8080))
-   # app.run(host="127.0.0.1", port=port)
-    port = int(os.environ.get("PORT", 80))
-    app.run(host="192.168.15.200", port=port)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="127.0.0.1", port=port)
+   # port = int(os.environ.get("PORT", 80))
+   # app.run(host="192.168.15.200", port=port)
 
 
 if __name__ == "__main__":
