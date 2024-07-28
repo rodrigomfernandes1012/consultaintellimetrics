@@ -27,7 +27,6 @@ dic_whats2 = []
 dic_altura = []
 
 
-
 token = "8c4EF9vXi8TZe6581e0af85c25"
 
 
@@ -141,6 +140,7 @@ def Selecionar_TbAcessoIntelBras():
     conexao.close()
     return resultado
 
+
 def Selecionar_VwTbDestinatarioDispositivo(codigoDisp):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
@@ -149,7 +149,7 @@ def Selecionar_VwTbDestinatarioDispositivo(codigoDisp):
     resultado = cursor.fetchall()
     cursor.close()
     conexao.close()
-    return (resultado)
+    return resultado
 
 
 # FIM DA FUNÇÃO
@@ -203,18 +203,15 @@ def Alterar_TbAcessoIntelBras(Campo, Dado, UpCampo, UpDado):
 
 # FIM DA FUNÇÃO
 
+
 def calcular_distancia(lat1, lon1, lat2, lon2):
     geolocator = Nominatim(user_agent="my_app")
     distancia = geodesic((lat1, lon1), (lat2, lon2)).kilometers
     return distancia
+
+
 # distancia = calcular_distancia("-23.5006347","-46.4884689","-23.5331802","-46.4659015")
 # distancia = calcular_distancia(lat1, lon1, lat2, lon2)
-
-
-
-
-
-
 
 
 # Selecionar registros da tabela DbIntelliMetrics.VwTbPosicaoAtual
@@ -642,7 +639,7 @@ def Inserir_TbPosicao(
     nrRaio,
     blArea,
     nrDistancia,
-    dsUser
+    dsUser,
 ):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
@@ -1418,25 +1415,70 @@ def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
 def Selecionar_VwRelHistoricoDispositivoProduto(filtros):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    
-    comando = f"select cdProduto, nrCodigo, dsDescricao, dtRegistro, cdDispositivo, dsNome, dsEndereco, nrBatPercentual, nrPorta, nrTemperatura, dsProdutoItem, nrQtdItens, dsStatus, dsStatusDispositivo from VwRelHistoricoDispositivoProduto where 1=1"
+
+    comando = f"select cdProduto, nrCodigo, dsDescricao, dtRegistro, cdDispositivo, dsNome, dsEndereco, nrBatPercentual, nrPorta, nrTemperatura, dsProdutoItem, nrQtdItens, dsStatus, dsStatusDispositivo, cdSensor from VwRelHistoricoDispositivoProduto where 1=1"
     # Adiciona condições à consulta SQL com base nos filtros fornecidos
     for campo, valor in filtros.items():
         if campo == "dtRegistro":
             campo = f"DATE({campo})"
             valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
         comando += f" AND {campo} = '{valor}'"
-    
+
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
     conexao.close()
+
     return resultado
+
+# busca dados de VwRelHistoricoDispositivoProduto, mas retorna cada produtoItem como uma coluna.
+def Selecionar_HistoricoPaginaDispositivo(filtros):
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+
+    comando = f"select cdProduto, nrCodigo, dsDescricao, dtRegistro, cdDispositivo, dsNome, dsEndereco, nrBatPercentual, nrPorta, nrTemperatura, dsProdutoItem, nrQtdItens, dsStatus, dsStatusDispositivo, cdSensor from VwRelHistoricoDispositivoProduto where 1=1"
+    # Adiciona condições à consulta SQL com base nos filtros fornecidos
+    for campo, valor in filtros.items():
+        if campo == "dtRegistro":
+            campo = f"DATE({campo})"
+            valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
+        comando += f" AND {campo} = '{valor}'"
+
+    cursor.execute(comando)
+    resultado = cursor.fetchall()
+    cursor.close()
+    conexao.close()
+    
+    if len(resultado) == 0:
+        return resultado
+
+    # Convert the result to a pandas DataFrame
+    df = pd.DataFrame(resultado)
+    
+    # Retain the original data for merging later
+    original_df = df.drop(columns=['nrQtdItens', 'dsProdutoItem', 'cdSensor']).drop_duplicates()
+    
+    # Pivot the data
+    pivot_df = df.pivot_table(index='dtRegistro', columns=['dsProdutoItem', 'cdSensor'], values='nrQtdItens', fill_value=0)
+    
+    # Flatten the multi-index columns
+    pivot_df.columns = [f"{item[0]}_{item[1]}" for item in pivot_df.columns]
+    
+    # Reset index to have dtRegistro as a column again
+    pivot_df = pivot_df.reset_index()
+    
+    # Merge the pivoted data with the original data
+    final_df = pd.merge(original_df, pivot_df, on='dtRegistro', how='left')
+    
+    result_json = final_df.to_json(orient='records', date_format='iso')
+
+    return result_json
+
 
 def Selecionar_VwRelDadosDispositivo(filtros):
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    
+
     comando = f"select cdProduto, dsNome, cdDispositivo, nrBat, dsNomeDest, dsEnderecoDest, nrNumeroDest, dsBairroDest, dsCidadeDest, dsUfDest, dsCepDest, dsLatDest, dsLongDest, dsRaio, dsEnderecoAtual, dsNumeroAtual, dsBairroAtual, dsCidadeAtual, dsUFAtual, dsCEPAtual, dsLatAtual, dsLongAtual, blArea, dtRegistro, dtCadastro from VwRelDadosDispositivo where 1=1"
     # Adiciona condições à consulta SQL com base nos filtros fornecidos
     for campo, valor in filtros.items():
@@ -1444,12 +1486,13 @@ def Selecionar_VwRelDadosDispositivo(filtros):
             campo = f"DATE({campo})"
             valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
         comando += f" AND {campo} = '{valor}'"
-    
+
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
     conexao.close()
     return resultado
+
 
 # Selecionar registros da tabela DbIntelliMetrics.TbProdutoTipo
 def Selecionar_VwTbProdutoTipo(codigo):
@@ -2110,22 +2153,24 @@ def get_Posicao(codigo):
 # FIM DA FUNÇÃO
 
 dic_endereco_pdv = []
+
+
 @app.route("/Posicao", methods=["POST"])
 def post_Posicao():
     payload = request.get_json()
     print(payload)
-    dsModelo = payload ['dsModelo']
-    dtData = payload ['dtData']
-    dtHora = payload ['dtHora']
-    dsLat = payload ['dsLat']
-    dsLong = payload ['dsLong']
-    nrTemp = payload ['nrTemp']
-    nrBat = payload ['nrBat']
-    nrSeq = payload ['nrSeq']
+    dsModelo = payload["dsModelo"]
+    dtData = payload["dtData"]
+    dtHora = payload["dtHora"]
+    dsLat = payload["dsLat"]
+    dsLong = payload["dsLong"]
+    nrTemp = payload["nrTemp"]
+    nrBat = payload["nrBat"]
+    nrSeq = payload["nrSeq"]
 
-    dsArquivo = payload ['dsArquivo']
-    cdDispositivo = payload ['cdDispositivo']
-    dsUser = payload['dsUser']
+    dsArquivo = payload["dsArquivo"]
+    cdDispositivo = payload["cdDispositivo"]
+    dsUser = payload["dsUser"]
     dic = get_endereco_coordenada(dsLat, dsLong)
     dsEndereco = dic[0]
     dsNum = dic[1]
@@ -2134,13 +2179,13 @@ def post_Posicao():
     dsUF = dic[4]
     dsCep = dic[5]
     dsPais = dic[6]
-    dic_endereco_pdv = Selecionar_VwTbDestinatarioDispositivo(cdDispositivo )
-    #print(dic_endereco_pdv)
+    dic_endereco_pdv = Selecionar_VwTbDestinatarioDispositivo(cdDispositivo)
+    # print(dic_endereco_pdv)
     dic_endereco_pdv = dict(dic_endereco_pdv[0])
-    dsLatPdv = dic_endereco_pdv['dsLat']
-    dsLongPdv = dic_endereco_pdv['dsLong']
-    nrRaio = dic_endereco_pdv['nrRaio']
-    DistanciaArea = calcular_distancia (dsLat, dsLong, dsLatPdv, dsLongPdv)
+    dsLatPdv = dic_endereco_pdv["dsLat"]
+    dsLongPdv = dic_endereco_pdv["dsLong"]
+    nrRaio = dic_endereco_pdv["nrRaio"]
+    DistanciaArea = calcular_distancia(dsLat, dsLong, dsLatPdv, dsLongPdv)
     nrDistancia = DistanciaArea
     # print(nrRaio)
     if float(DistanciaArea) > float(nrRaio):
@@ -2149,18 +2194,43 @@ def post_Posicao():
     else:
         Alterar_StatusTbPosicao(cdDispositivo, 1)
         blArea = 1
-    dic_sensores = payload['sensores']
-    #print(dic_sensores)
-    cd = Inserir_TbPosicao (dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsNum, dsBairro, dsCidade, dsUF, dsCep, dsPais,  dsLatPdv, dsLongPdv, nrRaio, blArea, nrDistancia,  dsUser)
-    cdSensor = dic_sensores['cdSensor']
+    dic_sensores = payload["sensores"]
+    # print(dic_sensores)
+    cd = Inserir_TbPosicao(
+        dsModelo,
+        dtData,
+        dtHora,
+        dsLat,
+        dsLong,
+        nrTemp,
+        nrBat,
+        nrSeq,
+        dsArquivo,
+        cdDispositivo,
+        dsEndereco,
+        dsNum,
+        dsBairro,
+        dsCidade,
+        dsUF,
+        dsCep,
+        dsPais,
+        dsLatPdv,
+        dsLongPdv,
+        nrRaio,
+        blArea,
+        nrDistancia,
+        dsUser,
+    )
+    cdSensor = dic_sensores["cdSensor"]
     cdPosicao = cd
-    nrValor = dic_sensores['nrValor']
-    #print(nome)  # Saída: Carlos
+    nrValor = dic_sensores["nrValor"]
+    # print(nome)  # Saída: Carlos
     Inserir_TbSensorRegistro(cdDispositivo, cdSensor, cdPosicao, nrValor)
 
-    return jsonify({ "cdPosicao": cd })
+    return jsonify({"cdPosicao": cd})
 
-#FIM DA FUNÇÃO
+
+# FIM DA FUNÇÃO
 
 
 # Deletar registros da tabela DbIntelliMetrics.TbPosicao
@@ -2330,8 +2400,6 @@ def Alterar_TbProduto(Campo, Dado, UpData):
 # mycursor.execute(sql)
 
 # mydb.commit()
-
-
 
 
 # Selecionar registros no EndPoint Relacionamento
@@ -2877,6 +2945,23 @@ def Alterar_VwTbProdutoTipo(Campo, Dado, UpCampo, UpDado):
 # FIM DA FUNÇÃO
 # https://replit.taxidigital.net/TbProdutoTotalStaus
 
+# endpoint usado para Pagina de Dispositivo. Mesmo do que o VwRelHistoricoDispositivoProduto,
+# mas com produtos sendo retornados como colunas.
+@app.route("/HistoricoPaginaDispositivo/<codigo>")
+def get_HistoricoPaginaDispositivo(codigo):
+    filtros = {
+        "dtRegistro": request.args.get("dtRegistro"),
+    }
+
+    # Remove filtros que nao tem valor
+    filtros = {k: v for k, v in filtros.items() if v is not None}
+
+    # Adiciona o codigo como um filtro se for diferente de 0
+    if codigo != "0":
+        filtros["cdDispositivo"] = codigo
+
+    resultado = Selecionar_HistoricoPaginaDispositivo(filtros)
+    return resultado
 
 @app.route("/VwRelHistoricoDispositivoProduto/<codigo>")
 def get_RelHistoricoDispositivoProduto(codigo):
@@ -2890,9 +2975,10 @@ def get_RelHistoricoDispositivoProduto(codigo):
     # Adiciona o codigo como um filtro se for diferente de 0
     if codigo != "0":
         filtros["cdDispositivo"] = codigo
-        
+
     resultado = Selecionar_VwRelHistoricoDispositivoProduto(filtros)
     return resultado
+
 
 @app.route("/VwRelDadosDispositivo/<codigo>")
 def get_RelVwRelDadosDispositivo(codigo):
@@ -2906,7 +2992,7 @@ def get_RelVwRelDadosDispositivo(codigo):
     # Adiciona o codigo como um filtro se for diferente de 0
     if codigo != "0":
         filtros["cdDispositivo"] = codigo
-        
+
     resultado = Selecionar_VwRelDadosDispositivo(filtros)
     return resultado
 
