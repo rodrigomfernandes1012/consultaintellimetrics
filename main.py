@@ -652,6 +652,14 @@ def Inserir_TbPosicao(
     conexao.commit()
     return cursor.lastrowid
 
+def Alterar_StatusTbPosicao(codigo, status):
+    conexao = conecta_bd()
+    cursor = conexao.cursor()
+    comando = f'update DbIntelliMetrics.TbDispositivo set cdStatus= {status}  where cdDispositivo = {codigo}  '
+    cursor.execute(comando)
+    conexao.commit()
+
+
 
 def Inserir_TbSensorRegistro(cdDispositivo, cdSensor, cdPosicao, nrValor):
     conexao = conecta_bd()
@@ -2136,8 +2144,10 @@ def post_Posicao():
     nrDistancia = DistanciaArea
     # print(nrRaio)
     if float(DistanciaArea) > float(nrRaio):
+        Alterar_StatusTbPosicao(cdDispositivo, 6)
         blArea = 0
     else:
+        Alterar_StatusTbPosicao(cdDispositivo, 1)
         blArea = 1
     dic_sensores = payload['sensores']
     #print(dic_sensores)
@@ -3418,8 +3428,10 @@ def dados():
 
 
 def main():
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host="127.0.0.1", port=port)
+   # port = int(os.environ.get("PORT", 8080))
+   # app.run(host="127.0.0.1", port=port)
+    port = int(os.environ.get("PORT", 80))
+    app.run(host="192.168.15.200", port=port)
 
 
 if __name__ == "__main__":
