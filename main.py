@@ -2222,10 +2222,14 @@ def post_Posicao():
         dsUser,
     )
     cdSensor = dic_sensores["cdSensor"]
-    cdPosicao = cd
     nrValor = dic_sensores["nrValor"]
+    cdSensor1 = dic_sensores["cdSensor1"]
+    nrValor1 = dic_sensores["nrValor1"]
+    cdPosicao = cd
+
     # print(nome)  # Saída: Carlos
     Inserir_TbSensorRegistro(cdDispositivo, cdSensor, cdPosicao, nrValor)
+    Inserir_TbSensorRegistro(cdDispositivo, cdSensor1, cdPosicao, nrValor1)
 
     return jsonify({"cdPosicao": cd})
 
@@ -3514,10 +3518,10 @@ def dados():
 
 
 def main():
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host="127.0.0.1", port=port)
-   # port = int(os.environ.get("PORT", 80))
-   # app.run(host="192.168.15.200", port=port)
+   # port = int(os.environ.get("PORT", 8080))
+   # app.run(host="127.0.0.1", port=port)
+    port = int(os.environ.get("PORT", 80))
+    app.run(host="192.168.15.200", port=port)
 
 
 if __name__ == "__main__":
