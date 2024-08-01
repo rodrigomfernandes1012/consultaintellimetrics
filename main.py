@@ -3303,6 +3303,12 @@ def get_Ponto():
     resultado = Selecionar_TbPonto()
     return resultado
 
+@app.route("/AcessoIntelBras", methods=["GET"])
+def get_AcessoIntelBras():
+    resultado = Selecionar_TbAcessoIntelBras()
+    return resultado
+
+
 
 # FIM DA FUNÇÃO
 
@@ -3325,22 +3331,23 @@ def post_AcessoIntelBras():
     dsUserType = payload["dsUserType"]
     dsUtc = payload["dsUtc"]
     TbAcessoIntelBrascol = payload["TbAcessoIntelBrascol"]
-    Inserir_TbAcessoIntelBras(
-        dsCardName,
-        dsCardNo,
-        dsDoor,
-        dsEntry,
-        dsErrorCode,
-        dsMethod,
-        dsPassword,
-        dsReaderID,
-        dsStatus,
-        dsType,
-        dsUserId,
-        dsUserType,
-        dsUtc,
-        TbAcessoIntelBrascol,
-    )
+    if dsStatus == 1:
+        Inserir_TbAcessoIntelBras(
+            dsCardName,
+            dsCardNo,
+            dsDoor,
+            dsEntry,
+            dsErrorCode,
+            dsMethod,
+            dsPassword,
+            dsReaderID,
+            dsStatus,
+            dsType,
+            dsUserId,
+            dsUserType,
+            dsUtc,
+            TbAcessoIntelBrascol,
+        )
     return "Cadastramento realizado com sucesso"
 
 
