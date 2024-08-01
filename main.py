@@ -16,6 +16,7 @@ import re
 import pandas as pd
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
+from datetime import datetime
 
 
 # Amazon
@@ -175,8 +176,68 @@ def Inserir_TbAcessoIntelBras(
     cursor = conexao.cursor(dictionary=True)
     comando = f'insert into DbIntelliMetrics.TbAcessoIntelBras ( dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc ) values ("{dsCardName}", "{dsCardNo}", "{dsDoor}", "{dsEntry}", "{dsErrorCode}", "{dsMethod}", "{dsPassword}", "{dsReaderID}", "{dsStatus}", "{dsType}", "{dsUserId}", "{dsUserType}", "{dsUtc}")'
     cursor.execute(comando)
+    data = str(datetime.utcfromtimestamp(int(dsUtc)).strftime('%Y-%m-%d %H:%M:%S'))
+    #print(dsCardNo,data)
+    Inserir_TbPonto(dsCardNo,data)
     conexao.commit()
+    cursor.close()
+    conexao.close()
 
+
+def Inserir_TbPonto(dsCardNo, dsUtc):
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    comando = f"select * from DbIntelliMetrics.TbPonto where dsCardNo = '{dsCardNo}' and DATE(dtRegistro) = DATE('{dsUtc}')"
+    cursor.execute(comando)
+    #print(comando)
+    resultado = cursor.fetchall()
+    #print(resultado)
+    if resultado == []:
+        print("vazio")
+        dado = "dsRegistro01"
+    else:
+        print(resultado)
+
+        for dtregistro in resultado:
+            if dtregistro['dsRegistro06']== None:
+                dado = "dsRegistro06"
+            if dtregistro['dsRegistro05'] == None:
+                dado = "dsRegistro05"
+            if dtregistro['dsRegistro04']==None:
+                dado = "dsRegistro04"
+            if dtregistro['dsRegistro03']==None:
+                dado = "dsRegistro03"
+            if dtregistro['dsRegistro02']==None:
+                dado = "dsRegistro02"
+            if dtregistro['dsRegistro01']==None:
+                dado = "dsRegistro01"
+            print(dado)
+
+    if dado=="dsRegistro01":
+        comando = f"insert into DbIntelliMetrics.TbPonto ( dsCardNo, dsRegistro01 ) values ('{dsCardNo}', '{dsUtc}')"
+    print(comando)
+    if dado == "dsRegistro02":
+        comando = f"update DbIntelliMetrics.TbPonto set dsRegistro02 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro02 is null"
+    print(comando)
+    if dado == "dsRegistro03":
+        comando = f"update DbIntelliMetrics.TbPonto set dsRegistro03 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro03 is null"
+    print(comando)
+    if dado == "dsRegistro04":
+        comando = f"update DbIntelliMetrics.TbPonto set dsRegistro04 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro04 is null"
+    print(comando)
+    if dado == "dsRegistro05":
+        comando = f"update DbIntelliMetrics.TbPonto set dsRegistro05 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro05 is null"
+    print(comando)
+    if dado == "dsRegistro06":
+        comando = f"update DbIntelliMetrics.TbPonto set dsRegistro06 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro06 is null"
+    print(comando)
+
+    cursor.execute(comando)
+    conexao.commit()
+    cursor.close()
+    conexao.close()
+
+#Inserir_TbAcessoIntelBras("rodrigo","17439772801","1","",0,25,"",1,'1',"Entry","17439772806",0,"1722531607")
 
 # FIM DA FUNÇÃO
 
