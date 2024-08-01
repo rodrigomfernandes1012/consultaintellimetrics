@@ -141,6 +141,20 @@ def Selecionar_TbAcessoIntelBras():
     conexao.close()
     return resultado
 
+def Selecionar_TbPonto():
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    comando = f"select cdPonto, cdAcessoIntelbras, dsCardNo, dsRegistro01, dsRegistro02, dsRegistro03, dsRegistro04, dsRegistro05, dsRegistro06, dtRegistro  from DbIntelliMetrics.TbPonto;"
+    cursor.execute(comando)
+    resultado = cursor.fetchall()
+    cursor.close()
+    conexao.close()
+    return resultado
+
+
+
+
+
 
 def Selecionar_VwTbDestinatarioDispositivo(codigoDisp):
     conexao = conecta_bd()
@@ -3282,6 +3296,11 @@ def get_NrImagensMaior(codigo):
 @app.route("/AcessoIntelBras")
 def get_AcessoIntelBras():
     resultado = Selecionar_TbAcessoIntelBras()
+    return resultado
+
+@app.route("/Ponto")
+def get_AcessoIntelBras():
+    resultado = Selecionar_TbPonto()
     return resultado
 
 
