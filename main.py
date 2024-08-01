@@ -3293,10 +3293,6 @@ def get_NrImagensMaior(codigo):
 
 
 # Selecionar registros no EndPoint AcessoIntelBras
-@app.route("/AcessoIntelBras")
-def get_AcessoIntelBras():
-    resultado = Selecionar_TbAcessoIntelBras()
-    return resultado
 
 @app.route("/Ponto")
 def get_Ponto():
@@ -3312,43 +3308,29 @@ def get_AcessoIntelBras():
 
 # FIM DA FUNÇÃO
 
-
-# Inserir registros no EndPoint AcessoIntelBras
-@app.route("/AcessoIntelBras", methods=["POST"])
+@app.route('/AcessoIntelBras', methods=['POST'])
 def post_AcessoIntelBras():
     payload = request.get_json()
-    dsCardName = payload["dsCardName"]
-    dsCardNo = payload["dsCardNo"]
-    dsDoor = payload["dsDoor"]
-    dsEntry = payload["dsEntry"]
-    dsErrorCode = payload["dsErrorCode"]
-    dsMethod = payload["dsMethod"]
-    dsPassword = payload["dsPassword"]
-    dsReaderID = payload["dsReaderID"]
-    dsStatus = payload["dsStatus"]
-    dsType = payload["dsType"]
-    dsUserId = payload["dsUserId"]
-    dsUserType = payload["dsUserType"]
-    dsUtc = payload["dsUtc"]
-    TbAcessoIntelBrascol = payload["TbAcessoIntelBrascol"]
-    if dsStatus == 1:
-        Inserir_TbAcessoIntelBras(
-            dsCardName,
-            dsCardNo,
-            dsDoor,
-            dsEntry,
-            dsErrorCode,
-            dsMethod,
-            dsPassword,
-            dsReaderID,
-            dsStatus,
-            dsType,
-            dsUserId,
-            dsUserType,
-            dsUtc,
-            TbAcessoIntelBrascol,
-        )
+    dsCardName = payload ['dsCardName']
+    dsCardNo = payload ['dsCardNo']
+    dsDoor = payload ['dsDoor']
+    dsEntry = payload ['dsEntry']
+    dsErrorCode = payload ['dsErrorCode']
+    dsMethod = payload ['dsMethod']
+    dsPassword = payload ['dsPassword']
+    dsReaderID = payload ['dsReaderID']
+    dsStatus = payload ['dsStatus']
+    dsType = payload ['dsType']
+    dsUserId = payload ['dsUserId']
+    dsUserType = payload ['dsUserType']
+    dsUtc = payload ['dsUtc']
+   # TbAcessoIntelBrascol = payload ['TbAcessoIntelBrascol']
+    if dsStatus == "1":
+        Inserir_TbAcessoIntelBras(dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc)
     return "Cadastramento realizado com sucesso"
+#FIM DA FUNÇÃO
+
+
 
 
 # FIM DA FUNÇÃO
