@@ -3299,7 +3299,7 @@ def get_AcessoIntelBras():
     return resultado
 
 @app.route("/Ponto")
-def get_AcessoIntelBras():
+def get_Ponto():
     resultado = Selecionar_TbPonto()
     return resultado
 
