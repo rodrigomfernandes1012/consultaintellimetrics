@@ -1,22 +1,21 @@
 # SERVER API
+import ast
 import base64
 import datetime
-from random import random
-import random
-from flask import Flask, jsonify, request, redirect, url_for
-from flask_cors import CORS
 import json
-import mysql.connector
-import requests
-import boto3
 import os
-import ast
 import time
-import re
-import pandas as pd
-from geopy.geocoders import Nominatim
-from geopy.distance import geodesic
 
+import boto3
+import mysql.connector
+import pandas as pd
+import psycopg2
+import psycopg2.extras
+import requests
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+from geopy.distance import geodesic
+from geopy.geocoders import Nominatim
 
 # Amazon
 selecao = []
@@ -27,22 +26,15 @@ dic_whats2 = []
 dic_altura = []
 
 
-token = "8c4EF9vXi8TZe6581e0af85c25"
-
-
 def conecta_bd():
-    conexao = mysql.connector.connect(
-        host="dbintellimetrics.c3kc6gou2fhz.us-west-2.rds.amazonaws.com",
-        user="admin",
-        password="IntelliMetr!c$",
-        database="DbIntelliMetrics",
-    )
+    
     return conexao
 
 
 def envia_whatstexto(msg):
-    import requests
     import json
+
+    import requests
 
     url = "https://app.whatsgw.com.br/api/WhatsGw/Send"
 
@@ -129,11 +121,11 @@ def Pegar_Medidas():
     return medidas
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbAcessoIntelBras
+# Selecionar registros da tabela public.TbAcessoIntelBras
 def Selecionar_TbAcessoIntelBras():
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdAcessoIntelBras, dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc from DbIntelliMetrics.TbAcessoIntelBras"
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f"select cdAcessoIntelBras, dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc from public.TbAcessoIntelBras"
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -143,8 +135,8 @@ def Selecionar_TbAcessoIntelBras():
 
 def Selecionar_VwTbDestinatarioDispositivo(codigoDisp):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdDestinatario, dsLat, dsLong, nrRaio, cdFilho from DbIntelliMetrics.VwTbDestinatarioDispositivo where cdFilho ={codigoDisp} "
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f"select cdDestinatario, dsLat, dsLong, nrRaio, cdFilho from public.VwTbDestinatarioDispositivo where cdFilho ={codigoDisp} "
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -155,7 +147,7 @@ def Selecionar_VwTbDestinatarioDispositivo(codigoDisp):
 # FIM DA FUNÇÃO
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbAcessoIntelBras
+# Inserir registros da tabela public.TbAcessoIntelBras
 def Inserir_TbAcessoIntelBras(
     dsCardName,
     dsCardNo,
@@ -172,8 +164,8 @@ def Inserir_TbAcessoIntelBras(
     dsUtc,
 ):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbAcessoIntelBras ( dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc ) values ("{dsCardName}", "{dsCardNo}", "{dsDoor}", "{dsEntry}", "{dsErrorCode}", "{dsMethod}", "{dsPassword}", "{dsReaderID}", "{dsStatus}", "{dsType}", "{dsUserId}", "{dsUserType}", "{dsUtc}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.TbAcessoIntelBras ( dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc ) values ("{dsCardName}", "{dsCardNo}", "{dsDoor}", "{dsEntry}", "{dsErrorCode}", "{dsMethod}", "{dsPassword}", "{dsReaderID}", "{dsStatus}", "{dsType}", "{dsUserId}", "{dsUserType}", "{dsUtc}")'
     cursor.execute(comando)
     conexao.commit()
 
@@ -181,11 +173,11 @@ def Inserir_TbAcessoIntelBras(
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbAcessoIntelBras
+# Deletar registros da tabela public.TbAcessoIntelBras
 def deletar_TbAcessoIntelBras(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbAcessoIntelBras where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbAcessoIntelBras where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -193,10 +185,10 @@ def deletar_TbAcessoIntelBras(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbAcessoIntelBras
+# Alterar registros da tabela public.TbAcessoIntelBras
 def Alterar_TbAcessoIntelBras(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbAcessoIntelBras set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = f'update public.TbAcessoIntelBras set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -214,10 +206,10 @@ def calcular_distancia(lat1, lon1, lat2, lon2):
 # distancia = calcular_distancia(lat1, lon1, lat2, lon2)
 
 
-# Selecionar registros da tabela DbIntelliMetrics.VwTbPosicaoAtual
+# Selecionar registros da tabela public.VwTbPosicaoAtual
 def Selecionar_VwTbPosicaoAtual(filtros):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     comando = f"select cdPosicao, \
     dtRegistro,\
@@ -238,7 +230,7 @@ def Selecionar_VwTbPosicaoAtual(filtros):
     dsDescricao,\
     dsStatus,\
     blArea\
-    from DbIntelliMetrics.VwTbPosicaoAtual WHERE 1=1"
+    from public.VwTbPosicaoAtual WHERE 1=1"
 
     for campo, valor in filtros.items():
         comando += f" AND {campo} = '{valor}'"
@@ -253,11 +245,11 @@ def Selecionar_VwTbPosicaoAtual(filtros):
 # FIM DA FUNÇÃO
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbChamados
+# Selecionar registros da tabela public.TbChamados
 def Selecionar_TbChamados():
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdChamados, dtOperacao, dsTipo, dsDescricao, nrQtde, dsUser, dtRegistro from DbIntelliMetrics.TbChamados"
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f"select cdChamados, dtOperacao, dsTipo, dsDescricao, nrQtde, dsUser, dtRegistro from public.TbChamados"
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -268,11 +260,11 @@ def Selecionar_TbChamados():
 # FIM DA FUNÇÃO
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbChamados
+# Inserir registros da tabela public.TbChamados
 def Inserir_TbChamados(dtOperacao, dsTipo, dsDescricao, nrQtde, dsUser, dtRegistro):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbChamados ( dtOperacao, dsTipo, dsDescricao, nrQtde, dsUser, dtRegistro ) values ("{dtOperacao}", "{dsTipo}", "{dsDescricao}", "{nrQtde}", "{dsUser}", "{dtRegistro}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.TbChamados ( dtOperacao, dsTipo, dsDescricao, nrQtde, dsUser, dtRegistro ) values ("{dtOperacao}", "{dsTipo}", "{dsDescricao}", "{nrQtde}", "{dsUser}", "{dtRegistro}")'
     cursor.execute(comando)
     conexao.commit()
 
@@ -280,11 +272,11 @@ def Inserir_TbChamados(dtOperacao, dsTipo, dsDescricao, nrQtde, dsUser, dtRegist
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbChamados
+# Deletar registros da tabela public.TbChamados
 def deletar_TbChamados(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbChamados where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbChamados where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -292,10 +284,12 @@ def deletar_TbChamados(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbChamados
+# Alterar registros da tabela public.TbChamados
 def Alterar_TbChamados(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbChamados set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbChamados set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -303,11 +297,11 @@ def Alterar_TbChamados(Campo, Dado, UpCampo, UpDado):
 # FIM DA FUNÇÃO
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbCliente
+# Selecionar registros da tabela public.TbCliente
 def Selecionar_TbCliente():
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdCliente, dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsUser, dtRegistro from DbIntelliMetrics.TbCliente"
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f"select cdCliente, dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsUser, dtRegistro from public.TbCliente"
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -318,7 +312,7 @@ def Selecionar_TbCliente():
 # FIM DA FUNÇÃO
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbCliente
+# Inserir registros da tabela public.TbCliente
 def Inserir_TbCliente(
     dsNome,
     nrCnpj,
@@ -337,8 +331,8 @@ def Inserir_TbCliente(
     dtRegistro,
 ):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbCliente ( dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsUser, dtRegistro ) values ("{dsNome}", "{nrCnpj}", "{nrIe}", "{nrInscMun}", "{dsLogradouro}", "{nrNumero}", "{dsComplemento}", "{dsBairro}", "{dsCep}", "{dsCidade}", "{dsUF}", "{dsObs}", "{cdStatus}", "{dsUser}", "{dtRegistro}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.TbCliente ( dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsUser, dtRegistro ) values ("{dsNome}", "{nrCnpj}", "{nrIe}", "{nrInscMun}", "{dsLogradouro}", "{nrNumero}", "{dsComplemento}", "{dsBairro}", "{dsCep}", "{dsCidade}", "{dsUF}", "{dsObs}", "{cdStatus}", "{dsUser}", "{dtRegistro}")'
     cursor.execute(comando)
     conexao.commit()
 
@@ -346,11 +340,11 @@ def Inserir_TbCliente(
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbCliente
+# Deletar registros da tabela public.TbCliente
 def deletar_TbCliente(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbCliente where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbCliente where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -358,10 +352,12 @@ def deletar_TbCliente(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbCliente
+# Alterar registros da tabela public.TbCliente
 def Alterar_TbCliente(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbCliente set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbCliente set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -369,14 +365,14 @@ def Alterar_TbCliente(Campo, Dado, UpCampo, UpDado):
 # FIM DA FUNÇÃO
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbDestinatario
+# Selecionar registros da tabela public.TbDestinatario
 def Selecionar_TbDestinatario(codigo):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     if codigo == "0":
-        comando = f"select cdDestinatario, dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsLat, dsLong, nrRaio, dsUser, dtRegistro from DbIntelliMetrics.TbDestinatario"
+        comando = f"select cdDestinatario, dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsLat, dsLong, nrRaio, dsUser, dtRegistro from public.TbDestinatario"
     else:
-        comando = f"select cdDestinatario, dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsLat, dsLong, nrRaio, dsUser, dtRegistro from DbIntelliMetrics.TbDestinatario where cdDestinatario ={codigo}"
+        comando = f"select cdDestinatario, dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsLat, dsLong, nrRaio, dsUser, dtRegistro from public.TbDestinatario where cdDestinatario ={codigo}"
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -389,8 +385,8 @@ def Selecionar_TbDestinatario(codigo):
 
 def Selecionar_Lat_Long_Destinatario(codigo):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"SELECT cdDestinatario, dsLat, dsLong, cdFilho FROM DbIntelliMetrics.VwTbDestinatarioDispositivo where cdFilho ={codigo}"
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f"SELECT cdDestinatario, dsLat, dsLong, cdFilho from public.VwTbDestinatarioDispositivo where cdFilho ={codigo}"
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -401,7 +397,7 @@ def Selecionar_Lat_Long_Destinatario(codigo):
 # print(Selecionar_Lat_Long_Destinatario(2))
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbDestinatario
+# Inserir registros da tabela public.TbDestinatario
 def Inserir_TbDestinatario(
     dsNome,
     nrCnpj,
@@ -423,8 +419,8 @@ def Inserir_TbDestinatario(
     dtRegistro,
 ):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbDestinatario ( dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsLat, dsLong, nrRaio, dsUser, dtRegistro ) values ("{dsNome}", "{nrCnpj}", "{nrIe}", "{nrInscMun}", "{dsLogradouro}", "{nrNumero}", "{dsComplemento}", "{dsBairro}", "{dsCep}", "{dsCidade}", "{dsUF}", "{dsObs}", "{cdStatus}", "{dsLat}", "{dsLong}", "{nrRaio}", "{dsUser}", "{dtRegistro}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.TbDestinatario ( dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsLat, dsLong, nrRaio, dsUser, dtRegistro ) values ("{dsNome}", "{nrCnpj}", "{nrIe}", "{nrInscMun}", "{dsLogradouro}", "{nrNumero}", "{dsComplemento}", "{dsBairro}", "{dsCep}", "{dsCidade}", "{dsUF}", "{dsObs}", "{cdStatus}", "{dsLat}", "{dsLong}", "{nrRaio}", "{dsUser}", "{dtRegistro}")'
     cursor.execute(comando)
     conexao.commit()
 
@@ -432,11 +428,11 @@ def Inserir_TbDestinatario(
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbDestinatario
+# Deletar registros da tabela public.TbDestinatario
 def deletar_TbDestinatario(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbDestinatario where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbDestinatario where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -444,10 +440,10 @@ def deletar_TbDestinatario(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbDestinatario
+# Alterar registros da tabela public.TbDestinatario
 def Alterar_TbDestinatario(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbDestinatario set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = f'update public.TbDestinatario set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -455,14 +451,14 @@ def Alterar_TbDestinatario(Campo, Dado, UpCampo, UpDado):
 # FIM DA FUNÇÃO
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbDispositivo
+# Selecionar registros da tabela public.TbDispositivo
 def Selecionar_TbDispositivo(codigo):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     if codigo == 0:
-        comando = f"select cdDispositivo, dsDispositivo, dsModelo, dsDescricao, dsObs, dsLayout, nrChip, cdStatus, dsUser, dtRegistro from DbIntelliMetrics.TbDispositivo"
+        comando = f"select cdDispositivo, dsDispositivo, dsModelo, dsDescricao, dsObs, dsLayout, nrChip, cdStatus, dsUser, dtRegistro from public.TbDispositivo"
     else:
-        comando = f"select cdDispositivo, dsDispositivo, dsModelo, dsDescricao, dsObs, dsLayout, nrChip, cdStatus, dsUser, dtRegistro from DbIntelliMetrics.TbDispositivo where cdDispositivo={codigo}"
+        comando = f"select cdDispositivo, dsDispositivo, dsModelo, dsDescricao, dsObs, dsLayout, nrChip, cdStatus, dsUser, dtRegistro from public.TbDispositivo where cdDispositivo={codigo}"
 
     cursor.execute(comando)
     resultado = cursor.fetchall()
@@ -474,7 +470,7 @@ def Selecionar_TbDispositivo(codigo):
 # FIM DA FUNÇÃO
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbDispositivo
+# Inserir registros da tabela public.TbDispositivo
 def Inserir_TbDispositivo(
     dsDispositivo,
     dsModelo,
@@ -487,8 +483,8 @@ def Inserir_TbDispositivo(
     dtRegistro,
 ):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbDispositivo ( dsDispositivo, dsModelo, dsDescricao, dsObs, dsLayout, nrChip, cdStatus, dsUser, dtRegistro ) values ("{dsDispositivo}", "{dsModelo}", "{dsDescricao}", "{dsObs}", "{dsLayout}", "{nrChip}", "{cdStatus}", "{dsUser}", "{dtRegistro}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.TbDispositivo ( dsDispositivo, dsModelo, dsDescricao, dsObs, dsLayout, nrChip, cdStatus, dsUser, dtRegistro ) values ("{dsDispositivo}", "{dsModelo}", "{dsDescricao}", "{dsObs}", "{dsLayout}", "{nrChip}", "{cdStatus}", "{dsUser}", "{dtRegistro}")'
     cursor.execute(comando)
     conexao.commit()
 
@@ -496,11 +492,11 @@ def Inserir_TbDispositivo(
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbDispositivo
+# Deletar registros da tabela public.TbDispositivo
 def deletar_TbDispositivo(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbDispositivo where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbDispositivo where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -508,10 +504,10 @@ def deletar_TbDispositivo(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbDispositivo
+# Alterar registros da tabela public.TbDispositivo
 def Alterar_TbDispositivo(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbDispositivo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = f'update public.TbDispositivo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -519,14 +515,14 @@ def Alterar_TbDispositivo(Campo, Dado, UpCampo, UpDado):
 # FIM DA FUNÇÃO
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbImagens
+# Selecionar registros da tabela public.TbImagens
 def Selecionar_TbImagens(codigo):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     if codigo == "0":
-        comando = f"select cdImagens, dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro from DbIntelliMetrics.TbImagens"
+        comando = f"select cdImagens, dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro from public.TbImagens"
     else:
-        comando = f'select cdImagens, dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro from DbIntelliMetrics.TbImagens where SUBSTRING_INDEX(cdCodigo, "-", 1) ={codigo}'
+        comando = f'select cdImagens, dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro from public.TbImagens where SUBSTRING_INDEX(cdCodigo, "-", 1) ={codigo}'
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -537,13 +533,13 @@ def Selecionar_TbImagens(codigo):
 # FIM DA FUNÇÃO
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbImagens
+# Inserir registros da tabela public.TbImagens
 def Inserir_TbImagens(
     dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro, cdProduto, nrImagem
 ):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbImagens ( dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro, cdProduto, nrImagem ) values ("{dsCaminho}", "{cdCodigo}", "{cdTipo}", "{dsUser}", "{dtRegistro}", "{cdProduto}", "{nrImagem}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.TbImagens ( dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro, cdProduto, nrImagem ) values ("{dsCaminho}", "{cdCodigo}", "{cdTipo}", "{dsUser}", "{dtRegistro}", "{cdProduto}", "{nrImagem}")'
     # print(comando)
     cursor.execute(comando)
     conexao.commit()
@@ -552,11 +548,11 @@ def Inserir_TbImagens(
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbImagens
+# Deletar registros da tabela public.TbImagens
 def deletar_TbImagens(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbImagens where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbImagens where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -564,10 +560,12 @@ def deletar_TbImagens(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbImagens
+# Alterar registros da tabela public.TbImagens
 def Alterar_TbImagens(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbImagens set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbImagens set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -575,15 +573,15 @@ def Alterar_TbImagens(Campo, Dado, UpCampo, UpDado):
 # FIM DA FUNÇÃO#
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbPosicao
+# Selecionar registros da tabela public.TbPosicao
 # def Selecionar_TbPosicao(codigo):
 #     conexao = conecta_bd()
-#     cursor = conexao.cursor(dictionary=True)
+#     cursor = conexao.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
 #     if codigo == '0':
-#         comando = f'select cdPosicao, dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dtRegistro from DbIntelliMetrics.TbPosicao'
+#         comando = f'select cdPosicao, dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dtRegistro from public.TbPosicao'
 #     else:
-#         comando = f'select cdPosicao, dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dtRegistro from DbIntelliMetrics.TbPosicao where cdDispositivo={codigo}'
+#         comando = f'select cdPosicao, dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dtRegistro from public.TbPosicao where cdDispositivo={codigo}'
 #     cursor.execute(comando)
 #     resultado = cursor.fetchall()
 #     cursor.close()
@@ -615,7 +613,7 @@ def get_endereco_coordenada(lat, long):
 # get_endereco_coordenada(lat, long)
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbPosicao
+# Inserir registros da tabela public.TbPosicao
 def Inserir_TbPosicao(
     dsModelo,
     dtData,
@@ -642,26 +640,26 @@ def Inserir_TbPosicao(
     dsUser,
 ):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbPosicao ( dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsNum, dsBairro, dsCidade,  dsUF, dsCep, dsPais,  dsLatPdv, dsLongPdv, nrRaio, blArea, nrDistancia, dsUser ) values ("{dsModelo}", "{dtData}", "{dtHora}", "{dsLat}", "{dsLong}", "{nrTemp}", "{nrBat}", "{nrSeq}", "{dsArquivo}", "{cdDispositivo}", "{dsEndereco}", "{dsNum}", "{dsBairro}", "{dsCidade}", "{dsUF}", "{dsCep}","{dsPais}", "{dsLatPdv}", "{dsLongPdv}", "{nrRaio}", "{blArea}", "{nrDistancia}", "{dsUser}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.TbPosicao ( dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsNum, dsBairro, dsCidade,  dsUF, dsCep, dsPais,  dsLatPdv, dsLongPdv, nrRaio, blArea, nrDistancia, dsUser ) values ("{dsModelo}", "{dtData}", "{dtHora}", "{dsLat}", "{dsLong}", "{nrTemp}", "{nrBat}", "{nrSeq}", "{dsArquivo}", "{cdDispositivo}", "{dsEndereco}", "{dsNum}", "{dsBairro}", "{dsCidade}", "{dsUF}", "{dsCep}","{dsPais}", "{dsLatPdv}", "{dsLongPdv}", "{nrRaio}", "{blArea}", "{nrDistancia}", "{dsUser}")'
     # print(comando)
     cursor.execute(comando)
     conexao.commit()
     return cursor.lastrowid
 
+
 def Alterar_StatusTbPosicao(codigo, status):
     conexao = conecta_bd()
     cursor = conexao.cursor()
-    comando = f'update DbIntelliMetrics.TbDispositivo set cdStatus= {status}  where cdDispositivo = {codigo}  '
+    comando = f"update public.TbDispositivo set cdStatus= {status}  where cdDispositivo = {codigo}  "
     cursor.execute(comando)
     conexao.commit()
 
 
-
 def Inserir_TbSensorRegistro(cdDispositivo, cdSensor, cdPosicao, nrValor):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbSensorRegistro (cdDispositivo, cdSensor, cdPosicao, nrValor) values ("{cdDispositivo}", "{cdSensor}", "{cdPosicao}", "{nrValor}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.TbSensorRegistro (cdDispositivo, cdSensor, cdPosicao, nrValor) values ("{cdDispositivo}", "{cdSensor}", "{cdPosicao}", "{nrValor}")'
     cursor.execute(comando)
     conexao.commit()
     return cursor.lastrowid
@@ -670,11 +668,11 @@ def Inserir_TbSensorRegistro(cdDispositivo, cdSensor, cdPosicao, nrValor):
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbPosicao
+# Deletar registros da tabela public.TbPosicao
 def deletar_TbPosicao(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbPosicao where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbPosicao where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -682,10 +680,12 @@ def deletar_TbPosicao(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbPosicao
+# Alterar registros da tabela public.TbPosicao
 def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbPosicao set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbPosicao set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -693,10 +693,10 @@ def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
 # FIM DA FUNÇÃO
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbProduto
+# Selecionar registros da tabela public.TbProduto
 def Selecionar_TbProduto(codigo):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     # Consulta os dados da tabela produtos
     comando = f"SELECT cdProduto, dsDescricao, dsNome, nrAlt, nrCodigo, nrComp, nrLarg, nrQtde, dsStatus FROM VwTbProdutoTotalStaus where cdProduto = {codigo}"
     cursor.execute(comando)
@@ -761,13 +761,13 @@ def Selecionar_TbProduto(codigo):
 # FIM DA FUNÇÃO
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbProduto
+# Inserir registros da tabela public.TbProduto
 def Inserir_TbProduto(
     dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, dsUser, dtRegistro
 ):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbProduto ( dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, dsUser, dtRegistro ) values ("{dsNome}", "{dsDescricao}", "{nrCodigo}", "{nrLarg}", "{nrComp}", "{nrAlt}", "{cdStatus}", "{dsUser}", "{dtRegistro}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.TbProduto ( dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, dsUser, dtRegistro ) values ("{dsNome}", "{dsDescricao}", "{nrCodigo}", "{nrLarg}", "{nrComp}", "{nrAlt}", "{cdStatus}", "{dsUser}", "{dtRegistro}")'
     cursor.execute(comando)
     conexao.commit()
     return cursor.lastrowid
@@ -776,11 +776,11 @@ def Inserir_TbProduto(
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbProduto
+# Deletar registros da tabela public.TbProduto
 def deletar_TbProduto(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbProduto where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbProduto where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -788,11 +788,11 @@ def deletar_TbProduto(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbRelacionamento
+# Selecionar registros da tabela public.TbRelacionamento
 def Selecionar_TbRelacionamento():
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdRelacionamento, cdPai, cdFilho, cdTipo, dsDescricao, cdStatus, dsUser, dtRegistro from DbIntelliMetrics.TbRelacionamento"
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f"select cdRelacionamento, cdPai, cdFilho, cdTipo, dsDescricao, cdStatus, dsUser, dtRegistro from public.TbRelacionamento"
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -803,13 +803,13 @@ def Selecionar_TbRelacionamento():
 # FIM DA FUNÇÃO
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbRelacionamento
+# Inserir registros da tabela public.TbRelacionamento
 def Inserir_TbRelacionamento(
     cdPai, cdFilho, cdTipo, dsDescricao, cdStatus, dsUser, dtRegistro
 ):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbRelacionamento ( cdPai, cdFilho, cdTipo, dsDescricao, cdStatus, dsUser, dtRegistro ) values ("{cdPai}", "{cdFilho}", "{cdTipo}", "{dsDescricao}", "{cdStatus}", "{dsUser}", "{dtRegistro}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.TbRelacionamento ( cdPai, cdFilho, cdTipo, dsDescricao, cdStatus, dsUser, dtRegistro ) values ("{cdPai}", "{cdFilho}", "{cdTipo}", "{dsDescricao}", "{cdStatus}", "{dsUser}", "{dtRegistro}")'
     cursor.execute(comando)
     conexao.commit()
 
@@ -817,11 +817,11 @@ def Inserir_TbRelacionamento(
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbRelacionamento
+# Deletar registros da tabela public.TbRelacionamento
 def deletar_TbRelacionamento(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbRelacionamento where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbRelacionamento where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -829,10 +829,10 @@ def deletar_TbRelacionamento(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbRelacionamento
+# Alterar registros da tabela public.TbRelacionamento
 def Alterar_TbRelacionamento(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbRelacionamento set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = f'update public.TbRelacionamento set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -840,11 +840,11 @@ def Alterar_TbRelacionamento(Campo, Dado, UpCampo, UpDado):
 # FIM DA FUNÇÃO
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbSensor
+# Selecionar registros da tabela public.TbSensor
 def Selecionar_TbSensor():
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdSensor, dsNome, cdTipo, dsDescricao, cdUnidade, nrUnidadeIni, nrUnidadeFim, dsUser, dtRegistro from DbIntelliMetrics.TbSensor"
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f"select cdSensor, dsNome, cdTipo, dsDescricao, cdUnidade, nrUnidadeIni, nrUnidadeFim, dsUser, dtRegistro from public.TbSensor"
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -855,7 +855,7 @@ def Selecionar_TbSensor():
 # FIM DA FUNÇÃO
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbSensor
+# Inserir registros da tabela public.TbSensor
 def Inserir_TbSensor(
     dsNome,
     cdTipo,
@@ -867,8 +867,8 @@ def Inserir_TbSensor(
     dtRegistro,
 ):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbSensor ( dsNome, cdTipo, dsDescricao, cdUnidade, nrUnidadeIni, nrUnidadeFim, dsUser, dtRegistro ) values ("{dsNome}", "{cdTipo}", "{dsDescricao}", "{cdUnidade}", "{nrUnidadeIni}", "{nrUnidadeFim}", "{dsUser}", "{dtRegistro}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.TbSensor ( dsNome, cdTipo, dsDescricao, cdUnidade, nrUnidadeIni, nrUnidadeFim, dsUser, dtRegistro ) values ("{dsNome}", "{cdTipo}", "{dsDescricao}", "{cdUnidade}", "{nrUnidadeIni}", "{nrUnidadeFim}", "{dsUser}", "{dtRegistro}")'
     cursor.execute(comando)
     conexao.commit()
 
@@ -876,11 +876,11 @@ def Inserir_TbSensor(
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbSensor
+# Deletar registros da tabela public.TbSensor
 def deletar_TbSensor(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbSensor where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbSensor where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -888,10 +888,12 @@ def deletar_TbSensor(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbSensor
+# Alterar registros da tabela public.TbSensor
 def Alterar_TbSensor(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbSensor set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbSensor set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -899,12 +901,12 @@ def Alterar_TbSensor(Campo, Dado, UpCampo, UpDado):
 # FIM DA FUNÇÃO
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbStatus
+# Selecionar registros da tabela public.TbStatus
 def Selecionar_TbStatus():
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     comando = (
-        f"select cdStatus, dsStatus, dsUser, dtRegistro from DbIntelliMetrics.TbStatus"
+        f'select "cdStatus", "dsStatus", "dsUser", "dtRegistro" from public."TbStatus"'
     )
     cursor.execute(comando)
     resultado = cursor.fetchall()
@@ -916,11 +918,14 @@ def Selecionar_TbStatus():
 # FIM DA FUNÇÃO
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbStatus
+# Inserir registros da tabela public.TbStatus
 def Inserir_TbStatus(dsStatus, dsUser, dtRegistro):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbStatus ( dsStatus, dsUser, dtRegistro ) values ("{dsStatus}", "{dsUser}", "{dtRegistro}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    dtRegistro = f"'{dtRegistro}'" if dtRegistro != None else "NULL"
+
+    comando = f'insert into public."TbStatus" ( "dsStatus", "dsUser", "dtRegistro" ) values (\'{dsStatus}\', \'{dsUser}\', {dtRegistro})'
     cursor.execute(comando)
     conexao.commit()
 
@@ -928,11 +933,11 @@ def Inserir_TbStatus(dsStatus, dsUser, dtRegistro):
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbStatus
+# Deletar registros da tabela public.TbStatus
 def deletar_TbStatus(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbStatus where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbStatus where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -940,10 +945,12 @@ def deletar_TbStatus(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbStatus
+# Alterar registros da tabela public.TbStatus
 def Alterar_TbStatus(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbStatus set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbStatus set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -951,11 +958,13 @@ def Alterar_TbStatus(Campo, Dado, UpCampo, UpDado):
 # FIM DA FUNÇÃO
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbTag
+# Selecionar registros da tabela public.TbTag
 def Selecionar_TbTag():
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdTag, dsDescricao, dsConteudo, dsUser, dtRegistro from DbIntelliMetrics.TbTag"
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = (
+        f"select cdTag, dsDescricao, dsConteudo, dsUser, dtRegistro from public.TbTag"
+    )
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -966,11 +975,11 @@ def Selecionar_TbTag():
 # FIM DA FUNÇÃO
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbTag
+# Inserir registros da tabela public.TbTag
 def Inserir_TbTag(dsDescricao, dsConteudo, dsUser, dtRegistro):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbTag ( dsDescricao, dsConteudo, dsUser, dtRegistro ) values ("{dsDescricao}", "{dsConteudo}", "{dsUser}", "{dtRegistro}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.TbTag ( dsDescricao, dsConteudo, dsUser, dtRegistro ) values ("{dsDescricao}", "{dsConteudo}", "{dsUser}", "{dtRegistro}")'
     cursor.execute(comando)
     conexao.commit()
 
@@ -978,11 +987,11 @@ def Inserir_TbTag(dsDescricao, dsConteudo, dsUser, dtRegistro):
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbTag
+# Deletar registros da tabela public.TbTag
 def deletar_TbTag(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbTag where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbTag where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -990,10 +999,10 @@ def deletar_TbTag(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbTag
+# Alterar registros da tabela public.TbTag
 def Alterar_TbTag(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbTag set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = f'update public.TbTag set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -1001,11 +1010,11 @@ def Alterar_TbTag(Campo, Dado, UpCampo, UpDado):
 # FIM DA FUNÇÃO
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbTicket
+# Selecionar registros da tabela public.TbTicket
 def Selecionar_TbTicket():
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdTicket, dtOperacao, dsAtendimento, nrAbertos, nrFechados, nrPendentes, dsUser, dtRegistro from DbIntelliMetrics.TbTicket"
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f"select cdTicket, dtOperacao, dsAtendimento, nrAbertos, nrFechados, nrPendentes, dsUser, dtRegistro from public.TbTicket"
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -1016,13 +1025,13 @@ def Selecionar_TbTicket():
 # FIM DA FUNÇÃO
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbTicket
+# Inserir registros da tabela public.TbTicket
 def Inserir_TbTicket(
     dtOperacao, dsAtendimento, nrAbertos, nrFechados, nrPendentes, dsUser, dtRegistro
 ):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbTicket ( dtOperacao, dsAtendimento, nrAbertos, nrFechados, nrPendentes, dsUser, dtRegistro ) values ("{dtOperacao}", "{dsAtendimento}", "{nrAbertos}", "{nrFechados}", "{nrPendentes}", "{dsUser}", "{dtRegistro}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.TbTicket ( dtOperacao, dsAtendimento, nrAbertos, nrFechados, nrPendentes, dsUser, dtRegistro ) values ("{dtOperacao}", "{dsAtendimento}", "{nrAbertos}", "{nrFechados}", "{nrPendentes}", "{dsUser}", "{dtRegistro}")'
     cursor.execute(comando)
     conexao.commit()
 
@@ -1030,11 +1039,11 @@ def Inserir_TbTicket(
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbTicket
+# Deletar registros da tabela public.TbTicket
 def deletar_TbTicket(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbTicket where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbTicket where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -1042,10 +1051,12 @@ def deletar_TbTicket(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbTicket
+# Alterar registros da tabela public.TbTicket
 def Alterar_TbTicket(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbTicket set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbTicket set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -1053,11 +1064,11 @@ def Alterar_TbTicket(Campo, Dado, UpCampo, UpDado):
 # FIM DA FUNÇÃO
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbTicketResumo
+# Selecionar registros da tabela public.TbTicketResumo
 def Selecionar_TbTicketResumo():
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdTicketResumo, dtOperacao, dsAtendimento, dsNaoAtribuido, dsSemResolucao, dsAtualizado, dsPendente, dsResolvido, dsUser, dtRegistro from DbIntelliMetrics.TbTicketResumo"
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f"select cdTicketResumo, dtOperacao, dsAtendimento, dsNaoAtribuido, dsSemResolucao, dsAtualizado, dsPendente, dsResolvido, dsUser, dtRegistro from public.TbTicketResumo"
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -1068,7 +1079,7 @@ def Selecionar_TbTicketResumo():
 # FIM DA FUNÇÃO
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbTicketResumo
+# Inserir registros da tabela public.TbTicketResumo
 def Inserir_TbTicketResumo(
     dtOperacao,
     dsAtendimento,
@@ -1081,8 +1092,8 @@ def Inserir_TbTicketResumo(
     dtRegistro,
 ):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbTicketResumo ( dtOperacao, dsAtendimento, dsNaoAtribuido, dsSemResolucao, dsAtualizado, dsPendente, dsResolvido, dsUser, dtRegistro ) values ("{dtOperacao}", "{dsAtendimento}", "{dsNaoAtribuido}", "{dsSemResolucao}", "{dsAtualizado}", "{dsPendente}", "{dsResolvido}", "{dsUser}", "{dtRegistro}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.TbTicketResumo ( dtOperacao, dsAtendimento, dsNaoAtribuido, dsSemResolucao, dsAtualizado, dsPendente, dsResolvido, dsUser, dtRegistro ) values ("{dtOperacao}", "{dsAtendimento}", "{dsNaoAtribuido}", "{dsSemResolucao}", "{dsAtualizado}", "{dsPendente}", "{dsResolvido}", "{dsUser}", "{dtRegistro}")'
     cursor.execute(comando)
     conexao.commit()
 
@@ -1090,11 +1101,11 @@ def Inserir_TbTicketResumo(
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbTicketResumo
+# Deletar registros da tabela public.TbTicketResumo
 def deletar_TbTicketResumo(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbTicketResumo where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbTicketResumo where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -1102,10 +1113,10 @@ def deletar_TbTicketResumo(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbTicketResumo
+# Alterar registros da tabela public.TbTicketResumo
 def Alterar_TbTicketResumo(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbTicketResumo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = f'update public.TbTicketResumo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -1113,13 +1124,11 @@ def Alterar_TbTicketResumo(Campo, Dado, UpCampo, UpDado):
 # FIM DA FUNÇÃO
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbTipo
+# Selecionar registros da tabela public.TbTipo
 def Selecionar_TbTipo():
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = (
-        f"select cdTipo, dsDescricao, dsUser, dtRegistro from DbIntelliMetrics.TbTipo"
-    )
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f"select cdTipo, dsDescricao, dsUser, dtRegistro from public.TbTipo"
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -1130,11 +1139,11 @@ def Selecionar_TbTipo():
 # FIM DA FUNÇÃO
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbTipo
+# Inserir registros da tabela public.TbTipo
 def Inserir_TbTipo(dsDescricao, dsUser, dtRegistro):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbTipo ( dsDescricao, dsUser, dtRegistro ) values ("{dsDescricao}", "{dsUser}", "{dtRegistro}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.TbTipo ( dsDescricao, dsUser, dtRegistro ) values ("{dsDescricao}", "{dsUser}", "{dtRegistro}")'
     cursor.execute(comando)
     conexao.commit()
 
@@ -1142,11 +1151,11 @@ def Inserir_TbTipo(dsDescricao, dsUser, dtRegistro):
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbTipo
+# Deletar registros da tabela public.TbTipo
 def deletar_TbTipo(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbTipo where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbTipo where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -1154,10 +1163,12 @@ def deletar_TbTipo(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbTipo
+# Alterar registros da tabela public.TbTipo
 def Alterar_TbTipo(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbTipo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbTipo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -1165,11 +1176,11 @@ def Alterar_TbTipo(Campo, Dado, UpCampo, UpDado):
 # FIM DA FUNÇÃO
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbUnidade
+# Selecionar registros da tabela public.TbUnidade
 def Selecionar_TbUnidade():
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdUnidade, dsUnidade, dsSimbolo, dsUser, dtRegistro from DbIntelliMetrics.TbUnidade"
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f"select cdUnidade, dsUnidade, dsSimbolo, dsUser, dtRegistro from public.TbUnidade"
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -1180,11 +1191,11 @@ def Selecionar_TbUnidade():
 # FIM DA FUNÇÃO
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbUnidade
+# Inserir registros da tabela public.TbUnidade
 def Inserir_TbUnidade(dsUnidade, dsSimbolo, dsUser, dtRegistro):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbUnidade ( dsUnidade, dsSimbolo, dsUser, dtRegistro ) values ("{dsUnidade}", "{dsSimbolo}", "{dsUser}", "{dtRegistro}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.TbUnidade ( dsUnidade, dsSimbolo, dsUser, dtRegistro ) values ("{dsUnidade}", "{dsSimbolo}", "{dsUser}", "{dtRegistro}")'
     cursor.execute(comando)
     conexao.commit()
 
@@ -1192,11 +1203,11 @@ def Inserir_TbUnidade(dsUnidade, dsSimbolo, dsUser, dtRegistro):
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbUnidade
+# Deletar registros da tabela public.TbUnidade
 def deletar_TbUnidade(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbUnidade where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbUnidade where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -1204,10 +1215,12 @@ def deletar_TbUnidade(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbUnidade
+# Alterar registros da tabela public.TbUnidade
 def Alterar_TbUnidade(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbUnidade set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbUnidade set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -1215,11 +1228,11 @@ def Alterar_TbUnidade(Campo, Dado, UpCampo, UpDado):
 # FIM DA FUNÇÃO
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbUsuario
+# Selecionar registros da tabela public.TbUsuario
 def Selecionar_TbUsuario():
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdUsuario, dsNome, dsLogin, dsSenha, cdPerfil, dsUser, dtRegistro from DbIntelliMetrics.TbUsuario"
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f"select cdUsuario, dsNome, dsLogin, dsSenha, cdPerfil, dsUser, dtRegistro from public.TbUsuario"
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -1230,11 +1243,11 @@ def Selecionar_TbUsuario():
 # FIM DA FUNÇÃO
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbUsuario
+# Inserir registros da tabela public.TbUsuario
 def Inserir_TbUsuario(dsNome, dsLogin, dsSenha, cdPerfil, dsUser, dtRegistro):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbUsuario ( dsNome, dsLogin, dsSenha, cdPerfil, dsUser, dtRegistro ) values ("{dsNome}", "{dsLogin}", "{dsSenha}", "{cdPerfil}", "{dsUser}", "{dtRegistro}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.TbUsuario ( dsNome, dsLogin, dsSenha, cdPerfil, dsUser, dtRegistro ) values ("{dsNome}", "{dsLogin}", "{dsSenha}", "{cdPerfil}", "{dsUser}", "{dtRegistro}")'
     cursor.execute(comando)
     conexao.commit()
 
@@ -1242,11 +1255,11 @@ def Inserir_TbUsuario(dsNome, dsLogin, dsSenha, cdPerfil, dsUser, dtRegistro):
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbUsuario
+# Deletar registros da tabela public.TbUsuario
 def deletar_TbUsuario(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbUsuario where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbUsuario where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -1254,10 +1267,12 @@ def deletar_TbUsuario(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbUsuario
+# Alterar registros da tabela public.TbUsuario
 def Alterar_TbUsuario(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbUsuario set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbUsuario set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -1265,11 +1280,11 @@ def Alterar_TbUsuario(Campo, Dado, UpCampo, UpDado):
 # FIM DA FUNÇÃO
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbVisita
+# Selecionar registros da tabela public.TbVisita
 def Selecionar_TbVisita():
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdVisita, cdCliente, cdVisitante, dtData, dsUser, dtRegistro from DbIntelliMetrics.TbVisita"
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f"select cdVisita, cdCliente, cdVisitante, dtData, dsUser, dtRegistro from public.TbVisita"
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -1280,11 +1295,11 @@ def Selecionar_TbVisita():
 # FIM DA FUNÇÃO
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbVisita
+# Inserir registros da tabela public.TbVisita
 def Inserir_TbVisita(cdCliente, cdVisitante, dtData, dsUser, dtRegistro):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbVisita ( cdCliente, cdVisitante, dtData, dsUser, dtRegistro ) values ("{cdCliente}", "{cdVisitante}", "{dtData}", "{dsUser}", "{dtRegistro}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.TbVisita ( cdCliente, cdVisitante, dtData, dsUser, dtRegistro ) values ("{cdCliente}", "{cdVisitante}", "{dtData}", "{dsUser}", "{dtRegistro}")'
     cursor.execute(comando)
     conexao.commit()
 
@@ -1292,11 +1307,11 @@ def Inserir_TbVisita(cdCliente, cdVisitante, dtData, dsUser, dtRegistro):
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbVisita
+# Deletar registros da tabela public.TbVisita
 def deletar_TbVisita(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbVisita where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbVisita where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -1304,10 +1319,12 @@ def deletar_TbVisita(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbVisita
+# Alterar registros da tabela public.TbVisita
 def Alterar_TbVisita(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbVisita set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbVisita set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -1315,11 +1332,11 @@ def Alterar_TbVisita(Campo, Dado, UpCampo, UpDado):
 # FIM DA FUNÇÃO
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbVisitante
+# Selecionar registros da tabela public.TbVisitante
 def Selecionar_TbVisitante():
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdVisitante, dsNome, nrTelefone, nrDocumento, dsEmail, dsUser, dtRegistro from DbIntelliMetrics.TbVisitante"
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f"select cdVisitante, dsNome, nrTelefone, nrDocumento, dsEmail, dsUser, dtRegistro from public.TbVisitante"
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -1330,11 +1347,11 @@ def Selecionar_TbVisitante():
 # FIM DA FUNÇÃO
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbVisitante
+# Inserir registros da tabela public.TbVisitante
 def Inserir_TbVisitante(dsNome, nrTelefone, nrDocumento, dsEmail, dsUser, dtRegistro):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbVisitante ( dsNome, nrTelefone, nrDocumento, dsEmail, dsUser, dtRegistro ) values ("{dsNome}", "{nrTelefone}", "{nrDocumento}", "{dsEmail}", "{dsUser}", "{dtRegistro}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.TbVisitante ( dsNome, nrTelefone, nrDocumento, dsEmail, dsUser, dtRegistro ) values ("{dsNome}", "{nrTelefone}", "{nrDocumento}", "{dsEmail}", "{dsUser}", "{dtRegistro}")'
     cursor.execute(comando)
     conexao.commit()
 
@@ -1342,11 +1359,11 @@ def Inserir_TbVisitante(dsNome, nrTelefone, nrDocumento, dsEmail, dsUser, dtRegi
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbVisitante
+# Deletar registros da tabela public.TbVisitante
 def deletar_TbVisitante(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbVisitante where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbVisitante where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -1354,10 +1371,12 @@ def deletar_TbVisitante(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbVisitante
+# Alterar registros da tabela public.TbVisitante
 def Alterar_TbVisitante(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbVisitante set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbVisitante set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -1365,13 +1384,13 @@ def Alterar_TbVisitante(Campo, Dado, UpCampo, UpDado):
 # FIM DA FUNÇÃO
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbPosicao
+# Selecionar registros da tabela public.TbPosicao
 def Selecionar_TbPosicao(filtros):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     # Inicializa a consulta SQL básica
-    comando = "SELECT dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, dsEndereco, dtRegistro FROM DbIntelliMetrics.TbPosicao WHERE 1=1"
+    comando = "SELECT dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, dsEndereco, dtRegistro from public.TbPosicao WHERE 1=1"
     # Adiciona condições à consulta SQL com base nos filtros fornecidos
     for campo, valor in filtros.items():
         if campo == "dtRegistro":
@@ -1389,11 +1408,11 @@ def Selecionar_TbPosicao(filtros):
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbPosicao
+# Deletar registros da tabela public.TbPosicao
 def deletar_TbPosicao(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbPosicao where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbPosicao where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -1401,10 +1420,12 @@ def deletar_TbPosicao(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbPosicao
+# Alterar registros da tabela public.TbPosicao
 def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbPosicao set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbPosicao set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -1414,7 +1435,7 @@ def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
 
 def Selecionar_VwRelHistoricoDispositivoProduto(filtros):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     comando = f"select cdProduto, nrCodigo, dsDescricao, dtRegistro, cdDispositivo, dsNome, dsEndereco, nrBatPercentual, nrPorta, nrTemperatura, dsProdutoItem, nrQtdItens, dsStatus, dsStatusDispositivo, cdSensor from VwRelHistoricoDispositivoProduto where 1=1"
     # Adiciona condições à consulta SQL com base nos filtros fornecidos
@@ -1431,10 +1452,11 @@ def Selecionar_VwRelHistoricoDispositivoProduto(filtros):
 
     return resultado
 
+
 # busca dados de VwRelHistoricoDispositivoProduto, mas retorna cada produtoItem como uma coluna.
 def Selecionar_HistoricoPaginaDispositivo(filtros):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     comando = f"select cdProduto, nrCodigo, dsDescricao, dtRegistro, cdDispositivo, dsNome, dsEndereco, nrBatPercentual, nrPorta, nrTemperatura, dsProdutoItem, nrQtdItens, dsStatus, dsStatusDispositivo, cdSensor from VwRelHistoricoDispositivoProduto where 1=1"
     # Adiciona condições à consulta SQL com base nos filtros fornecidos
@@ -1448,36 +1470,43 @@ def Selecionar_HistoricoPaginaDispositivo(filtros):
     resultado = cursor.fetchall()
     cursor.close()
     conexao.close()
-    
+
     if len(resultado) == 0:
         return resultado
 
     # Convert the result to a pandas DataFrame
     df = pd.DataFrame(resultado)
-    
+
     # Retain the original data for merging later
-    original_df = df.drop(columns=['nrQtdItens', 'dsProdutoItem', 'cdSensor']).drop_duplicates()
-    
+    original_df = df.drop(
+        columns=["nrQtdItens", "dsProdutoItem", "cdSensor"]
+    ).drop_duplicates()
+
     # Pivot the data
-    pivot_df = df.pivot_table(index='dtRegistro', columns=['dsProdutoItem', 'cdSensor'], values='nrQtdItens', fill_value=0)
-    
+    pivot_df = df.pivot_table(
+        index="dtRegistro",
+        columns=["dsProdutoItem", "cdSensor"],
+        values="nrQtdItens",
+        fill_value=0,
+    )
+
     # Flatten the multi-index columns
     pivot_df.columns = [f"{item[0]}_{item[1]}" for item in pivot_df.columns]
-    
+
     # Reset index to have dtRegistro as a column again
     pivot_df = pivot_df.reset_index()
-    
+
     # Merge the pivoted data with the original data
-    final_df = pd.merge(original_df, pivot_df, on='dtRegistro', how='left')
-    
-    result_json = final_df.to_json(orient='records', date_format='iso')
+    final_df = pd.merge(original_df, pivot_df, on="dtRegistro", how="left")
+
+    result_json = final_df.to_json(orient="records", date_format="iso")
 
     return result_json
 
 
 def Selecionar_VwRelDadosDispositivo(filtros):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     comando = f"select cdProduto, dsNome, cdDispositivo, nrBat, dsNomeDest, dsEnderecoDest, nrNumeroDest, dsBairroDest, dsCidadeDest, dsUfDest, dsCepDest, dsLatDest, dsLongDest, dsRaio, dsEnderecoAtual, dsNumeroAtual, dsBairroAtual, dsCidadeAtual, dsUFAtual, dsCEPAtual, dsLatAtual, dsLongAtual, blArea, dtRegistro, dtCadastro from VwRelDadosDispositivo where 1=1"
     # Adiciona condições à consulta SQL com base nos filtros fornecidos
@@ -1494,14 +1523,14 @@ def Selecionar_VwRelDadosDispositivo(filtros):
     return resultado
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbProdutoTipo
+# Selecionar registros da tabela public.TbProdutoTipo
 def Selecionar_VwTbProdutoTipo(codigo):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     if codigo == "0":
-        comando = f"select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, cdDispositivo, dsDispositivo, dsModelo, DescDispositivo, dsObs, dsLayout, nrChip, StatusDispositivo from DbIntelliMetrics.VwTbProdutoTipo"
+        comando = f"select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, cdDispositivo, dsDispositivo, dsModelo, DescDispositivo, dsObs, dsLayout, nrChip, StatusDispositivo from public.VwTbProdutoTipo"
     else:
-        comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, cdDispositivo, dsDispositivo, dsModelo, DescDispositivo, dsObs, dsLayout, nrChip, StatusDispositivo from DbIntelliMetrics.VwTbProdutoTipo where cdProduto = "{codigo}"'
+        comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, cdDispositivo, dsDispositivo, dsModelo, DescDispositivo, dsObs, dsLayout, nrChip, StatusDispositivo from public.VwTbProdutoTipo where cdProduto = "{codigo}"'
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -1512,7 +1541,7 @@ def Selecionar_VwTbProdutoTipo(codigo):
 # FIM DA FUNÇÃO
 
 
-# Inserir registros da tabela DbIntelliMetrics.VwTbProdutoTipo
+# Inserir registros da tabela public.VwTbProdutoTipo
 def Inserir_VwTbProdutoTipo(
     dsNome,
     dsDescricao,
@@ -1531,8 +1560,8 @@ def Inserir_VwTbProdutoTipo(
     StatusDispositivo,
 ):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.VwTbProdutoTipo ( dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, cdDispositivo, dsDispositivo, dsModelo, DescDispositivo, dsObs, dsLayout, nrChip, StatusDispositivo ) values ("{dsNome}", "{dsDescricao}", "{nrCodigo}", "{nrLarg}", "{nrComp}", "{nrAlt}", "{cdStatus}", "{cdDispositivo}", "{dsDispositivo}", "{dsModelo}", "{DescDispositivo}", "{dsObs}", "{dsLayout}", "{nrChip}", "{StatusDispositivo}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.VwTbProdutoTipo ( dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, cdDispositivo, dsDispositivo, dsModelo, DescDispositivo, dsObs, dsLayout, nrChip, StatusDispositivo ) values ("{dsNome}", "{dsDescricao}", "{nrCodigo}", "{nrLarg}", "{nrComp}", "{nrAlt}", "{cdStatus}", "{cdDispositivo}", "{dsDispositivo}", "{dsModelo}", "{DescDispositivo}", "{dsObs}", "{dsLayout}", "{nrChip}", "{StatusDispositivo}")'
     cursor.execute(comando)
     conexao.commit()
 
@@ -1540,11 +1569,11 @@ def Inserir_VwTbProdutoTipo(
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.VwTbProdutoTipo
+# Deletar registros da tabela public.VwTbProdutoTipo
 def deletar_VwTbProdutoTipo(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.VwTbProdutoTipo where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.VwTbProdutoTipo where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -1552,10 +1581,10 @@ def deletar_VwTbProdutoTipo(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.VwTbProdutoTipo
+# Alterar registros da tabela public.VwTbProdutoTipo
 def Alterar_VwTbProdutoTipo(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.VwTbProdutoTipo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = f'update public.VwTbProdutoTipo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -1563,12 +1592,12 @@ def Alterar_VwTbProdutoTipo(Campo, Dado, UpCampo, UpDado):
 # FIM DA FUNÇÃO
 
 
-# Selecionar registros da tabela DbIntelliMetrics.VwTbProdutoTotalStaus
+# Selecionar registros da tabela public.VwTbProdutoTotalStaus
 def Selecionar_VwTbProdutoTotalStaus(codigo):
     try:
         # Conecta ao banco de dados
         conexao = conecta_bd()
-        cursor = conexao.cursor(dictionary=True)
+        cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
         # Consulta os dados da tabela produtos
         comandoProduto = "SELECT cdProduto, dsDescricao, dsNome, nrAlt, nrCodigo, nrComp, nrLarg, dsStatus, nrQtde, QtdeTotal FROM VwTbProdutoTotalStaus"
@@ -1633,11 +1662,11 @@ def Selecionar_VwTbProdutoTotalStaus(codigo):
 
 def Selecionar_VwTbProdutoTotal(codigo):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     if codigo == "0":
-        comando = f"select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, nrQtde from DbIntelliMetrics.VwTbProdutoTotal"
+        comando = f"select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, nrQtde from public.VwTbProdutoTotal"
     else:
-        comando = f"select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, nrQtde from DbIntelliMetrics.VwTbProdutoTotal where cdProduto = {codigo}"
+        comando = f"select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, nrQtde from public.VwTbProdutoTotal where cdProduto = {codigo}"
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -1649,13 +1678,13 @@ def Selecionar_VwTbProdutoTotal(codigo):
 # FIM DA FUNÇÃO
 
 
-# Inserir registros da tabela DbIntelliMetrics.VwTbProdutoTotalStaus
+# Inserir registros da tabela public.VwTbProdutoTotalStaus
 def Inserir_VwTbProdutoTotalStaus(
     dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde
 ):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.VwTbProdutoTotalStaus ( dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde ) values ("{dsNome}", "{dsDescricao}", "{nrCodigo}", "{nrLarg}", "{nrComp}", "{nrAlt}", "{Status}", "{nrQtde}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.VwTbProdutoTotalStaus ( dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde ) values ("{dsNome}", "{dsDescricao}", "{nrCodigo}", "{nrLarg}", "{nrComp}", "{nrAlt}", "{Status}", "{nrQtde}")'
     cursor.execute(comando)
     conexao.commit()
 
@@ -1663,13 +1692,11 @@ def Inserir_VwTbProdutoTotalStaus(
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.VwTbProdutoTotalStaus
+# Deletar registros da tabela public.VwTbProdutoTotalStaus
 def deletar_VwTbProdutoTotalStaus(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = (
-        f'delete from DbIntelliMetrics.VwTbProdutoTotalStaus where {Campo}="{Dado}"  '
-    )
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.VwTbProdutoTotalStaus where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -1677,10 +1704,10 @@ def deletar_VwTbProdutoTotalStaus(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.VwTbProdutoTotalStaus
+# Alterar registros da tabela public.VwTbProdutoTotalStaus
 def Alterar_VwTbProdutoTotalStaus(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.VwTbProdutoTotalStaus set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = f'update public.VwTbProdutoTotalStaus set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -1688,11 +1715,11 @@ def Alterar_VwTbProdutoTotalStaus(Campo, Dado, UpCampo, UpDado):
 # FIM DA FUNÇÃO
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbFuncionario
+# Selecionar registros da tabela public.TbFuncionario
 def Selecionar_TbFuncionario():
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdFuncionario, dsBairro, dsCidade, dsComplemento, dsFuncao, dsLogradouro, dsNomeEmpregado, dsNumCasa, dsUser, dtRegistro, nrCodEmpregado, TbFuncionariocol from DbIntelliMetrics.TbFuncionario"
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f"select cdFuncionario, dsBairro, dsCidade, dsComplemento, dsFuncao, dsLogradouro, dsNomeEmpregado, dsNumCasa, dsUser, dtRegistro, nrCodEmpregado, TbFuncionariocol from public.TbFuncionario"
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -1703,7 +1730,7 @@ def Selecionar_TbFuncionario():
 # FIM DA FUNÇÃO
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbFuncionario
+# Inserir registros da tabela public.TbFuncionario
 def Inserir_TbFuncionario(
     dsBairro,
     dsCidade,
@@ -1718,8 +1745,8 @@ def Inserir_TbFuncionario(
     TbFuncionariocol,
 ):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbFuncionario ( dsBairro, dsCidade, dsComplemento, dsFuncao, dsLogradouro, dsNomeEmpregado, dsNumCasa, dsUser, dtRegistro, nrCodEmpregado, TbFuncionariocol ) values ("{dsBairro}", "{dsCidade}", "{dsComplemento}", "{dsFuncao}", "{dsLogradouro}", "{dsNomeEmpregado}", "{dsNumCasa}", "{dsUser}", "{dtRegistro}", "{nrCodEmpregado}", "{TbFuncionariocol}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.TbFuncionario ( dsBairro, dsCidade, dsComplemento, dsFuncao, dsLogradouro, dsNomeEmpregado, dsNumCasa, dsUser, dtRegistro, nrCodEmpregado, TbFuncionariocol ) values ("{dsBairro}", "{dsCidade}", "{dsComplemento}", "{dsFuncao}", "{dsLogradouro}", "{dsNomeEmpregado}", "{dsNumCasa}", "{dsUser}", "{dtRegistro}", "{nrCodEmpregado}", "{TbFuncionariocol}")'
     cursor.execute(comando)
     conexao.commit()
 
@@ -1727,11 +1754,11 @@ def Inserir_TbFuncionario(
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbFuncionario
+# Deletar registros da tabela public.TbFuncionario
 def deletar_TbFuncionario(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbFuncionario where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbFuncionario where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -1739,10 +1766,10 @@ def deletar_TbFuncionario(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbFuncionario
+# Alterar registros da tabela public.TbFuncionario
 def Alterar_TbFuncionario(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbFuncionario set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = f'update public.TbFuncionario set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -1750,14 +1777,14 @@ def Alterar_TbFuncionario(Campo, Dado, UpCampo, UpDado):
 # FIM DA FUNÇÃO
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbFuncionario
+# Selecionar registros da tabela public.TbFuncionario
 def Selecionar_TbEtiqueta(dsEtiqueta):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     if dsEtiqueta == "0":
-        comando = f"select dsEtiqueta, nrFator, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, dsUser, dtRegistro from DbIntelliMetrics.TbEtiqueta order by cdEtiqueta desc"
+        comando = f"select dsEtiqueta, nrFator, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, dsUser, dtRegistro from public.TbEtiqueta order by cdEtiqueta desc"
     else:
-        comando = f"select dsEtiqueta, nrFator, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, dsUser, dtRegistro from DbIntelliMetrics.TbEtiqueta where dsEtiqueta ={dsEtiqueta}"
+        comando = f"select dsEtiqueta, nrFator, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, dsUser, dtRegistro from public.TbEtiqueta where dsEtiqueta ={dsEtiqueta}"
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -1768,7 +1795,7 @@ def Selecionar_TbEtiqueta(dsEtiqueta):
 # FIM DA FUNÇÃO
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbEtiqueta
+# Inserir registros da tabela public.TbEtiqueta
 def Inserir_TbEtiqueta(
     dsEtiqueta,
     nrFator,
@@ -1781,8 +1808,8 @@ def Inserir_TbEtiqueta(
     dtRegistro,
 ):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbEtiqueta (dsEtiqueta, nrFator, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, dsUser, dtRegistro) values ("{dsEtiqueta}", "{nrFator}", "{nrLargura}", "{nrAltura}", "{nrComprimento}", "{nrPeso}", "{nrCubado}", "{dsUser}", "{dtRegistro}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.TbEtiqueta (dsEtiqueta, nrFator, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, dsUser, dtRegistro) values ("{dsEtiqueta}", "{nrFator}", "{nrLargura}", "{nrAltura}", "{nrComprimento}", "{nrPeso}", "{nrCubado}", "{dsUser}", "{dtRegistro}")'
     cursor.execute(comando)
     conexao.commit()
     return cursor.lastrowid
@@ -1825,11 +1852,11 @@ def post_Chamados():
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbChamados
+# Deletar registros da tabela public.TbChamados
 def deletar_TbChamados(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbChamados where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbChamados where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -1837,10 +1864,12 @@ def deletar_TbChamados(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbChamados
+# Alterar registros da tabela public.TbChamados
 def Alterar_TbChamados(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbChamados set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbChamados set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -1901,11 +1930,11 @@ def post_Cliente():
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbCliente
+# Deletar registros da tabela public.TbCliente
 def deletar_TbCliente(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbCliente where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbCliente where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -1913,10 +1942,12 @@ def deletar_TbCliente(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbCliente
+# Alterar registros da tabela public.TbCliente
 def Alterar_TbCliente(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbCliente set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbCliente set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -1983,11 +2014,11 @@ def post_Destinatario():
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbDestinatario
+# Deletar registros da tabela public.TbDestinatario
 def deletar_TbDestinatario(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbDestinatario where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbDestinatario where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -1995,10 +2026,10 @@ def deletar_TbDestinatario(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbDestinatario
+# Alterar registros da tabela public.TbDestinatario
 def Alterar_TbDestinatario(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbDestinatario set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = f'update public.TbDestinatario set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -2047,11 +2078,11 @@ def post_Dispositivo():
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbDispositivo
+# Deletar registros da tabela public.TbDispositivo
 def deletar_TbDispositivo(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbDispositivo where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbDispositivo where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -2059,10 +2090,10 @@ def deletar_TbDispositivo(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbDispositivo
+# Alterar registros da tabela public.TbDispositivo
 def Alterar_TbDispositivo(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbDispositivo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = f'update public.TbDispositivo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -2101,11 +2132,11 @@ def post_Imagens():
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbImagens
+# Deletar registros da tabela public.TbImagens
 def deletar_TbImagens(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbImagens where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbImagens where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -2113,10 +2144,12 @@ def deletar_TbImagens(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbImagens
+# Alterar registros da tabela public.TbImagens
 def Alterar_TbImagens(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbImagens set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbImagens set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -2233,11 +2266,11 @@ def post_Posicao():
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbPosicao
+# Deletar registros da tabela public.TbPosicao
 def deletar_TbPosicao(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbPosicao where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbPosicao where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -2245,10 +2278,12 @@ def deletar_TbPosicao(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbPosicao
+# Alterar registros da tabela public.TbPosicao
 def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbPosicao set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbPosicao set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -2364,11 +2399,11 @@ def post_Etiqueta():
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbProduto
+# Deletar registros da tabela public.TbProduto
 def deletar_TbProduto(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbProduto where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbProduto where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -2376,9 +2411,9 @@ def deletar_TbProduto(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbProduto
+# Alterar registros da tabela public.TbProduto
 def Alterar_TbProduto(Campo, Dado, UpData):
-    comando = "update DbIntelliMetrics.TbProduto set"
+    comando = "update public.TbProduto set"
 
     for campos in UpData:
         comando += f' {campos}="{UpData[campos]}",'
@@ -2607,11 +2642,11 @@ def get_Tipo():
 
 def Selecionar_NrImagensMaior(codigo):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     if codigo == "0":
-        comando = f'select  SUBSTRING_INDEX(cdCodigo, "-",1) as cdProduto, max(SUBSTRING_INDEX(SUBSTRING_INDEX(cdCodigo, "-",-1),".",1)) as nrMaior from DbIntelliMetrics.TbImagens where cdTipo = 10  group by cdProduto order by cdProduto'
+        comando = f'select  SUBSTRING_INDEX(cdCodigo, "-",1) as cdProduto, max(SUBSTRING_INDEX(SUBSTRING_INDEX(cdCodigo, "-",-1),".",1)) as nrMaior from public.TbImagens where cdTipo = 10  group by cdProduto order by cdProduto'
     else:
-        comando = f'select  SUBSTRING_INDEX(cdCodigo, "-",1) as cdProduto, max(SUBSTRING_INDEX(SUBSTRING_INDEX(cdCodigo, "-",-1),".",1)) as nrMaior from DbIntelliMetrics.TbImagens where cdTipo = 10 and cdCodigo = {codigo} group by cdProduto'
+        comando = f'select  SUBSTRING_INDEX(cdCodigo, "-",1) as cdProduto, max(SUBSTRING_INDEX(SUBSTRING_INDEX(cdCodigo, "-",-1),".",1)) as nrMaior from public.TbImagens where cdTipo = 10 and cdCodigo = {codigo} group by cdProduto'
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -2633,11 +2668,11 @@ def post_Tipo():
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbTipo
+# Deletar registros da tabela public.TbTipo
 def deletar_TbTipo(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbTipo where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbTipo where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -2645,10 +2680,12 @@ def deletar_TbTipo(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbTipo
+# Alterar registros da tabela public.TbTipo
 def Alterar_TbTipo(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbTipo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbTipo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -2682,10 +2719,12 @@ def post_Unidade():
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbUnidade
+# Alterar registros da tabela public.TbUnidade
 def Alterar_TbUnidade(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbUnidade set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbUnidade set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -2721,11 +2760,11 @@ def post_Usuario():
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbUsuario
+# Deletar registros da tabela public.TbUsuario
 def deletar_TbUsuario(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbUsuario where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbUsuario where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -2733,10 +2772,12 @@ def deletar_TbUsuario(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbUsuario
+# Alterar registros da tabela public.TbUsuario
 def Alterar_TbUsuario(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbUsuario set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbUsuario set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -2771,11 +2812,11 @@ def post_Visita():
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbVisita
+# Deletar registros da tabela public.TbVisita
 def deletar_TbVisita(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbVisita where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbVisita where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -2783,10 +2824,12 @@ def deletar_TbVisita(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbVisita
+# Alterar registros da tabela public.TbVisita
 def Alterar_TbVisita(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbVisita set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbVisita set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -2822,11 +2865,11 @@ def post_Visitante():
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbVisitante
+# Deletar registros da tabela public.TbVisitante
 def deletar_TbVisitante(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbVisitante where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbVisitante where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -2834,10 +2877,12 @@ def deletar_TbVisitante(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbVisitante
+# Alterar registros da tabela public.TbVisitante
 def Alterar_TbVisitante(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbVisitante set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbVisitante set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -2846,11 +2891,11 @@ def Alterar_TbVisitante(Campo, Dado, UpCampo, UpDado):
 # https://replit.taxidigital.net/TbPosicao
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbPosicao
+# Deletar registros da tabela public.TbPosicao
 def deletar_TbPosicao(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbPosicao where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.TbPosicao where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -2858,10 +2903,12 @@ def deletar_TbPosicao(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbPosicao
+# Alterar registros da tabela public.TbPosicao
 def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbPosicao set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = (
+        f'update public.TbPosicao set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    )
     cursor.execute(comando)
     conexao.commit()
 
@@ -2922,11 +2969,11 @@ def post_TbProdutoTipo():
 # FIM DA FUNÇÃO
 
 
-# Deletar registros da tabela DbIntelliMetrics.VwTbProdutoTipo
+# Deletar registros da tabela public.VwTbProdutoTipo
 def deletar_VwTbProdutoTipo(Campo, Dado):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.VwTbProdutoTipo where {Campo}="{Dado}"  '
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'delete from public.VwTbProdutoTipo where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
@@ -2934,16 +2981,17 @@ def deletar_VwTbProdutoTipo(Campo, Dado):
 # FIM DA FUNÇÃO
 
 
-# Alterar registros da tabela DbIntelliMetrics.VwTbProdutoTipo
+# Alterar registros da tabela public.VwTbProdutoTipo
 def Alterar_VwTbProdutoTipo(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.VwTbProdutoTipo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
+    comando = f'update public.VwTbProdutoTipo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
     cursor.execute(comando)
     conexao.commit()
 
 
 # FIM DA FUNÇÃO
 # https://replit.taxidigital.net/TbProdutoTotalStaus
+
 
 # endpoint usado para Pagina de Dispositivo. Mesmo do que o VwRelHistoricoDispositivoProduto,
 # mas com produtos sendo retornados como colunas.
@@ -2962,6 +3010,7 @@ def get_HistoricoPaginaDispositivo(codigo):
 
     resultado = Selecionar_HistoricoPaginaDispositivo(filtros)
     return resultado
+
 
 @app.route("/VwRelHistoricoDispositivoProduto/<codigo>")
 def get_RelHistoricoDispositivoProduto(codigo):
@@ -3516,8 +3565,10 @@ def dados():
 def main():
     port = int(os.environ.get("PORT", 8080))
     app.run(host="127.0.0.1", port=port)
-   # port = int(os.environ.get("PORT", 80))
-   # app.run(host="192.168.15.200", port=port)
+
+
+# port = int(os.environ.get("PORT", 80))
+# app.run(host="192.168.15.200", port=port)
 
 
 if __name__ == "__main__":
