@@ -5,17 +5,23 @@ import datetime
 import json
 import os
 import time
+from collections import defaultdict
+from typing import Any, Dict, List
 
 import boto3
-import mysql.connector
 import pandas as pd
 import psycopg2
 import psycopg2.extras
 import requests
+from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from geopy.distance import geodesic
 from geopy.geocoders import Nominatim
+from supabase import Client, create_client
+
+# possibilita pegar variaveis do .env
+load_dotenv()
 
 # Amazon
 selecao = []
@@ -25,9 +31,20 @@ dic_whats = []
 dic_whats2 = []
 dic_altura = []
 
+# Supabase setup client
+url: str = os.getenv("SUPABASE_URL")
+key: str = os.getenv("SUPABASE_KEY")
+supabase: Client = create_client(url, key)
+
 
 def conecta_bd():
-    
+    conexao = psycopg2.connect(
+        host=os.getenv("DB_HOST"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_DATABASE"),
+        port=os.getenv("DB_PORT"),
+    )
     return conexao
 
 
@@ -123,25 +140,24 @@ def Pegar_Medidas():
 
 # Selecionar registros da tabela public.TbAcessoIntelBras
 def Selecionar_TbAcessoIntelBras():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f"select cdAcessoIntelBras, dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc from public.TbAcessoIntelBras"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbAcessoIntelBras")
+        .select(
+            "cdAcessoIntelBras, dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc"
+        )
+        .execute()
+    )
+    return resultado.data
 
 
 def Selecionar_VwTbDestinatarioDispositivo(codigoDisp):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f"select cdDestinatario, dsLat, dsLong, nrRaio, cdFilho from public.VwTbDestinatarioDispositivo where cdFilho ={codigoDisp} "
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("VwTbDestinatarioDispositivo")
+        .select("cdDestinatario", "dsLat", "dsLong", "nrRaio", "cdFilho")
+        .eq("cdFilho", codigoDisp)
+        .execute()
+    )
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -208,38 +224,33 @@ def calcular_distancia(lat1, lon1, lat2, lon2):
 
 # Selecionar registros da tabela public.VwTbPosicaoAtual
 def Selecionar_VwTbPosicaoAtual(filtros):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-
-    comando = f"select cdPosicao, \
-    dtRegistro,\
-    cdDispositivo,\
-    dsLat,\
-    dsLong,\
-    dsEndereco,\
-    dsNum,\
-    dsCep,\
-    dsBairro,\
-    dsCidade,\
-    dsUF,\
-    dsPais,\
-    nrBat,\
-    nrCodigo,\
-    cdProduto,\
-    dsProduto,\
-    dsDescricao,\
-    dsStatus,\
-    blArea\
-    from public.VwTbPosicaoAtual WHERE 1=1"
+    query = supabase.table("VwTbPosicaoAtual").select(
+        "cdPosicao",
+        "dtRegistro",
+        "cdDispositivo",
+        "dsLat",
+        "dsLong",
+        "dsEndereco",
+        "dsNum",
+        "dsCep",
+        "dsBairro",
+        "dsCidade",
+        "dsUF",
+        "dsPais",
+        "nrBat",
+        "nrCodigo",
+        "cdProduto",
+        "dsProduto",
+        "dsDescricao",
+        "dsStatus",
+        "blArea",
+    )
 
     for campo, valor in filtros.items():
-        comando += f" AND {campo} = '{valor}'"
+        query = query.eq(campo, valor)
 
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = query.execute()
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -247,14 +258,21 @@ def Selecionar_VwTbPosicaoAtual(filtros):
 
 # Selecionar registros da tabela public.TbChamados
 def Selecionar_TbChamados():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f"select cdChamados, dtOperacao, dsTipo, dsDescricao, nrQtde, dsUser, dtRegistro from public.TbChamados"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbChamados")
+        .select(
+            "cdChamados",
+            "dtOperacao",
+            "dsTipo",
+            "dsDescricao",
+            "nrQtde",
+            "dsUser",
+            "dtRegistro",
+        )
+        .execute()
+    )
+
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -299,14 +317,30 @@ def Alterar_TbChamados(Campo, Dado, UpCampo, UpDado):
 
 # Selecionar registros da tabela public.TbCliente
 def Selecionar_TbCliente():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f"select cdCliente, dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsUser, dtRegistro from public.TbCliente"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbCliente")
+        .select(
+            "cdCliente",
+            "dsNome",
+            "nrCnpj",
+            "nrIe",
+            "nrInscMun",
+            "dsLogradouro",
+            "nrNumero",
+            "dsComplemento",
+            "dsBairro",
+            "dsCep",
+            "dsCidade",
+            "dsUF",
+            "dsObs",
+            "cdStatus",
+            "dsUser",
+            "dtRegistro",
+        )
+        .execute()
+    )
+
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -367,34 +401,48 @@ def Alterar_TbCliente(Campo, Dado, UpCampo, UpDado):
 
 # Selecionar registros da tabela public.TbDestinatario
 def Selecionar_TbDestinatario(codigo):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    if codigo == "0":
-        comando = f"select cdDestinatario, dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsLat, dsLong, nrRaio, dsUser, dtRegistro from public.TbDestinatario"
-    else:
-        comando = f"select cdDestinatario, dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsLat, dsLong, nrRaio, dsUser, dtRegistro from public.TbDestinatario where cdDestinatario ={codigo}"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    query = supabase.table("TbDestinatario").select(
+        "cdDestinatario",
+        "dsNome",
+        "nrCnpj",
+        "nrIe",
+        "nrInscMun",
+        "dsLogradouro",
+        "nrNumero",
+        "dsComplemento",
+        "dsBairro",
+        "dsCep",
+        "dsCidade",
+        "dsUF",
+        "dsObs",
+        "cdStatus",
+        "dsLat",
+        "dsLong",
+        "nrRaio",
+        "dsUser",
+        "dtRegistro",
+    )
+
+    if codigo != "0":
+        query.eq("cdDestinatario", codigo)
+
+    resultado = query.execute()
+
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
 
 
 def Selecionar_Lat_Long_Destinatario(codigo):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f"SELECT cdDestinatario, dsLat, dsLong, cdFilho from public.VwTbDestinatarioDispositivo where cdFilho ={codigo}"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("VwTbDestinatarioDispositivo")
+        .select("cdDestinatario", "dsLat", "dsLong", "cdFilho")
+        .eq("cdFilho", codigo)
+        .execute()
+    )
 
-
-# print(Selecionar_Lat_Long_Destinatario(2))
+    return resultado.data
 
 
 # Inserir registros da tabela public.TbDestinatario
@@ -453,18 +501,25 @@ def Alterar_TbDestinatario(Campo, Dado, UpCampo, UpDado):
 
 # Selecionar registros da tabela public.TbDispositivo
 def Selecionar_TbDispositivo(codigo):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    if codigo == 0:
-        comando = f"select cdDispositivo, dsDispositivo, dsModelo, dsDescricao, dsObs, dsLayout, nrChip, cdStatus, dsUser, dtRegistro from public.TbDispositivo"
-    else:
-        comando = f"select cdDispositivo, dsDispositivo, dsModelo, dsDescricao, dsObs, dsLayout, nrChip, cdStatus, dsUser, dtRegistro from public.TbDispositivo where cdDispositivo={codigo}"
+    query = supabase.table("TbDispositivo").select(
+        "cdDispositivo",
+        "dsDispositivo",
+        "dsModelo",
+        "dsDescricao",
+        "dsObs",
+        "dsLayout",
+        "nrChip",
+        "cdStatus",
+        "dsUser",
+        "dtRegistro",
+    )
 
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    if codigo != "0":
+        query.eq("cdDispositivo", codigo)
+
+    resultado = query.execute()
+
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -517,17 +572,16 @@ def Alterar_TbDispositivo(Campo, Dado, UpCampo, UpDado):
 
 # Selecionar registros da tabela public.TbImagens
 def Selecionar_TbImagens(codigo):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    if codigo == "0":
-        comando = f"select cdImagens, dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro from public.TbImagens"
-    else:
-        comando = f'select cdImagens, dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro from public.TbImagens where SUBSTRING_INDEX(cdCodigo, "-", 1) ={codigo}'
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    query = supabase.table("TbImagens").select(
+        "cdImagens, dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro, cdProduto, nrImagem"
+    )
+
+    if codigo != "0":
+        query.eq("cdProduto", codigo)
+
+    resultado = query.execute()
+
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -570,28 +624,6 @@ def Alterar_TbImagens(Campo, Dado, UpCampo, UpDado):
     conexao.commit()
 
 
-# FIM DA FUNÇÃO#
-
-
-# Selecionar registros da tabela public.TbPosicao
-# def Selecionar_TbPosicao(codigo):
-#     conexao = conecta_bd()
-#     cursor = conexao.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
-
-#     if codigo == '0':
-#         comando = f'select cdPosicao, dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dtRegistro from public.TbPosicao'
-#     else:
-#         comando = f'select cdPosicao, dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dtRegistro from public.TbPosicao where cdDispositivo={codigo}'
-#     cursor.execute(comando)
-#     resultado = cursor.fetchall()
-#     cursor.close()
-#     conexao.close()
-#     return  resultado
-# FIM DA FUNÇÃO
-
-# Selecionar_TbDestinatario()
-
-
 def get_endereco_coordenada(lat, long):
     payload = f"http://osm.taxidigital.net:4000/v1/reverse?point.lon={long}&point.lat={lat}&layers=address&sources=oa&size=1&cdFilial=0&cdTipoOrigem=0"
     requisicao = requests.get(payload)
@@ -608,9 +640,6 @@ def get_endereco_coordenada(lat, long):
         dsCep = dados.get("postalcode")
         dsPais = dados.get("country_code")
         return (dsLogradoruro, dsNum, dsBairro, dsCidade, dsUF, dsCep, dsPais)
-
-
-# get_endereco_coordenada(lat, long)
 
 
 # Inserir registros da tabela public.TbPosicao
@@ -695,67 +724,25 @@ def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
 
 # Selecionar registros da tabela public.TbProduto
 def Selecionar_TbProduto(codigo):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    # Consulta os dados da tabela produtos
-    comando = f"SELECT cdProduto, dsDescricao, dsNome, nrAlt, nrCodigo, nrComp, nrLarg, nrQtde, dsStatus FROM VwTbProdutoTotalStaus where cdProduto = {codigo}"
-    cursor.execute(comando)
-    produtos = cursor.fetchall()
-
-    # Array para armazenar os resultados
-    produtos_json = []
-
-    # Percorre os produtos
-    for produto in produtos:
-        (
-            cdProduto,
-            dsDescricao,
-            dsNome,
-            nrAlt,
-            nrCodigo,
-            nrComp,
-            nrLarg,
-            nrQtde,
-            dsStatus,
-        ) = produto
-
-        # Consulta os dados da tabela imagens para o produto atual
-        comando = (
-            f"SELECT cdCodigo, dsCaminho  FROM TbImagens WHERE cdProduto = {codigo}"
+    resultado = (
+        supabase.table("VwTbProdutoTotalStaus")
+        .select(
+            "cdProduto",
+            "dsDescricao",
+            "dsNome",
+            "nrAlt",
+            "nrCodigo",
+            "nrComp",
+            "nrLarg",
+            "nrQtde",
+            "dsStatus",
+            "TbImagens(cdCodigo, dsCaminho)",
         )
-        # query = "SELECT cdCodigo, dsCaminho  FROM TbImagens WHERE cdImagens = 26"
-        cursor.execute(comando)
-        imagens = cursor.fetchall()
+        .eq("cdProduto", codigo)
+        .execute()
+    )
 
-        # Array para armazenar as imagens
-        imagens_array = []
-
-        # Percorre as imagens e adiciona ao array
-        for imagem in imagens:
-            cdCodigo, dsCaminho = imagem
-            imagens_array.append({"cdImagens": cdCodigo, "dsCaminho": dsCaminho})
-
-        # Cria um dicionário com os dados do produto e o array de imagens
-        produto_json = {
-            "cdProduto": cdProduto,
-            "dsDescricao": dsDescricao,
-            "dsNome": dsNome,
-            "nrAlt": nrAlt,
-            "nrCodigo": nrCodigo,
-            "nrComp": nrComp,
-            "nrLarg": nrLarg,
-            "nrQtde": nrQtde,
-            "dsStatus": dsStatus,
-            "imagens": imagens_array,
-        }
-        # produtos_json.append(produto_json)
-        produtos_json.append(produto)
-        produtos_json.append(imagens_array)
-
-    # Fecha a conexão com o banco de dados
-    cursor.close()
-    conexao.close()
-    return jsonify(produtos_json)
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -767,7 +754,7 @@ def Inserir_TbProduto(
 ):
     conexao = conecta_bd()
     cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.TbProduto ( dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, dsUser, dtRegistro ) values ("{dsNome}", "{dsDescricao}", "{nrCodigo}", "{nrLarg}", "{nrComp}", "{nrAlt}", "{cdStatus}", "{dsUser}", "{dtRegistro}")'
+    comando = f'insert into public."TbProduto" ( "dsNome", "dsDescricao", "nrCodigo", "nrLarg", "nrComp", "nrAlt", "cdStatus", "dsUser", "dtRegistro" ) values (\'{dsNome}\', \'{dsDescricao}\', \'{nrCodigo}\', \'{nrLarg}\', \'{nrComp}\', \'{nrAlt}\', \'{cdStatus}\', \'{dsUser}\', \'{dtRegistro}\')'
     cursor.execute(comando)
     conexao.commit()
     return cursor.lastrowid
@@ -790,14 +777,22 @@ def deletar_TbProduto(Campo, Dado):
 
 # Selecionar registros da tabela public.TbRelacionamento
 def Selecionar_TbRelacionamento():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f"select cdRelacionamento, cdPai, cdFilho, cdTipo, dsDescricao, cdStatus, dsUser, dtRegistro from public.TbRelacionamento"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbRelacionamento")
+        .select(
+            "cdRelacionamento",
+            "cdPai",
+            "cdFilho",
+            "cdTipo",
+            "dsDescricao",
+            "cdStatus",
+            "dsUser",
+            "dtRegistro",
+        )
+        .execute()
+    )
+
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -842,14 +837,23 @@ def Alterar_TbRelacionamento(Campo, Dado, UpCampo, UpDado):
 
 # Selecionar registros da tabela public.TbSensor
 def Selecionar_TbSensor():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f"select cdSensor, dsNome, cdTipo, dsDescricao, cdUnidade, nrUnidadeIni, nrUnidadeFim, dsUser, dtRegistro from public.TbSensor"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbSensor")
+        .select(
+            "cdSensor",
+            "dsNome",
+            "cdTipo",
+            "dsDescricao",
+            "cdUnidade",
+            "nrUnidadeIni",
+            "nrUnidadeFim",
+            "dsUser",
+            "dtRegistro",
+        )
+        .execute()
+    )
+
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -903,16 +907,12 @@ def Alterar_TbSensor(Campo, Dado, UpCampo, UpDado):
 
 # Selecionar registros da tabela public.TbStatus
 def Selecionar_TbStatus():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = (
-        f'select "cdStatus", "dsStatus", "dsUser", "dtRegistro" from public."TbStatus"'
+    resultado = (
+        supabase.table("TbStatus")
+        .select("cdStatus, dsStatus, dsUser, dtRegistro")
+        .execute()
     )
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -920,14 +920,19 @@ def Selecionar_TbStatus():
 
 # Inserir registros da tabela public.TbStatus
 def Inserir_TbStatus(dsStatus, dsUser, dtRegistro):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    resultado = (
+        supabase.table("TbStatus")
+        .insert(
+            {
+                "dsStatus": dsStatus,
+                "dsUser": dsUser,
+                "dtRegistro": dtRegistro,
+            }
+        )
+        .execute()
+    )
 
-    dtRegistro = f"'{dtRegistro}'" if dtRegistro != None else "NULL"
-
-    comando = f'insert into public."TbStatus" ( "dsStatus", "dsUser", "dtRegistro" ) values (\'{dsStatus}\', \'{dsUser}\', {dtRegistro})'
-    cursor.execute(comando)
-    conexao.commit()
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -935,11 +940,13 @@ def Inserir_TbStatus(dsStatus, dsUser, dtRegistro):
 
 # Deletar registros da tabela public.TbStatus
 def deletar_TbStatus(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbStatus where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
+    # conexao = conecta_bd()
+    # cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    # comando = f'delete from public.TbStatus where {Campo}="{Dado}"  '
+    # cursor.execute(comando)
+    # conexao.commit()
+    resultado = supabase.table("TbStatus").delete().eq(Campo, Dado).execute()
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -960,16 +967,13 @@ def Alterar_TbStatus(Campo, Dado, UpCampo, UpDado):
 
 # Selecionar registros da tabela public.TbTag
 def Selecionar_TbTag():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = (
-        f"select cdTag, dsDescricao, dsConteudo, dsUser, dtRegistro from public.TbTag"
+    resultado = (
+        supabase.table("TbTag")
+        .select("cdTag", "dsDescricao", "dsConteudo", "dsUser", "dtRegistro")
+        .execute()
     )
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -1012,17 +1016,22 @@ def Alterar_TbTag(Campo, Dado, UpCampo, UpDado):
 
 # Selecionar registros da tabela public.TbTicket
 def Selecionar_TbTicket():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f"select cdTicket, dtOperacao, dsAtendimento, nrAbertos, nrFechados, nrPendentes, dsUser, dtRegistro from public.TbTicket"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbTicket")
+        .select(
+            "cdTicket",
+            "dtOperacao",
+            "dsAtendimento",
+            "nrAbertos",
+            "nrFechados",
+            "nrPendentes",
+            "dsUser",
+            "dtRegistro",
+        )
+        .execute()
+    )
 
-
-# FIM DA FUNÇÃO
+    return resultado.data
 
 
 # Inserir registros da tabela public.TbTicket
@@ -1066,17 +1075,24 @@ def Alterar_TbTicket(Campo, Dado, UpCampo, UpDado):
 
 # Selecionar registros da tabela public.TbTicketResumo
 def Selecionar_TbTicketResumo():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f"select cdTicketResumo, dtOperacao, dsAtendimento, dsNaoAtribuido, dsSemResolucao, dsAtualizado, dsPendente, dsResolvido, dsUser, dtRegistro from public.TbTicketResumo"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbTicketResumo")
+        .select(
+            "cdTicketResumo",
+            "dtOperacao",
+            "dsAtendimento",
+            "dsNaoAtribuido",
+            "dsSemResolucao",
+            "dsAtualizado",
+            "dsPendente",
+            "dsResolvido",
+            "dsUser",
+            "dtRegistro",
+        )
+        .execute()
+    )
 
-
-# FIM DA FUNÇÃO
+    return resultado.data
 
 
 # Inserir registros da tabela public.TbTicketResumo
@@ -1126,14 +1142,13 @@ def Alterar_TbTicketResumo(Campo, Dado, UpCampo, UpDado):
 
 # Selecionar registros da tabela public.TbTipo
 def Selecionar_TbTipo():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f"select cdTipo, dsDescricao, dsUser, dtRegistro from public.TbTipo"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbTipo")
+        .select("cdTipo", "dsDescricao", "dsUser", "dtRegistro")
+        .execute()
+    )
+
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -1178,17 +1193,13 @@ def Alterar_TbTipo(Campo, Dado, UpCampo, UpDado):
 
 # Selecionar registros da tabela public.TbUnidade
 def Selecionar_TbUnidade():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f"select cdUnidade, dsUnidade, dsSimbolo, dsUser, dtRegistro from public.TbUnidade"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbUnidade")
+        .select("cdUnidade", "dsUnidade", "dsSimbolo", "dsUser", "dtRegistro")
+        .execute()
+    )
 
-
-# FIM DA FUNÇÃO
+    return resultado.data
 
 
 # Inserir registros da tabela public.TbUnidade
@@ -1230,17 +1241,21 @@ def Alterar_TbUnidade(Campo, Dado, UpCampo, UpDado):
 
 # Selecionar registros da tabela public.TbUsuario
 def Selecionar_TbUsuario():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f"select cdUsuario, dsNome, dsLogin, dsSenha, cdPerfil, dsUser, dtRegistro from public.TbUsuario"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbUsuario")
+        .select(
+            "cdUsuario",
+            "dsNome",
+            "dsLogin",
+            "dsSenha",
+            "cdPerfil",
+            "dsUser",
+            "dtRegistro",
+        )
+        .execute()
+    )
 
-
-# FIM DA FUNÇÃO
+    return resultado.data
 
 
 # Inserir registros da tabela public.TbUsuario
@@ -1282,17 +1297,15 @@ def Alterar_TbUsuario(Campo, Dado, UpCampo, UpDado):
 
 # Selecionar registros da tabela public.TbVisita
 def Selecionar_TbVisita():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f"select cdVisita, cdCliente, cdVisitante, dtData, dsUser, dtRegistro from public.TbVisita"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbVisita")
+        .select(
+            "cdVisita", "cdCliente", "cdVisitante", "dtData", "dsUser", "dtRegistro"
+        )
+        .execute()
+    )
 
-
-# FIM DA FUNÇÃO
+    return resultado.data
 
 
 # Inserir registros da tabela public.TbVisita
@@ -1334,17 +1347,21 @@ def Alterar_TbVisita(Campo, Dado, UpCampo, UpDado):
 
 # Selecionar registros da tabela public.TbVisitante
 def Selecionar_TbVisitante():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f"select cdVisitante, dsNome, nrTelefone, nrDocumento, dsEmail, dsUser, dtRegistro from public.TbVisitante"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbVisitante")
+        .select(
+            "cdVisitante",
+            "dsNome",
+            "nrTelefone",
+            "nrDocumento",
+            "dsEmail",
+            "dsUser",
+            "dtRegistro",
+        )
+        .execute()
+    )
 
-
-# FIM DA FUNÇÃO
+    return resultado.data
 
 
 # Inserir registros da tabela public.TbVisitante
@@ -1386,23 +1403,30 @@ def Alterar_TbVisitante(Campo, Dado, UpCampo, UpDado):
 
 # Selecionar registros da tabela public.TbPosicao
 def Selecionar_TbPosicao(filtros):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    query = supabase.table("TbPosicao").select(
+        "dtData",
+        "dtHora",
+        "dsLat",
+        "dsLong",
+        "nrTemp",
+        "nrBat",
+        "dsEndereco",
+        "dtRegistro",
+    )
 
-    # Inicializa a consulta SQL básica
-    comando = "SELECT dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, dsEndereco, dtRegistro from public.TbPosicao WHERE 1=1"
-    # Adiciona condições à consulta SQL com base nos filtros fornecidos
+    # Apply filters
     for campo, valor in filtros.items():
         if campo == "dtRegistro":
-            campo = f"DATE({campo})"
+            # Format date as YYYY-MM-DD
             valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
-        comando += f" AND {campo} = '{valor}'"
+            query = query.gte(campo, f'{valor + " 00:00:00"}')
+            query = query.lte(campo, f'{valor + " 23:59:59"}')
+        else:
+            query = query.eq(campo, valor)
 
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = query.execute()
+
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -1434,42 +1458,42 @@ def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
 
 
 def Selecionar_VwRelHistoricoDispositivoProduto(filtros):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    query = supabase.table("VwRelHistoricoDispositivoProduto").select(
+        "cdProduto",
+        "nrCodigo",
+        "dsDescricao",
+        "dtRegistro",
+        "cdDispositivo",
+        "dsNome",
+        "dsEndereco",
+        "nrBatPercentual",
+        "nrPorta",
+        "nrTemperatura",
+        "dsProdutoItem",
+        "nrQtdItens",
+        "dsStatus",
+        "dsStatusDispositivo",
+        "cdSensor",
+    )
 
-    comando = f"select cdProduto, nrCodigo, dsDescricao, dtRegistro, cdDispositivo, dsNome, dsEndereco, nrBatPercentual, nrPorta, nrTemperatura, dsProdutoItem, nrQtdItens, dsStatus, dsStatusDispositivo, cdSensor from VwRelHistoricoDispositivoProduto where 1=1"
-    # Adiciona condições à consulta SQL com base nos filtros fornecidos
+    # Apply filters
     for campo, valor in filtros.items():
         if campo == "dtRegistro":
-            campo = f"DATE({campo})"
+            # Format date as YYYY-MM-DD
             valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
-        comando += f" AND {campo} = '{valor}'"
+            query = query.gte(campo, f'{valor + " 00:00:00"}')
+            query = query.lte(campo, f'{valor + " 23:59:59"}')
+        else:
+            query = query.eq(campo, valor)
 
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
+    resultado = query.execute()
 
-    return resultado
+    return resultado.data
 
 
 # busca dados de VwRelHistoricoDispositivoProduto, mas retorna cada produtoItem como uma coluna.
 def Selecionar_HistoricoPaginaDispositivo(filtros):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-
-    comando = f"select cdProduto, nrCodigo, dsDescricao, dtRegistro, cdDispositivo, dsNome, dsEndereco, nrBatPercentual, nrPorta, nrTemperatura, dsProdutoItem, nrQtdItens, dsStatus, dsStatusDispositivo, cdSensor from VwRelHistoricoDispositivoProduto where 1=1"
-    # Adiciona condições à consulta SQL com base nos filtros fornecidos
-    for campo, valor in filtros.items():
-        if campo == "dtRegistro":
-            campo = f"DATE({campo})"
-            valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
-        comando += f" AND {campo} = '{valor}'"
-
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
+    resultado = Selecionar_VwRelHistoricoDispositivoProduto
 
     if len(resultado) == 0:
         return resultado
@@ -1505,40 +1529,76 @@ def Selecionar_HistoricoPaginaDispositivo(filtros):
 
 
 def Selecionar_VwRelDadosDispositivo(filtros):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    query = supabase.table("VwRelDadosDispositivo").select(
+        "cdProduto",
+        "dsNome",
+        "cdDispositivo",
+        "nrBat",
+        "dsNomeDest",
+        "dsEnderecoDest",
+        "nrNumeroDest",
+        "dsBairroDest",
+        "dsCidadeDest",
+        "dsUfDest",
+        "dsCepDest",
+        "dsLatDest",
+        "dsLongDest",
+        "dsRaio",
+        "dsEnderecoAtual",
+        "dsNumeroAtual",
+        "dsBairroAtual",
+        "dsCidadeAtual",
+        "dsUFAtual",
+        "dsCEPAtual",
+        "dsLatAtual",
+        "dsLongAtual",
+        "blArea",
+        "dtRegistro",
+        "dtCadastro",
+    )
 
-    comando = f"select cdProduto, dsNome, cdDispositivo, nrBat, dsNomeDest, dsEnderecoDest, nrNumeroDest, dsBairroDest, dsCidadeDest, dsUfDest, dsCepDest, dsLatDest, dsLongDest, dsRaio, dsEnderecoAtual, dsNumeroAtual, dsBairroAtual, dsCidadeAtual, dsUFAtual, dsCEPAtual, dsLatAtual, dsLongAtual, blArea, dtRegistro, dtCadastro from VwRelDadosDispositivo where 1=1"
-    # Adiciona condições à consulta SQL com base nos filtros fornecidos
+    # Apply filters
     for campo, valor in filtros.items():
         if campo == "dtRegistro":
-            campo = f"DATE({campo})"
+            # Format date as YYYY-MM-DD
             valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
-        comando += f" AND {campo} = '{valor}'"
+            query = query.gte(campo, f'{valor + " 00:00:00"}')
+            query = query.lte(campo, f'{valor + " 23:59:59"}')
+        else:
+            query = query.eq(campo, valor)
 
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = query.execute()
+
+    return resultado.data
 
 
 # Selecionar registros da tabela public.TbProdutoTipo
 def Selecionar_VwTbProdutoTipo(codigo):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    if codigo == "0":
-        comando = f"select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, cdDispositivo, dsDispositivo, dsModelo, DescDispositivo, dsObs, dsLayout, nrChip, StatusDispositivo from public.VwTbProdutoTipo"
-    else:
-        comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, cdDispositivo, dsDispositivo, dsModelo, DescDispositivo, dsObs, dsLayout, nrChip, StatusDispositivo from public.VwTbProdutoTipo where cdProduto = "{codigo}"'
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    query = supabase.table("VwTbProdutoTipo").select(
+        "cdProduto",
+        "dsNome",
+        "dsDescricao",
+        "nrCodigo",
+        "nrLarg",
+        "nrComp",
+        "nrAlt",
+        "cdStatus",
+        "cdDispositivo",
+        "dsDispositivo",
+        "dsModelo",
+        "DescDispositivo",
+        "dsObs",
+        "dsLayout",
+        "nrChip",
+        "StatusDispositivo",
+    )
 
+    if codigo != "0":
+        query.eq("cdProduto", codigo)
 
-# FIM DA FUNÇÃO
+    resultado = query.execute()
+
+    return resultado.data
 
 
 # Inserir registros da tabela public.VwTbProdutoTipo
@@ -1594,35 +1654,49 @@ def Alterar_VwTbProdutoTipo(Campo, Dado, UpCampo, UpDado):
 
 # Selecionar registros da tabela public.VwTbProdutoTotalStaus
 def Selecionar_VwTbProdutoTotalStaus(codigo):
-    try:
-        # Conecta ao banco de dados
-        conexao = conecta_bd()
-        cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    query = supabase.table("VwTbProdutoTotalStaus").select(
+        "cdProduto",
+        "dsDescricao",
+        "dsNome",
+        "nrAlt",
+        "nrCodigo",
+        "nrComp",
+        "nrLarg",
+        "nrQtde",
+        "dsStatus",
+        "QtdeTotal",
+        "imagens:TbImagens(cdCodigo, dsCaminho)",
+    )
 
-        # Consulta os dados da tabela produtos
-        comandoProduto = "SELECT cdProduto, dsDescricao, dsNome, nrAlt, nrCodigo, nrComp, nrLarg, dsStatus, nrQtde, QtdeTotal FROM VwTbProdutoTotalStaus"
-        comandoImagem = "SELECT cdCodigo, dsCaminho, cdProduto FROM TbImagens"
+    if codigo != "0":
+        query.eq("cdProduto", codigo)
 
-        if codigo != "0":
-            comandoProduto = comandoProduto + f" where cdProduto = {codigo}"
-            comandoImagem = comandoImagem + f" WHERE cdProduto = {codigo}"
+    resultado = query.execute()
 
-        cursor.execute(comandoProduto)
-        produtos = cursor.fetchall()
+    # Dictionary to store the results
+    produtos_dict: Dict[str, Any] = defaultdict(
+        lambda: {
+            "cdProduto": None,
+            "dsDescricao": None,
+            "dsNome": None,
+            "nrAlt": None,
+            "nrCodigo": None,
+            "nrComp": None,
+            "nrLarg": None,
+            "QtdeTotal": None,
+            "imagens": None,
+            "status": [],
+        }
+    )
 
-        cursor.execute(comandoImagem)
-        imagens = cursor.fetchall()
+    # Iterate through the products
+    for produto in resultado.data:
+        cdProduto = produto["cdProduto"]
 
-        # dicionario para armazenar os resultados
-        produtos_json = {}
-
-        # Percorre os produtos
-        for produto in produtos:
-            cdProduto = produto["cdProduto"]
-
-            # cria produto no dicionario se ainda nao existe
-            if cdProduto not in produtos_json:
-                produtos_json[cdProduto] = {
+        # Initialize product if not already present
+        if produtos_dict[cdProduto]["cdProduto"] is None:
+            produtos_dict[cdProduto].update(
+                {
                     "cdProduto": produto["cdProduto"],
                     "dsDescricao": produto["dsDescricao"],
                     "dsNome": produto["dsNome"],
@@ -1631,51 +1705,52 @@ def Selecionar_VwTbProdutoTotalStaus(codigo):
                     "nrComp": produto["nrComp"],
                     "nrLarg": produto["nrLarg"],
                     "QtdeTotal": produto["QtdeTotal"],
-                    "status": [],
-                    "imagens": [],
+                    "imagens": produto["imagens"],
                 }
+            )
 
-            # adiciona status no array
-            if produto["nrQtde"] and produto["dsStatus"]:
-                produtos_json[cdProduto]["status"].append(
-                    {"dsStatus": produto["dsStatus"], "nrQtde": produto["nrQtde"]}
-                )
+        # Add status to the status list
+        if produto["nrQtde"] and produto["dsStatus"]:
+            produtos_dict[cdProduto]["status"].append(
+                {"dsStatus": produto["dsStatus"], "nrQtde": produto["nrQtde"]}
+            )
 
-        # adiciona imagens nos produtos corretos
-        for img in imagens:
-            cdProduto = img["cdProduto"]
-            if cdProduto in produtos_json:
-                produtos_json[cdProduto]["imagens"].append(img)
+    # Convert to list for JSON serialization
+    produtos_list: List[Dict[str, Any]] = list(produtos_dict.values())
 
-        # Fecha a conexão com o banco de dados
-        cursor.close()
-        conexao.close()
-
-        return jsonify(list(produtos_json.values()))
-
-    except mysql.connector.Error as error:
-        return jsonify({"error": f"Erro ao acessar o banco de dados: {error}"})
+    return jsonify(produtos_list)
 
 
 # FIM DA FUNÇÃO
 
 
 def Selecionar_VwTbProdutoTotal(codigo):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    if codigo == "0":
-        comando = f"select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, nrQtde from public.VwTbProdutoTotal"
-    else:
-        comando = f"select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, nrQtde from public.VwTbProdutoTotal where cdProduto = {codigo}"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    print(comando)
-    return resultado
+    query = supabase.table("VwTbProdutoTotal").select(
+        "cdProduto",
+        "dsNome",
+        "dsDescricao",
+        "nrCodigo",
+        "nrLarg",
+        "nrComp",
+        "nrAlt",
+        "cdStatus",
+        "cdDispositivo",
+        "dsDispositivo",
+        "dsModelo",
+        "DescDispositivo",
+        "dsObs",
+        "dsLayout",
+        "nrChip",
+        "StatusDispositivo",
+        "nrQtde",
+    )
 
+    if codigo != "0":
+        query.eq("cdProduto", codigo)
 
-# FIM DA FUNÇÃO
+    resultado = query.execute()
+
+    return resultado.data
 
 
 # Inserir registros da tabela public.VwTbProdutoTotalStaus
@@ -1717,14 +1792,26 @@ def Alterar_VwTbProdutoTotalStaus(Campo, Dado, UpCampo, UpDado):
 
 # Selecionar registros da tabela public.TbFuncionario
 def Selecionar_TbFuncionario():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f"select cdFuncionario, dsBairro, dsCidade, dsComplemento, dsFuncao, dsLogradouro, dsNomeEmpregado, dsNumCasa, dsUser, dtRegistro, nrCodEmpregado, TbFuncionariocol from public.TbFuncionario"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbFuncionario")
+        .select(
+            "cdFuncionario",
+            "dsBairro",
+            "dsCidade",
+            "dsComplemento",
+            "dsFuncao",
+            "dsLogradouro",
+            "dsNomeEmpregado",
+            "dsNumCasa",
+            "dsUser",
+            "dtRegistro",
+            "nrCodEmpregado",
+            "TbFuncionariocol",
+        )
+        .execute()
+    )
+
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -1779,17 +1866,23 @@ def Alterar_TbFuncionario(Campo, Dado, UpCampo, UpDado):
 
 # Selecionar registros da tabela public.TbFuncionario
 def Selecionar_TbEtiqueta(dsEtiqueta):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    if dsEtiqueta == "0":
-        comando = f"select dsEtiqueta, nrFator, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, dsUser, dtRegistro from public.TbEtiqueta order by cdEtiqueta desc"
-    else:
-        comando = f"select dsEtiqueta, nrFator, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, dsUser, dtRegistro from public.TbEtiqueta where dsEtiqueta ={dsEtiqueta}"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    query = supabase.table("TbEtiqueta").select(
+        "dsEtiqueta",
+        "nrFator",
+        "nrLargura",
+        "nrAltura",
+        "nrComprimento",
+        "nrPeso",
+        "nrCubado",
+        "dsUser",
+        "dtRegistro",
+    )
+
+    if dsEtiqueta != "0":
+        query.eq("dsEtiqueta", dsEtiqueta)
+
+    resultado = query.order("cdEtiqueta", desc=True).execute()
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -2637,23 +2730,6 @@ def get_Tipo():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
-def Selecionar_NrImagensMaior(codigo):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    if codigo == "0":
-        comando = f'select  SUBSTRING_INDEX(cdCodigo, "-",1) as cdProduto, max(SUBSTRING_INDEX(SUBSTRING_INDEX(cdCodigo, "-",-1),".",1)) as nrMaior from public.TbImagens where cdTipo = 10  group by cdProduto order by cdProduto'
-    else:
-        comando = f'select  SUBSTRING_INDEX(cdCodigo, "-",1) as cdProduto, max(SUBSTRING_INDEX(SUBSTRING_INDEX(cdCodigo, "-",-1),".",1)) as nrMaior from public.TbImagens where cdTipo = 10 and cdCodigo = {codigo} group by cdProduto'
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
-
-
 # Inserir registros no EndPoint Tipo
 @app.route("/Tipo", methods=["POST"])
 def post_Tipo():
@@ -3053,32 +3129,6 @@ def get_TbProdutoTotalStaus(codigo):
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-# Selecionar registros no EndPoint TbProdutoTotalStaus
-
-img = {"Imagens": []}
-status = {"Status": []}
-produto = {"Produto": []}
-resultado = []
-
-
-# alunos = {"alunos": []}
-@app.route("/TbProdutoTotal/<codigo>")
-def get_TbProdutoTotal(codigo):
-
-    # resultado = Selecionar_VwTbProdutoTotal(codigo)
-    produto["Produto"] = Selecionar_VwTbProdutoTotal(codigo)
-    status["Status"] = Selecionar_VwTbProdutoTotalStaus(codigo)
-    img["Imagens"] = Selecionar_TbImagens(codigo)
-    resultado.append(produto)
-    resultado.append(status)
-    resultado.append(img)
-    return resultado
-
-
-# FIM DA FUNÇÃO
-
 # https://replit.taxidigital.net/TbPosicaoAtual
 
 
@@ -3096,9 +3146,6 @@ def get_TbPosicaoAtual(codigo):
 
     resultado = Selecionar_VwTbPosicaoAtual(filtros)
     return resultado
-
-
-# FIM DA FUNÇÃO
 
 
 # Inserir registros no EndPoint TbProdutoTotalStaus
@@ -3248,15 +3295,6 @@ def Assinada():
     arquivo = payload["arquivo"]
     result = assinar_arquivo(arquivo)
     return result
-
-
-# Selecionar_NrImagensMaior
-
-
-@app.route("/NrImagensMaior/<codigo>")
-def get_NrImagensMaior(codigo):
-    resultado = Selecionar_NrImagensMaior(codigo)
-    return resultado
 
 
 # https://replit.taxidigital.net/AcessoIntelBras
