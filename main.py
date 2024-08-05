@@ -146,7 +146,7 @@ def Selecionar_TbAcessoIntelBras():
 def Selecionar_TbPonto():
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdPonto, cdAcessoIntelbras, dsCardNo, dsCardname, dsRegistro01, dsRegistro02, dsRegistro03, dsRegistro04, dsRegistro05, dsRegistro06, dtRegistro  from DbIntelliMetrics.TbPonto;"
+    comando = f"select cdPonto, cdAcessoIntelbras, dsCardNo, dsCardName, dsRegistro01, dsRegistro02, dsRegistro03, dsRegistro04, dsRegistro05, dsRegistro06, dtRegistro  from DbIntelliMetrics.TbPonto;"
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
