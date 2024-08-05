@@ -6,6 +6,11 @@ import os
 import time
 from collections import defaultdict
 from typing import Any, Dict, List
+import re
+import pandas as pd
+from geopy.geocoders import Nominatim
+from geopy.distance import geodesic
+from datetime import datetime
 
 import boto3
 import pandas as pd
@@ -148,6 +153,17 @@ def Selecionar_TbAcessoIntelBras():
     return resultado.data
 
 
+def Selecionar_TbPonto():
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    comando = f"select cdPonto, cdAcessoIntelbras, dsCardNo, dsRegistro01, dsRegistro02, dsRegistro03, dsRegistro04, dsRegistro05, dsRegistro06, dtRegistro  from DbIntelliMetrics.TbPonto;"
+    cursor.execute(comando)
+    resultado = cursor.fetchall()
+    cursor.close()
+    conexao.close()
+    return resultado
+
+
 def Selecionar_VwTbDestinatarioDispositivo(codigoDisp):
     resultado = (
         supabase.table("VwTbDestinatarioDispositivo")
@@ -159,9 +175,91 @@ def Selecionar_VwTbDestinatarioDispositivo(codigoDisp):
 
 
 # Inserir registros da tabela public.TbAcessoIntelBras
-def Inserir_TbAcessoIntelBras(data):
-    resultado = supabase.table("TbAcessoIntelBras").insert(data).execute()
-    return resultado.data
+# def Inserir_TbAcessoIntelBras(data):
+#     resultado = supabase.table("TbAcessoIntelBras").insert(data).execute()
+#     return resultado.data
+
+
+# Inserir registros da tabela DbIntelliMetrics.TbAcessoIntelBras
+def Inserir_TbAcessoIntelBras(
+    dsCardName,
+    dsCardNo,
+    dsDoor,
+    dsEntry,
+    dsErrorCode,
+    dsMethod,
+    dsPassword,
+    dsReaderID,
+    dsStatus,
+    dsType,
+    dsUserId,
+    dsUserType,
+    dsUtc,
+):
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    comando = f'insert into DbIntelliMetrics.TbAcessoIntelBras ( dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc ) values ("{dsCardName}", "{dsCardNo}", "{dsDoor}", "{dsEntry}", "{dsErrorCode}", "{dsMethod}", "{dsPassword}", "{dsReaderID}", "{dsStatus}", "{dsType}", "{dsUserId}", "{dsUserType}", "{dsUtc}")'
+    cursor.execute(comando)
+    data = str(datetime.utcfromtimestamp(int(dsUtc)).strftime("%Y-%m-%d %H:%M:%S"))
+    # print(dsCardNo,data)
+    Inserir_TbPonto(dsCardNo, data)
+    conexao.commit()
+    cursor.close()
+    conexao.close()
+
+
+def Inserir_TbPonto(dsCardNo, dsUtc):
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    comando = f"select * from DbIntelliMetrics.TbPonto where dsCardNo = '{dsCardNo}' and DATE(dtRegistro) = DATE('{dsUtc}')"
+    cursor.execute(comando)
+    # print(comando)
+    resultado = cursor.fetchall()
+    # print(resultado)
+    if resultado == []:
+        print("vazio")
+        dado = "dsRegistro01"
+    else:
+        print(resultado)
+
+        for dtregistro in resultado:
+            if dtregistro["dsRegistro06"] == None:
+                dado = "dsRegistro06"
+            if dtregistro["dsRegistro05"] == None:
+                dado = "dsRegistro05"
+            if dtregistro["dsRegistro04"] == None:
+                dado = "dsRegistro04"
+            if dtregistro["dsRegistro03"] == None:
+                dado = "dsRegistro03"
+            if dtregistro["dsRegistro02"] == None:
+                dado = "dsRegistro02"
+            if dtregistro["dsRegistro01"] == None:
+                dado = "dsRegistro01"
+            print(dado)
+
+    if dado == "dsRegistro01":
+        comando = f"insert into DbIntelliMetrics.TbPonto ( dsCardNo, dsRegistro01 ) values ('{dsCardNo}', '{dsUtc}')"
+    print(comando)
+    if dado == "dsRegistro02":
+        comando = f"update DbIntelliMetrics.TbPonto set dsRegistro02 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro02 is null"
+    print(comando)
+    if dado == "dsRegistro03":
+        comando = f"update DbIntelliMetrics.TbPonto set dsRegistro03 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro03 is null"
+    print(comando)
+    if dado == "dsRegistro04":
+        comando = f"update DbIntelliMetrics.TbPonto set dsRegistro04 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro04 is null"
+    print(comando)
+    if dado == "dsRegistro05":
+        comando = f"update DbIntelliMetrics.TbPonto set dsRegistro05 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro05 is null"
+    print(comando)
+    if dado == "dsRegistro06":
+        comando = f"update DbIntelliMetrics.TbPonto set dsRegistro06 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro06 is null"
+    print(comando)
+
+    cursor.execute(comando)
+    conexao.commit()
+    cursor.close()
+    conexao.close()
 
 
 def calcular_distancia(lat1, lon1, lat2, lon2):
@@ -1732,22 +1830,65 @@ def Assinada():
 
 
 # Selecionar registros no EndPoint AcessoIntelBras
-@app.route("/AcessoIntelBras")
+
+
+@app.route("/Ponto")
+def get_Ponto():
+    resultado = Selecionar_TbPonto()
+    return resultado
+
+
+@app.route("/AcessoIntelBras", methods=["GET"])
 def get_AcessoIntelBras():
     resultado = Selecionar_TbAcessoIntelBras()
     return resultado
 
 
 # Inserir registros no EndPoint AcessoIntelBras
+# @app.route("/AcessoIntelBras", methods=["POST"])
+# def post_AcessoIntelBras():
+#     payload = request.get_json()
+#     data, error = valida_e_constroi_insert("TbAcessoIntelBras", payload)
+
+#     if error:
+#         return jsonify({"error": error}), 400
+
+#     Inserir_TbAcessoIntelBras(data)
+
+
 @app.route("/AcessoIntelBras", methods=["POST"])
 def post_AcessoIntelBras():
     payload = request.get_json()
-    data, error = valida_e_constroi_insert("TbCAcessoIntelBras", payload)
-
-    if error:
-        return jsonify({"error": error}), 400
-
-    Inserir_TbAcessoIntelBras(data)
+    dsCardName = payload["dsCardName"]
+    dsCardNo = payload["dsCardNo"]
+    dsDoor = payload["dsDoor"]
+    dsEntry = payload["dsEntry"]
+    dsErrorCode = payload["dsErrorCode"]
+    dsMethod = payload["dsMethod"]
+    dsPassword = payload["dsPassword"]
+    dsReaderID = payload["dsReaderID"]
+    dsStatus = payload["dsStatus"]
+    dsType = payload["dsType"]
+    dsUserId = payload["dsUserId"]
+    dsUserType = payload["dsUserType"]
+    dsUtc = payload["dsUtc"]
+    # TbAcessoIntelBrascol = payload ['TbAcessoIntelBrascol']
+    if dsStatus == "1":
+        Inserir_TbAcessoIntelBras(
+            dsCardName,
+            dsCardNo,
+            dsDoor,
+            dsEntry,
+            dsErrorCode,
+            dsMethod,
+            dsPassword,
+            dsReaderID,
+            dsStatus,
+            dsType,
+            dsUserId,
+            dsUserType,
+            dsUtc,
+        )
     return "Cadastramento realizado com sucesso"
 
 
@@ -1996,12 +2137,10 @@ def dados():
 
 
 def main():
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host="127.0.0.1", port=port, debug=True)
-
-
-# port = int(os.environ.get("PORT", 80))
-# app.run(host="192.168.15.200", port=port)
+    # port = int(os.environ.get("PORT", 8080))
+    # app.run(host="127.0.0.1", port=port)
+    port = int(os.environ.get("PORT", 80))
+    app.run(host="192.168.15.200", port=port)
 
 
 if __name__ == "__main__":
