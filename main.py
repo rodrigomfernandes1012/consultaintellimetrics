@@ -164,23 +164,6 @@ def Inserir_TbAcessoIntelBras(data):
     return resultado.data
 
 
-# Deletar registros da tabela public.TbAcessoIntelBras
-def deletar_TbAcessoIntelBras(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbAcessoIntelBras where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# Alterar registros da tabela public.TbAcessoIntelBras
-def Alterar_TbAcessoIntelBras(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update public.TbAcessoIntelBras set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
 def calcular_distancia(lat1, lon1, lat2, lon2):
     geolocator = Nominatim(user_agent="my_app")
     distancia = geodesic((lat1, lon1), (lat2, lon2)).kilometers
@@ -218,9 +201,6 @@ def Selecionar_VwTbPosicaoAtual(filtros):
     return resultado.data
 
 
-# FIM DA FUNÇÃO
-
-
 # Selecionar registros da tabela public.TbChamados
 def Selecionar_TbChamados():
     resultado = (
@@ -239,42 +219,10 @@ def Selecionar_TbChamados():
 
     return resultado.data
 
-
-# FIM DA FUNÇÃO
-
-
 # Inserir registros da tabela public.TbChamados
 def Inserir_TbChamados(data):
     resultado = supabase.table("TbChamados").insert(data).execute()
     return resultado.data
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbChamados
-def deletar_TbChamados(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbChamados where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbChamados
-def Alterar_TbChamados(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbChamados set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 
 
 # Selecionar registros da tabela public.TbCliente
@@ -305,38 +253,10 @@ def Selecionar_TbCliente():
     return resultado.data
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros da tabela public.TbCliente
 def Inserir_TbCliente(data):
     resultado = supabase.table("TbCliente").insert(data).execute()
     return resultado.data
-
-
-# Deletar registros da tabela public.TbCliente
-def deletar_TbCliente(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbCliente where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbCliente
-def Alterar_TbCliente(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbCliente set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 
 
 # Selecionar registros da tabela public.TbDestinatario
@@ -370,10 +290,6 @@ def Selecionar_TbDestinatario(codigo):
 
     return resultado.data
 
-
-# FIM DA FUNÇÃO
-
-
 def Selecionar_Lat_Long_Destinatario(codigo):
     resultado = (
         supabase.table("VwTbDestinatarioDispositivo")
@@ -389,33 +305,6 @@ def Selecionar_Lat_Long_Destinatario(codigo):
 def Inserir_TbDestinatario(data):
     resultado = supabase.table("TbDestinatario").insert(data).execute()
     return resultado.data
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbDestinatario
-def deletar_TbDestinatario(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbDestinatario where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbDestinatario
-def Alterar_TbDestinatario(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update public.TbDestinatario set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
 
 # Selecionar registros da tabela public.TbDispositivo
 def Selecionar_TbDispositivo(codigo):
@@ -440,39 +329,10 @@ def Selecionar_TbDispositivo(codigo):
     return resultado.data
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros da tabela public.TbDispositivo
 def Inserir_TbDispositivo(data):
     resultado = supabase.table("TbDispositivo").insert(data).execute()
     return resultado.data
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbDispositivo
-def deletar_TbDispositivo(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbDispositivo where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbDispositivo
-def Alterar_TbDispositivo(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update public.TbDispositivo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 
 
 # Selecionar registros da tabela public.TbImagens
@@ -489,38 +349,10 @@ def Selecionar_TbImagens(codigo):
     return resultado.data
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros da tabela public.TbImagens
 def Inserir_TbImagens(data):
     resultado = supabase.table("TbImagens").insert(data).execute()
     return resultado.data
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbImagens
-def deletar_TbImagens(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbImagens where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbImagens
-def Alterar_TbImagens(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbImagens set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
 
 
 def get_endereco_coordenada(lat, long):
@@ -571,34 +403,6 @@ def Inserir_TbSensorRegistro(data):
     return resultado.data
 
 
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbPosicao
-def deletar_TbPosicao(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbPosicao where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbPosicao
-def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbPosicao set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
 # Selecionar registros da tabela public.TbProduto
 def Selecionar_TbProduto(codigo):
     resultado = (
@@ -628,18 +432,6 @@ def Inserir_TbProduto(data):
     return resultado.data
 
 
-# Deletar registros da tabela public.TbProduto
-def deletar_TbProduto(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbProduto where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
 # Selecionar registros da tabela public.TbRelacionamento
 def Selecionar_TbRelacionamento():
     resultado = (
@@ -660,39 +452,10 @@ def Selecionar_TbRelacionamento():
     return resultado.data
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros da tabela public.TbRelacionamento
 def Inserir_TbRelacionamento(data):
     resultado = supabase.table("TbRelacionamento").insert(data).execute()
     return resultado.data
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbRelacionamento
-def deletar_TbRelacionamento(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbRelacionamento where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbRelacionamento
-def Alterar_TbRelacionamento(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update public.TbRelacionamento set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 
 
 # Selecionar registros da tabela public.TbSensor
@@ -722,30 +485,6 @@ def Inserir_TbSensor(data):
     return resultado.data
 
 
-# Deletar registros da tabela public.TbSensor
-def deletar_TbSensor(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbSensor where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbSensor
-def Alterar_TbSensor(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbSensor set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
 
 # Selecionar registros da tabela public.TbStatus
 def Selecionar_TbStatus():
@@ -757,43 +496,12 @@ def Selecionar_TbStatus():
     return resultado.data
 
 
-# FIM DA FUNÇÃO
-
 
 # Inserir registros da tabela public.TbStatus
 def Inserir_TbStatus(data):
     resultado = supabase.table("TbStatus").insert(data).execute()
     return resultado.data
 
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbStatus
-def deletar_TbStatus(Campo, Dado):
-    # conexao = conecta_bd()
-    # cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    # comando = f'delete from public.TbStatus where {Campo}="{Dado}"  '
-    # cursor.execute(comando)
-    # conexao.commit()
-    resultado = supabase.table("TbStatus").delete().eq(Campo, Dado).execute()
-    return resultado.data
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbStatus
-def Alterar_TbStatus(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbStatus set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 
 
 # Selecionar registros da tabela public.TbTag
@@ -807,39 +515,10 @@ def Selecionar_TbTag():
     return resultado.data
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros da tabela public.TbTag
 def Inserir_TbTag(data):
     resultado = supabase.table("TbTag").insert(data).execute()
     return resultado.data
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbTag
-def deletar_TbTag(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbTag where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbTag
-def Alterar_TbTag(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update public.TbTag set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 
 
 # Selecionar registros da tabela public.TbTicket
@@ -866,34 +545,6 @@ def Selecionar_TbTicket():
 def Inserir_TbTicket(data):
     resultado = supabase.table("TbTicket").insert(data).execute()
     return resultado.data
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbTicket
-def deletar_TbTicket(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbTicket where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbTicket
-def Alterar_TbTicket(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbTicket set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 
 
 # Selecionar registros da tabela public.TbTicketResumo
@@ -924,32 +575,6 @@ def Inserir_TbTicketResumo(data):
     return resultado.data
 
 
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbTicketResumo
-def deletar_TbTicketResumo(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbTicketResumo where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbTicketResumo
-def Alterar_TbTicketResumo(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update public.TbTicketResumo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
 # Selecionar registros da tabela public.TbTipo
 def Selecionar_TbTipo():
     resultado = (
@@ -961,41 +586,10 @@ def Selecionar_TbTipo():
     return resultado.data
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros da tabela public.TbTipo
 def Inserir_TbTipo(data):
     resultado = supabase.table("TbTipo").insert(data).execute()
     return resultado.data
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbTipo
-def deletar_TbTipo(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbTipo where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbTipo
-def Alterar_TbTipo(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbTipo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 
 
 # Selecionar registros da tabela public.TbUnidade
@@ -1013,34 +607,6 @@ def Selecionar_TbUnidade():
 def Inserir_TbUnidade(data):
     resultado = supabase.table("TbUnidade").insert(data).execute()
     return resultado.data
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbUnidade
-def deletar_TbUnidade(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbUnidade where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbUnidade
-def Alterar_TbUnidade(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbUnidade set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 
 
 # Selecionar registros da tabela public.TbUsuario
@@ -1068,31 +634,6 @@ def Inserir_TbUsuario(data):
     return resultado.data
 
 
-# Deletar registros da tabela public.TbUsuario
-def deletar_TbUsuario(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbUsuario where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbUsuario
-def Alterar_TbUsuario(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbUsuario set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
 # Selecionar registros da tabela public.TbVisita
 def Selecionar_TbVisita():
     resultado = (
@@ -1110,34 +651,6 @@ def Selecionar_TbVisita():
 def Inserir_TbVisita(data):
     resultado = supabase.table("TbVisita").insert(data).execute()
     return resultado.data
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbVisita
-def deletar_TbVisita(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbVisita where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbVisita
-def Alterar_TbVisita(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbVisita set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 
 
 # Selecionar registros da tabela public.TbVisitante
@@ -1163,34 +676,6 @@ def Selecionar_TbVisitante():
 def Inserir_TbVisitante(data):
     resultado = supabase.table("TbVisitante").insert(data).execute()
     return resultado.data
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbVisitante
-def deletar_TbVisitante(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbVisitante where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbVisitante
-def Alterar_TbVisitante(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbVisitante set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 
 
 # Selecionar registros da tabela public.TbPosicao
@@ -1219,35 +704,6 @@ def Selecionar_TbPosicao(filtros):
     resultado = query.execute()
 
     return resultado.data
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbPosicao
-def deletar_TbPosicao(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbPosicao where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbPosicao
-def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbPosicao set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
 
 def Selecionar_VwRelHistoricoDispositivoProduto(filtros):
     query = supabase.table("VwRelHistoricoDispositivoProduto").select(
@@ -1393,57 +849,6 @@ def Selecionar_VwTbProdutoTipo(codigo):
     return resultado.data
 
 
-# Inserir registros da tabela public.VwTbProdutoTipo
-def Inserir_VwTbProdutoTipo(
-    dsNome,
-    dsDescricao,
-    nrCodigo,
-    nrLarg,
-    nrComp,
-    nrAlt,
-    cdStatus,
-    cdDispositivo,
-    dsDispositivo,
-    dsModelo,
-    DescDispositivo,
-    dsObs,
-    dsLayout,
-    nrChip,
-    StatusDispositivo,
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.VwTbProdutoTipo ( dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, cdDispositivo, dsDispositivo, dsModelo, DescDispositivo, dsObs, dsLayout, nrChip, StatusDispositivo ) values ("{dsNome}", "{dsDescricao}", "{nrCodigo}", "{nrLarg}", "{nrComp}", "{nrAlt}", "{cdStatus}", "{cdDispositivo}", "{dsDispositivo}", "{dsModelo}", "{DescDispositivo}", "{dsObs}", "{dsLayout}", "{nrChip}", "{StatusDispositivo}")'
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.VwTbProdutoTipo
-def deletar_VwTbProdutoTipo(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.VwTbProdutoTipo where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.VwTbProdutoTipo
-def Alterar_VwTbProdutoTipo(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update public.VwTbProdutoTipo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
 # Selecionar registros da tabela public.VwTbProdutoTotalStaus
 def Selecionar_VwTbProdutoTotalStaus(codigo):
     query = supabase.table("VwTbProdutoTotalStaus").select(
@@ -1512,10 +917,6 @@ def Selecionar_VwTbProdutoTotalStaus(codigo):
 
     return jsonify(produtos_list)
 
-
-# FIM DA FUNÇÃO
-
-
 def Selecionar_VwTbProdutoTotal(codigo):
     query = supabase.table("VwTbProdutoTotal").select(
         "cdProduto",
@@ -1544,44 +945,6 @@ def Selecionar_VwTbProdutoTotal(codigo):
 
     return resultado.data
 
-
-# Inserir registros da tabela public.VwTbProdutoTotalStaus
-def Inserir_VwTbProdutoTotalStaus(
-    dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.VwTbProdutoTotalStaus ( dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde ) values ("{dsNome}", "{dsDescricao}", "{nrCodigo}", "{nrLarg}", "{nrComp}", "{nrAlt}", "{Status}", "{nrQtde}")'
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.VwTbProdutoTotalStaus
-def deletar_VwTbProdutoTotalStaus(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.VwTbProdutoTotalStaus where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.VwTbProdutoTotalStaus
-def Alterar_VwTbProdutoTotalStaus(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update public.VwTbProdutoTotalStaus set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
 # Selecionar registros da tabela public.TbFuncionario
 def Selecionar_TbFuncionario():
     resultado = (
@@ -1606,9 +969,6 @@ def Selecionar_TbFuncionario():
     return resultado.data
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros da tabela public.TbFuncionario
 def Inserir_TbFuncionario(
     dsBairro,
@@ -1628,32 +988,6 @@ def Inserir_TbFuncionario(
     comando = f'insert into public.TbFuncionario ( dsBairro, dsCidade, dsComplemento, dsFuncao, dsLogradouro, dsNomeEmpregado, dsNumCasa, dsUser, dtRegistro, nrCodEmpregado, TbFuncionariocol ) values ("{dsBairro}", "{dsCidade}", "{dsComplemento}", "{dsFuncao}", "{dsLogradouro}", "{dsNomeEmpregado}", "{dsNumCasa}", "{dsUser}", "{dtRegistro}", "{nrCodEmpregado}", "{TbFuncionariocol}")'
     cursor.execute(comando)
     conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbFuncionario
-def deletar_TbFuncionario(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbFuncionario where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbFuncionario
-def Alterar_TbFuncionario(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update public.TbFuncionario set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 
 
 # Selecionar registros da tabela public.TbFuncionario
@@ -1677,16 +1011,11 @@ def Selecionar_TbEtiqueta(dsEtiqueta):
     return resultado.data
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros da tabela public.TbEtiqueta
 def Inserir_TbEtiqueta(data):
     resultado = supabase.table("TbEtiqueta").insert(data).execute()
     return resultado.data
 
-
-# FIM DA FUNÇÃO
 
 
 app = Flask(__name__)  # cria o site
@@ -1703,8 +1032,6 @@ def get_Chamados():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
 
 # Inserir registros no EndPoint Chamados
 @app.route("/Chamados", methods=["POST"])
@@ -1718,33 +1045,6 @@ def post_Chamados():
     Inserir_TbChamados(data)
     return "Cadastramento realizado com sucesso"
 
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbChamados
-def deletar_TbChamados(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbChamados where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbChamados
-def Alterar_TbChamados(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbChamados set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 # https://replit.taxidigital.net/Cliente
 
 
@@ -1754,8 +1054,6 @@ def get_Cliente():
     resultado = Selecionar_TbCliente()
     return resultado
 
-
-# FIM DA FUNÇÃO
 
 
 # Inserir registros no EndPoint Cliente
@@ -1772,31 +1070,6 @@ def post_Cliente():
 
 
 # FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbCliente
-def deletar_TbCliente(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbCliente where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbCliente
-def Alterar_TbCliente(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbCliente set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 # https://replit.taxidigital.net/Destinatario
 
 
@@ -1805,9 +1078,6 @@ def Alterar_TbCliente(Campo, Dado, UpCampo, UpDado):
 def get_Destinatario(codigo):
     resultado = Selecionar_TbDestinatario(codigo)
     return resultado
-
-
-# FIM DA FUNÇÃO
 
 
 # Inserir registros no EndPoint Destinatario
@@ -1821,28 +1091,6 @@ def post_Destinatario():
     resultado = Inserir_TbDestinatario(data)
     return resultado
 
-
-# Deletar registros da tabela public.TbDestinatario
-def deletar_TbDestinatario(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbDestinatario where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbDestinatario
-def Alterar_TbDestinatario(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update public.TbDestinatario set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 # https://replit.taxidigital.net/Dispositivo
 
 
@@ -1851,9 +1099,6 @@ def Alterar_TbDestinatario(Campo, Dado, UpCampo, UpDado):
 def get_Dispositivo(codigo):
     resultado = Selecionar_TbDispositivo(codigo)
     return resultado
-
-
-# FIM DA FUNÇÃO
 
 
 # Inserir registros no EndPoint Dispositivo
@@ -1868,30 +1113,6 @@ def post_Dispositivo():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbDispositivo
-def deletar_TbDispositivo(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbDispositivo where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbDispositivo
-def Alterar_TbDispositivo(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update public.TbDispositivo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 # https://replit.taxidigital.net/Imagens
 
 
@@ -1902,29 +1123,6 @@ def get_Imagens(codigo):
     return resultado
 
 
-# Deletar registros da tabela public.TbImagens
-def deletar_TbImagens(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbImagens where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbImagens
-def Alterar_TbImagens(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbImagens set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 # https://replit.taxidigital.net/Posicao
 
 
@@ -2028,36 +1226,7 @@ def post_Posicao():
 
     return resultado_posicao
 
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbPosicao
-def deletar_TbPosicao(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbPosicao where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbPosicao
-def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbPosicao set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 # https://replit.taxidigital.net/Produto
-
-cd = []
 
 
 # Inserir registros no EndPoint Produto
@@ -2070,9 +1239,6 @@ def post_Produto():
         return jsonify({"error": error}), 400
     resultado = Inserir_TbProduto(data)
     return jsonify({"cdProduto": resultado[0]["cdProduto"]})
-
-
-# FIM DA FUNÇÃO
 
 
 @app.route("/Produto/<codigo>")
@@ -2090,21 +1256,14 @@ def update_Produto(codigo):
 
 @app.route("/Produto/<codigo>", methods=["DELETE"])
 def delete_Produto(codigo):
-
     deletar_TbProduto("cdProduto", codigo)
     return jsonify({"message": "Produto deletado com sucesso"})
-
-
-# FIM DA FUNÇÃO
 
 
 @app.route("/Etiqueta/<dsEtiqueta>", methods=["GET"])
 def get_Etiqueta(dsEtiqueta):
     resultado = Selecionar_TbEtiqueta(dsEtiqueta)
     return resultado
-
-
-# FIM DA FUNÇÃO
 
 
 @app.route("/TbEtiqueta", methods=["POST"])
@@ -2117,10 +1276,7 @@ def post_Etiqueta():
     resultado = Inserir_TbEtiqueta(data)
     return resultado
 
-
-# FIM DA FUNÇÃO
-
-
+# TODO: atualizar esse
 # Deletar registros da tabela public.TbProduto
 def deletar_TbProduto(Campo, Dado):
     conexao = conecta_bd()
@@ -2130,9 +1286,7 @@ def deletar_TbProduto(Campo, Dado):
     conexao.commit()
 
 
-# FIM DA FUNÇÃO
-
-
+# TODO: atualizar esse
 # Alterar registros da tabela public.TbProduto
 def Alterar_TbProduto(Campo, Dado, UpData):
     comando = "update public.TbProduto set"
@@ -2149,24 +1303,13 @@ def Alterar_TbProduto(Campo, Dado, UpData):
     conexao.commit()
 
 
-# FIM DA FUNÇÃO
 # https://replit.taxidigital.net/Relacionamento
-# mycursor = mydb.cursor()
-# sql = "UPDATE customers SET address = 'Canyon 123' WHERE address = 'Valley 345'"
-
-# mycursor.execute(sql)
-
-# mydb.commit()
-
 
 # Selecionar registros no EndPoint Relacionamento
 @app.route("/Relacionamento")
 def get_Relacionamento():
     resultado = Selecionar_TbRelacionamento()
     return resultado
-
-
-# FIM DA FUNÇÃO
 
 
 # Inserir registros no EndPoint Relacionamento
@@ -2181,17 +1324,11 @@ def post_Relacionamento():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 # Selecionar registros no EndPoint Sensor
 @app.route("/Sensor")
 def get_Sensor():
     resultado = Selecionar_TbSensor()
     return resultado
-
-
-# FIM DA FUNÇÃO
 
 
 # Inserir registros no EndPoint Sensor
@@ -2206,17 +1343,11 @@ def post_Sensor():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 # Selecionar registros no EndPoint Status
 @app.route("/Status")
 def get_Status():
     resultado = Selecionar_TbStatus()
     return resultado
-
-
-# FIM DA FUNÇÃO
 
 
 # Inserir registros no EndPoint Status
@@ -2231,17 +1362,11 @@ def post_Status():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 # Selecionar registros no EndPoint Tag
 @app.route("/Tag")
 def get_Tag():
     resultado = Selecionar_TbTag()
     return resultado
-
-
-# FIM DA FUNÇÃO
 
 
 # Inserir registros no EndPoint Tag
@@ -2256,17 +1381,11 @@ def post_Tag():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 # Selecionar registros no EndPoint Ticket
 @app.route("/Ticket")
 def get_Ticket():
     resultado = Selecionar_TbTicket()
     return resultado
-
-
-# FIM DA FUNÇÃO
 
 
 # Inserir registros no EndPoint Ticket
@@ -2281,17 +1400,11 @@ def post_Ticket():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 # Selecionar registros no EndPoint TicketResumo
 @app.route("/TicketResumo")
 def get_TicketResumo():
     resultado = Selecionar_TbTicketResumo()
     return resultado
-
-
-# FIM DA FUNÇÃO
 
 
 # Inserir registros no EndPoint TicketResumo
@@ -2304,9 +1417,6 @@ def post_TicketResumo():
         return jsonify({"error": error}), 400
     resultado = Inserir_TbTicketResumo(data)
     return resultado
-
-
-# FIM DA FUNÇÃO
 
 
 # Selecionar registros no EndPoint Tipo
@@ -2327,33 +1437,6 @@ def post_Tipo():
     resultado = Inserir_TbTipo(data)
     return resultado
 
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbTipo
-def deletar_TbTipo(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbTipo where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbTipo
-def Alterar_TbTipo(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbTipo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 # https://replit.taxidigital.net/Unidade
 
 
@@ -2362,9 +1445,6 @@ def Alterar_TbTipo(Campo, Dado, UpCampo, UpDado):
 def get_Unidade():
     resultado = Selecionar_TbUnidade()
     return resultado
-
-
-# FIM DA FUNÇÃO
 
 
 # Inserir registros no EndPoint Unidade
@@ -2378,21 +1458,6 @@ def post_Unidade():
     resultado = Inserir_TbUnidade(data)
     return resultado
 
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbUnidade
-def Alterar_TbUnidade(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbUnidade set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 # https://replit.taxidigital.net/Usuario
 
 
@@ -2401,9 +1466,6 @@ def Alterar_TbUnidade(Campo, Dado, UpCampo, UpDado):
 def get_Usuario():
     resultado = Selecionar_TbUsuario()
     return resultado
-
-
-# FIM DA FUNÇÃO
 
 
 # Inserir registros no EndPoint Usuario
@@ -2417,33 +1479,6 @@ def post_Usuario():
     resultado = Inserir_TbUsuario(data)
     return resultado
 
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbUsuario
-def deletar_TbUsuario(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbUsuario where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbUsuario
-def Alterar_TbUsuario(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbUsuario set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 # https://replit.taxidigital.net/Visita
 
 
@@ -2452,9 +1487,6 @@ def Alterar_TbUsuario(Campo, Dado, UpCampo, UpDado):
 def get_Visita():
     resultado = Selecionar_TbVisita()
     return resultado
-
-
-# FIM DA FUNÇÃO
 
 
 # Inserir registros no EndPoint Visita
@@ -2468,33 +1500,6 @@ def post_Visita():
     resultado = Inserir_TbVisita(data)
     return resultado
 
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbVisita
-def deletar_TbVisita(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbVisita where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbVisita
-def Alterar_TbVisita(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbVisita set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 # https://replit.taxidigital.net/Visitante
 
 
@@ -2503,9 +1508,6 @@ def Alterar_TbVisita(Campo, Dado, UpCampo, UpDado):
 def get_Visitante():
     resultado = Selecionar_TbVisitante()
     return resultado
-
-
-# FIM DA FUNÇÃO
 
 
 # Inserir registros no EndPoint Visitante
@@ -2520,135 +1522,11 @@ def post_Visitante():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.TbVisitante
-def deletar_TbVisitante(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbVisitante where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbVisitante
-def Alterar_TbVisitante(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbVisitante set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-# https://replit.taxidigital.net/TbPosicao
-
-
-# Deletar registros da tabela public.TbPosicao
-def deletar_TbPosicao(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbPosicao where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.TbPosicao
-def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = (
-        f'update public.TbPosicao set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    )
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-# https://replit.taxidigital.net/TbProdutoTipo
-
-
 # Selecionar registros no EndPoint TbProdutoTipo
 @app.route("/TbProdutoTipo/<codigo>")
 def get_TbProdutoTipo(codigo):
     resultado = Selecionar_VwTbProdutoTipo(codigo)
     return resultado
-
-
-# FIM DA FUNÇÃO
-
-
-# Inserir registros no EndPoint TbProdutoTipo
-@app.route("/TbProdutoTipo", methods=["POST"])
-def post_TbProdutoTipo():
-    payload = request.get_json()
-    dsNome = payload["dsNome"]
-    dsDescricao = payload["dsDescricao"]
-    nrCodigo = payload["nrCodigo"]
-    nrLarg = payload["nrLarg"]
-    nrComp = payload["nrComp"]
-    nrAlt = payload["nrAlt"]
-    cdStatus = payload["cdStatus"]
-    cdDispositivo = payload["cdDispositivo"]
-    dsDispositivo = payload["dsDispositivo"]
-    dsModelo = payload["dsModelo"]
-    DescDispositivo = payload["DescDispositivo"]
-    dsObs = payload["dsObs"]
-    dsLayout = payload["dsLayout"]
-    nrChip = payload["nrChip"]
-    StatusDispositivo = payload["StatusDispositivo"]
-    Inserir_VwTbProdutoTipo(
-        dsNome,
-        dsDescricao,
-        nrCodigo,
-        nrLarg,
-        nrComp,
-        nrAlt,
-        cdStatus,
-        cdDispositivo,
-        dsDispositivo,
-        dsModelo,
-        DescDispositivo,
-        dsObs,
-        dsLayout,
-        nrChip,
-        StatusDispositivo,
-    )
-    return payload
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela public.VwTbProdutoTipo
-def deletar_VwTbProdutoTipo(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.VwTbProdutoTipo where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela public.VwTbProdutoTipo
-def Alterar_VwTbProdutoTipo(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update public.VwTbProdutoTipo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-# https://replit.taxidigital.net/TbProdutoTotalStaus
 
 
 # endpoint usado para Pagina de Dispositivo. Mesmo do que o VwRelHistoricoDispositivoProduto,
@@ -2711,9 +1589,6 @@ def get_TbProdutoTotalStaus(codigo):
     return resultado
 
 
-# https://replit.taxidigital.net/TbPosicaoAtual
-
-
 # Selecionar registros no EndPoint TbPosicaoAtual
 @app.route("/TbPosicaoAtual/<codigo>")
 def get_TbPosicaoAtual(codigo):
@@ -2730,38 +1605,11 @@ def get_TbPosicaoAtual(codigo):
     return resultado
 
 
-# Inserir registros no EndPoint TbProdutoTotalStaus
-@app.route("/TbProdutoTotalStaus/", methods=["POST"])
-def post_TbProdutoTotalStaus():
-    payload = request.get_json()
-    dsNome = payload["dsNome"]
-    dsDescricao = payload["dsDescricao"]
-    nrCodigo = payload["nrCodigo"]
-    nrLarg = payload["nrLarg"]
-    nrComp = payload["nrComp"]
-    nrAlt = payload["nrAlt"]
-    Status = payload["Status"]
-    nrQtde = payload["nrQtde"]
-    Inserir_VwTbProdutoTotalStaus(
-        dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde
-    )
-    return payload
-
-
-# FIM DA FUNÇÃO
-
-# https://replit.taxidigital.net/Funcionario
-
-
 # Selecionar registros no EndPoint Funcionario
 @app.route("/Funcionario")
 def get_Funcionario():
     resultado = Selecionar_TbFuncionario()
     return resultado
-
-
-# FIM DA FUNÇÃO
-
 
 # Inserir registros no EndPoint Funcionario
 @app.route("/Funcionario", methods=["POST"])
@@ -2794,8 +1642,6 @@ def post_Funcionario():
     return payload
 
 
-# FIM DA FUNÇÃO
-
 # Fim do Gerador de API
 
 ## atulizado em 04052024
@@ -2811,9 +1657,6 @@ def post_Foto():
     with open(dsFoto, "wb") as fh:
         fh.write(photo_data)
     return payload
-
-
-# FIM DA FUNÇÃO
 
 
 @app.route("/CadastraImgProduto", methods=["POST"])
@@ -2893,9 +1736,6 @@ def get_AcessoIntelBras():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros no EndPoint AcessoIntelBras
 @app.route("/AcessoIntelBras", methods=["POST"])
 def post_AcessoIntelBras():
@@ -2907,9 +1747,6 @@ def post_AcessoIntelBras():
 
     Inserir_TbAcessoIntelBras(data)
     return "Cadastramento realizado com sucesso"
-
-
-# FIM DA FUNÇÃO
 
 
 @app.route("/notification", methods=["POST"])
@@ -3131,9 +1968,6 @@ def get_Medidas():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 @app.route("/medidassensor", methods=["GET", "POST"])
 def dados():
     payload = request.get_json()
@@ -3151,11 +1985,8 @@ def dados():
         "pesoreal": pesoreal,
         "cubado": cubado,
     }
-    # print(dic_altura)
+
     return dic_altura
-
-
-# FIM DA FUNÇÃO
 
 
 # app.run(port=8080, host='0.0.0.0', debug=True, threaded=True)
