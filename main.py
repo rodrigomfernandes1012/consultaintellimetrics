@@ -19,7 +19,7 @@ from geopy.distance import geodesic
 from geopy.geocoders import Nominatim
 from supabase import Client, create_client
 
-from utils import valida_e_constroi_insert
+from utils import valida_e_constroi_insert, valida_e_constroi_update
 
 # possibilita pegar variaveis do .env
 load_dotenv()
@@ -219,6 +219,7 @@ def Selecionar_TbChamados():
 
     return resultado.data
 
+
 # Inserir registros da tabela public.TbChamados
 def Inserir_TbChamados(data):
     resultado = supabase.table("TbChamados").insert(data).execute()
@@ -290,6 +291,7 @@ def Selecionar_TbDestinatario(codigo):
 
     return resultado.data
 
+
 def Selecionar_Lat_Long_Destinatario(codigo):
     resultado = (
         supabase.table("VwTbDestinatarioDispositivo")
@@ -305,6 +307,7 @@ def Selecionar_Lat_Long_Destinatario(codigo):
 def Inserir_TbDestinatario(data):
     resultado = supabase.table("TbDestinatario").insert(data).execute()
     return resultado.data
+
 
 # Selecionar registros da tabela public.TbDispositivo
 def Selecionar_TbDispositivo(codigo):
@@ -485,7 +488,6 @@ def Inserir_TbSensor(data):
     return resultado.data
 
 
-
 # Selecionar registros da tabela public.TbStatus
 def Selecionar_TbStatus():
     resultado = (
@@ -496,12 +498,10 @@ def Selecionar_TbStatus():
     return resultado.data
 
 
-
 # Inserir registros da tabela public.TbStatus
 def Inserir_TbStatus(data):
     resultado = supabase.table("TbStatus").insert(data).execute()
     return resultado.data
-
 
 
 # Selecionar registros da tabela public.TbTag
@@ -704,6 +704,7 @@ def Selecionar_TbPosicao(filtros):
     resultado = query.execute()
 
     return resultado.data
+
 
 def Selecionar_VwRelHistoricoDispositivoProduto(filtros):
     query = supabase.table("VwRelHistoricoDispositivoProduto").select(
@@ -917,6 +918,7 @@ def Selecionar_VwTbProdutoTotalStaus(codigo):
 
     return jsonify(produtos_list)
 
+
 def Selecionar_VwTbProdutoTotal(codigo):
     query = supabase.table("VwTbProdutoTotal").select(
         "cdProduto",
@@ -944,6 +946,7 @@ def Selecionar_VwTbProdutoTotal(codigo):
     resultado = query.execute()
 
     return resultado.data
+
 
 # Selecionar registros da tabela public.TbFuncionario
 def Selecionar_TbFuncionario():
@@ -1017,7 +1020,6 @@ def Inserir_TbEtiqueta(data):
     return resultado.data
 
 
-
 app = Flask(__name__)  # cria o site
 app.json.sort_keys = False
 CORS(app, resources={r"*": {"origins": "*"}})
@@ -1032,7 +1034,6 @@ def get_Chamados():
     return resultado
 
 
-
 # Inserir registros no EndPoint Chamados
 @app.route("/Chamados", methods=["POST"])
 def post_Chamados():
@@ -1045,6 +1046,7 @@ def post_Chamados():
     Inserir_TbChamados(data)
     return "Cadastramento realizado com sucesso"
 
+
 # https://replit.taxidigital.net/Cliente
 
 
@@ -1053,7 +1055,6 @@ def post_Chamados():
 def get_Cliente():
     resultado = Selecionar_TbCliente()
     return resultado
-
 
 
 # Inserir registros no EndPoint Cliente
@@ -1090,6 +1091,7 @@ def post_Destinatario():
         return jsonify({"error": error}), 400
     resultado = Inserir_TbDestinatario(data)
     return resultado
+
 
 # https://replit.taxidigital.net/Dispositivo
 
@@ -1226,6 +1228,7 @@ def post_Posicao():
 
     return resultado_posicao
 
+
 # https://replit.taxidigital.net/Produto
 
 
@@ -1249,14 +1252,19 @@ def get_Produto(codigo):
 
 @app.route("/Produto/<codigo>", methods=["PUT"])
 def update_Produto(codigo):
-    data = request.get_json()
-    Alterar_TbProduto("cdProduto", codigo, data)
-    return jsonify({"message": "Produto atualizado com sucesso"})
+    payload = request.get_json()
+    data, error = valida_e_constroi_update("cdProduto", payload)
+    if error:
+        return jsonify({"error": error}), 400
+
+    resultado = Alterar_TbProduto("cdProduto", codigo, data)
+
+    return resultado
 
 
 @app.route("/Produto/<codigo>", methods=["DELETE"])
 def delete_Produto(codigo):
-    deletar_TbProduto("cdProduto", codigo)
+    deletar_TbProduto(codigo)
     return jsonify({"message": "Produto deletado com sucesso"})
 
 
@@ -1276,34 +1284,23 @@ def post_Etiqueta():
     resultado = Inserir_TbEtiqueta(data)
     return resultado
 
-# TODO: atualizar esse
+
 # Deletar registros da tabela public.TbProduto
-def deletar_TbProduto(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'delete from public.TbProduto where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
+def deletar_TbProduto(cdProduto):
+    resultado = (
+        supabase.table("TbProduto").delete().eq("cdProduto", cdProduto).execute()
+    )
+    return resultado.data
 
 
-# TODO: atualizar esse
 # Alterar registros da tabela public.TbProduto
 def Alterar_TbProduto(Campo, Dado, UpData):
-    comando = "update public.TbProduto set"
-
-    for campos in UpData:
-        comando += f' {campos}="{UpData[campos]}",'
-
-    comando = comando[:-1]
-    comando += f' where {Campo}="{Dado}"'
-
-    conexao = conecta_bd()
-    cursor = conexao.cursor()
-    cursor.execute(comando)
-    conexao.commit()
+    response = supabase.table("TbProduto").update(UpData).eq(Campo, Dado).execute()
+    return response.data, response.error
 
 
 # https://replit.taxidigital.net/Relacionamento
+
 
 # Selecionar registros no EndPoint Relacionamento
 @app.route("/Relacionamento")
@@ -1437,6 +1434,7 @@ def post_Tipo():
     resultado = Inserir_TbTipo(data)
     return resultado
 
+
 # https://replit.taxidigital.net/Unidade
 
 
@@ -1457,6 +1455,7 @@ def post_Unidade():
         return jsonify({"error": error}), 400
     resultado = Inserir_TbUnidade(data)
     return resultado
+
 
 # https://replit.taxidigital.net/Usuario
 
@@ -1479,6 +1478,7 @@ def post_Usuario():
     resultado = Inserir_TbUsuario(data)
     return resultado
 
+
 # https://replit.taxidigital.net/Visita
 
 
@@ -1499,6 +1499,7 @@ def post_Visita():
         return jsonify({"error": error}), 400
     resultado = Inserir_TbVisita(data)
     return resultado
+
 
 # https://replit.taxidigital.net/Visitante
 
@@ -1610,6 +1611,7 @@ def get_TbPosicaoAtual(codigo):
 def get_Funcionario():
     resultado = Selecionar_TbFuncionario()
     return resultado
+
 
 # Inserir registros no EndPoint Funcionario
 @app.route("/Funcionario", methods=["POST"])
