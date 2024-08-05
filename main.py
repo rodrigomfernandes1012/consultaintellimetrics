@@ -1,7 +1,6 @@
 # SERVER API
 import ast
 import base64
-import datetime
 import json
 import os
 import time
@@ -19,6 +18,8 @@ from flask_cors import CORS
 from geopy.distance import geodesic
 from geopy.geocoders import Nominatim
 from supabase import Client, create_client
+
+from utils import valida_e_constroi_insert
 
 # possibilita pegar variaveis do .env
 load_dotenv()
@@ -80,9 +81,6 @@ def assinar_arquivo(arquivo):
         ExpiresIn=3600,
     )
     return url
-
-
-# assinar_arquivo()
 
 
 def upload_file(file_name, bucket, object_name):
@@ -160,33 +158,10 @@ def Selecionar_VwTbDestinatarioDispositivo(codigoDisp):
     return resultado.data
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros da tabela public.TbAcessoIntelBras
-def Inserir_TbAcessoIntelBras(
-    dsCardName,
-    dsCardNo,
-    dsDoor,
-    dsEntry,
-    dsErrorCode,
-    dsMethod,
-    dsPassword,
-    dsReaderID,
-    dsStatus,
-    dsType,
-    dsUserId,
-    dsUserType,
-    dsUtc,
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.TbAcessoIntelBras ( dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc ) values ("{dsCardName}", "{dsCardNo}", "{dsDoor}", "{dsEntry}", "{dsErrorCode}", "{dsMethod}", "{dsPassword}", "{dsReaderID}", "{dsStatus}", "{dsType}", "{dsUserId}", "{dsUserType}", "{dsUtc}")'
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
+def Inserir_TbAcessoIntelBras(data):
+    resultado = supabase.table("TbAcessoIntelBras").insert(data).execute()
+    return resultado.data
 
 
 # Deletar registros da tabela public.TbAcessoIntelBras
@@ -198,9 +173,6 @@ def deletar_TbAcessoIntelBras(Campo, Dado):
     conexao.commit()
 
 
-# FIM DA FUNÇÃO
-
-
 # Alterar registros da tabela public.TbAcessoIntelBras
 def Alterar_TbAcessoIntelBras(Campo, Dado, UpCampo, UpDado):
     conexao = conecta_bd()
@@ -209,17 +181,10 @@ def Alterar_TbAcessoIntelBras(Campo, Dado, UpCampo, UpDado):
     conexao.commit()
 
 
-# FIM DA FUNÇÃO
-
-
 def calcular_distancia(lat1, lon1, lat2, lon2):
     geolocator = Nominatim(user_agent="my_app")
     distancia = geodesic((lat1, lon1), (lat2, lon2)).kilometers
     return distancia
-
-
-# distancia = calcular_distancia("-23.5006347","-46.4884689","-23.5331802","-46.4659015")
-# distancia = calcular_distancia(lat1, lon1, lat2, lon2)
 
 
 # Selecionar registros da tabela public.VwTbPosicaoAtual
@@ -279,12 +244,9 @@ def Selecionar_TbChamados():
 
 
 # Inserir registros da tabela public.TbChamados
-def Inserir_TbChamados(dtOperacao, dsTipo, dsDescricao, nrQtde, dsUser, dtRegistro):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.TbChamados ( dtOperacao, dsTipo, dsDescricao, nrQtde, dsUser, dtRegistro ) values ("{dtOperacao}", "{dsTipo}", "{dsDescricao}", "{nrQtde}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
+def Inserir_TbChamados(data):
+    resultado = supabase.table("TbChamados").insert(data).execute()
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -347,31 +309,9 @@ def Selecionar_TbCliente():
 
 
 # Inserir registros da tabela public.TbCliente
-def Inserir_TbCliente(
-    dsNome,
-    nrCnpj,
-    nrIe,
-    nrInscMun,
-    dsLogradouro,
-    nrNumero,
-    dsComplemento,
-    dsBairro,
-    dsCep,
-    dsCidade,
-    dsUF,
-    dsObs,
-    cdStatus,
-    dsUser,
-    dtRegistro,
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.TbCliente ( dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsUser, dtRegistro ) values ("{dsNome}", "{nrCnpj}", "{nrIe}", "{nrInscMun}", "{dsLogradouro}", "{nrNumero}", "{dsComplemento}", "{dsBairro}", "{dsCep}", "{dsCidade}", "{dsUF}", "{dsObs}", "{cdStatus}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
+def Inserir_TbCliente(data):
+    resultado = supabase.table("TbCliente").insert(data).execute()
+    return resultado.data
 
 
 # Deletar registros da tabela public.TbCliente
@@ -446,31 +386,9 @@ def Selecionar_Lat_Long_Destinatario(codigo):
 
 
 # Inserir registros da tabela public.TbDestinatario
-def Inserir_TbDestinatario(
-    dsNome,
-    nrCnpj,
-    nrIe,
-    nrInscMun,
-    dsLogradouro,
-    nrNumero,
-    dsComplemento,
-    dsBairro,
-    dsCep,
-    dsCidade,
-    dsUF,
-    dsObs,
-    cdStatus,
-    dsLat,
-    dsLong,
-    nrRaio,
-    dsUser,
-    dtRegistro,
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.TbDestinatario ( dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsLat, dsLong, nrRaio, dsUser, dtRegistro ) values ("{dsNome}", "{nrCnpj}", "{nrIe}", "{nrInscMun}", "{dsLogradouro}", "{nrNumero}", "{dsComplemento}", "{dsBairro}", "{dsCep}", "{dsCidade}", "{dsUF}", "{dsObs}", "{cdStatus}", "{dsLat}", "{dsLong}", "{nrRaio}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
+def Inserir_TbDestinatario(data):
+    resultado = supabase.table("TbDestinatario").insert(data).execute()
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -526,22 +444,9 @@ def Selecionar_TbDispositivo(codigo):
 
 
 # Inserir registros da tabela public.TbDispositivo
-def Inserir_TbDispositivo(
-    dsDispositivo,
-    dsModelo,
-    dsDescricao,
-    dsObs,
-    dsLayout,
-    nrChip,
-    cdStatus,
-    dsUser,
-    dtRegistro,
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.TbDispositivo ( dsDispositivo, dsModelo, dsDescricao, dsObs, dsLayout, nrChip, cdStatus, dsUser, dtRegistro ) values ("{dsDispositivo}", "{dsModelo}", "{dsDescricao}", "{dsObs}", "{dsLayout}", "{nrChip}", "{cdStatus}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
+def Inserir_TbDispositivo(data):
+    resultado = supabase.table("TbDispositivo").insert(data).execute()
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -588,15 +493,9 @@ def Selecionar_TbImagens(codigo):
 
 
 # Inserir registros da tabela public.TbImagens
-def Inserir_TbImagens(
-    dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro, cdProduto, nrImagem
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.TbImagens ( dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro, cdProduto, nrImagem ) values ("{dsCaminho}", "{cdCodigo}", "{cdTipo}", "{dsUser}", "{dtRegistro}", "{cdProduto}", "{nrImagem}")'
-    # print(comando)
-    cursor.execute(comando)
-    conexao.commit()
+def Inserir_TbImagens(data):
+    resultado = supabase.table("TbImagens").insert(data).execute()
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -639,59 +538,37 @@ def get_endereco_coordenada(lat, long):
         dsUF = dados.get("region_a")
         dsCep = dados.get("postalcode")
         dsPais = dados.get("country_code")
-        return (dsLogradoruro, dsNum, dsBairro, dsCidade, dsUF, dsCep, dsPais)
+
+    return {
+        "dsLogradoruro": dsLogradoruro,
+        "dsNum": dsNum,
+        "dsBairro": dsBairro,
+        "dsCidade": dsCidade,
+        "dsUF": dsUF,
+        "dsCep": dsCep,
+        "dsPais": dsPais,
+    }
 
 
 # Inserir registros da tabela public.TbPosicao
-def Inserir_TbPosicao(
-    dsModelo,
-    dtData,
-    dtHora,
-    dsLat,
-    dsLong,
-    nrTemp,
-    nrBat,
-    nrSeq,
-    dsArquivo,
-    cdDispositivo,
-    dsEndereco,
-    dsNum,
-    dsBairro,
-    dsCidade,
-    dsUF,
-    dsCep,
-    dsPais,
-    dsLatPdv,
-    dsLongPdv,
-    nrRaio,
-    blArea,
-    nrDistancia,
-    dsUser,
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.TbPosicao ( dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsNum, dsBairro, dsCidade,  dsUF, dsCep, dsPais,  dsLatPdv, dsLongPdv, nrRaio, blArea, nrDistancia, dsUser ) values ("{dsModelo}", "{dtData}", "{dtHora}", "{dsLat}", "{dsLong}", "{nrTemp}", "{nrBat}", "{nrSeq}", "{dsArquivo}", "{cdDispositivo}", "{dsEndereco}", "{dsNum}", "{dsBairro}", "{dsCidade}", "{dsUF}", "{dsCep}","{dsPais}", "{dsLatPdv}", "{dsLongPdv}", "{nrRaio}", "{blArea}", "{nrDistancia}", "{dsUser}")'
-    # print(comando)
-    cursor.execute(comando)
-    conexao.commit()
-    return cursor.lastrowid
+def Inserir_TbPosicao(data):
+    resultado = supabase.table("TbPosicao").insert(data).execute()
+    return resultado.data
 
 
 def Alterar_StatusTbPosicao(codigo, status):
-    conexao = conecta_bd()
-    cursor = conexao.cursor()
-    comando = f"update public.TbDispositivo set cdStatus= {status}  where cdDispositivo = {codigo}  "
-    cursor.execute(comando)
-    conexao.commit()
+    response = (
+        supabase.table("TbDispositivo")
+        .update({"cdStatus": status})
+        .eq("cdDispositivo", codigo)
+        .execute()
+    )
+    return response.data
 
 
-def Inserir_TbSensorRegistro(cdDispositivo, cdSensor, cdPosicao, nrValor):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.TbSensorRegistro (cdDispositivo, cdSensor, cdPosicao, nrValor) values ("{cdDispositivo}", "{cdSensor}", "{cdPosicao}", "{nrValor}")'
-    cursor.execute(comando)
-    conexao.commit()
-    return cursor.lastrowid
+def Inserir_TbSensorRegistro(data):
+    resultado = supabase.table("TbSensorRegistro").insert(data).execute()
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -745,22 +622,10 @@ def Selecionar_TbProduto(codigo):
     return resultado.data
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros da tabela public.TbProduto
-def Inserir_TbProduto(
-    dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, dsUser, dtRegistro
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public."TbProduto" ( "dsNome", "dsDescricao", "nrCodigo", "nrLarg", "nrComp", "nrAlt", "cdStatus", "dsUser", "dtRegistro" ) values (\'{dsNome}\', \'{dsDescricao}\', \'{nrCodigo}\', \'{nrLarg}\', \'{nrComp}\', \'{nrAlt}\', \'{cdStatus}\', \'{dsUser}\', \'{dtRegistro}\')'
-    cursor.execute(comando)
-    conexao.commit()
-    return cursor.lastrowid
-
-
-# FIM DA FUNÇÃO
+def Inserir_TbProduto(data):
+    resultado = supabase.table("TbProduto").insert(data).execute()
+    return resultado.data
 
 
 # Deletar registros da tabela public.TbProduto
@@ -799,14 +664,9 @@ def Selecionar_TbRelacionamento():
 
 
 # Inserir registros da tabela public.TbRelacionamento
-def Inserir_TbRelacionamento(
-    cdPai, cdFilho, cdTipo, dsDescricao, cdStatus, dsUser, dtRegistro
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.TbRelacionamento ( cdPai, cdFilho, cdTipo, dsDescricao, cdStatus, dsUser, dtRegistro ) values ("{cdPai}", "{cdFilho}", "{cdTipo}", "{dsDescricao}", "{cdStatus}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
+def Inserir_TbRelacionamento(data):
+    resultado = supabase.table("TbRelacionamento").insert(data).execute()
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -856,28 +716,10 @@ def Selecionar_TbSensor():
     return resultado.data
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros da tabela public.TbSensor
-def Inserir_TbSensor(
-    dsNome,
-    cdTipo,
-    dsDescricao,
-    cdUnidade,
-    nrUnidadeIni,
-    nrUnidadeFim,
-    dsUser,
-    dtRegistro,
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.TbSensor ( dsNome, cdTipo, dsDescricao, cdUnidade, nrUnidadeIni, nrUnidadeFim, dsUser, dtRegistro ) values ("{dsNome}", "{cdTipo}", "{dsDescricao}", "{cdUnidade}", "{nrUnidadeIni}", "{nrUnidadeFim}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
+def Inserir_TbSensor(data):
+    resultado = supabase.table("TbSensor").insert(data).execute()
+    return resultado.data
 
 
 # Deletar registros da tabela public.TbSensor
@@ -919,19 +761,8 @@ def Selecionar_TbStatus():
 
 
 # Inserir registros da tabela public.TbStatus
-def Inserir_TbStatus(dsStatus, dsUser, dtRegistro):
-    resultado = (
-        supabase.table("TbStatus")
-        .insert(
-            {
-                "dsStatus": dsStatus,
-                "dsUser": dsUser,
-                "dtRegistro": dtRegistro,
-            }
-        )
-        .execute()
-    )
-
+def Inserir_TbStatus(data):
+    resultado = supabase.table("TbStatus").insert(data).execute()
     return resultado.data
 
 
@@ -980,12 +811,9 @@ def Selecionar_TbTag():
 
 
 # Inserir registros da tabela public.TbTag
-def Inserir_TbTag(dsDescricao, dsConteudo, dsUser, dtRegistro):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.TbTag ( dsDescricao, dsConteudo, dsUser, dtRegistro ) values ("{dsDescricao}", "{dsConteudo}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
+def Inserir_TbTag(data):
+    resultado = supabase.table("TbTag").insert(data).execute()
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -1035,14 +863,9 @@ def Selecionar_TbTicket():
 
 
 # Inserir registros da tabela public.TbTicket
-def Inserir_TbTicket(
-    dtOperacao, dsAtendimento, nrAbertos, nrFechados, nrPendentes, dsUser, dtRegistro
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.TbTicket ( dtOperacao, dsAtendimento, nrAbertos, nrFechados, nrPendentes, dsUser, dtRegistro ) values ("{dtOperacao}", "{dsAtendimento}", "{nrAbertos}", "{nrFechados}", "{nrPendentes}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
+def Inserir_TbTicket(data):
+    resultado = supabase.table("TbTicket").insert(data).execute()
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -1096,22 +919,9 @@ def Selecionar_TbTicketResumo():
 
 
 # Inserir registros da tabela public.TbTicketResumo
-def Inserir_TbTicketResumo(
-    dtOperacao,
-    dsAtendimento,
-    dsNaoAtribuido,
-    dsSemResolucao,
-    dsAtualizado,
-    dsPendente,
-    dsResolvido,
-    dsUser,
-    dtRegistro,
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.TbTicketResumo ( dtOperacao, dsAtendimento, dsNaoAtribuido, dsSemResolucao, dsAtualizado, dsPendente, dsResolvido, dsUser, dtRegistro ) values ("{dtOperacao}", "{dsAtendimento}", "{dsNaoAtribuido}", "{dsSemResolucao}", "{dsAtualizado}", "{dsPendente}", "{dsResolvido}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
+def Inserir_TbTicketResumo(data):
+    resultado = supabase.table("TbTicketResumo").insert(data).execute()
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -1155,12 +965,9 @@ def Selecionar_TbTipo():
 
 
 # Inserir registros da tabela public.TbTipo
-def Inserir_TbTipo(dsDescricao, dsUser, dtRegistro):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.TbTipo ( dsDescricao, dsUser, dtRegistro ) values ("{dsDescricao}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
+def Inserir_TbTipo(data):
+    resultado = supabase.table("TbTipo").insert(data).execute()
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -1203,12 +1010,9 @@ def Selecionar_TbUnidade():
 
 
 # Inserir registros da tabela public.TbUnidade
-def Inserir_TbUnidade(dsUnidade, dsSimbolo, dsUser, dtRegistro):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.TbUnidade ( dsUnidade, dsSimbolo, dsUser, dtRegistro ) values ("{dsUnidade}", "{dsSimbolo}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
+def Inserir_TbUnidade(data):
+    resultado = supabase.table("TbUnidade").insert(data).execute()
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -1259,15 +1063,9 @@ def Selecionar_TbUsuario():
 
 
 # Inserir registros da tabela public.TbUsuario
-def Inserir_TbUsuario(dsNome, dsLogin, dsSenha, cdPerfil, dsUser, dtRegistro):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.TbUsuario ( dsNome, dsLogin, dsSenha, cdPerfil, dsUser, dtRegistro ) values ("{dsNome}", "{dsLogin}", "{dsSenha}", "{cdPerfil}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
+def Inserir_TbUsuario(data):
+    resultado = supabase.table("TbUsuario").insert(data).execute()
+    return resultado.data
 
 
 # Deletar registros da tabela public.TbUsuario
@@ -1309,12 +1107,9 @@ def Selecionar_TbVisita():
 
 
 # Inserir registros da tabela public.TbVisita
-def Inserir_TbVisita(cdCliente, cdVisitante, dtData, dsUser, dtRegistro):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.TbVisita ( cdCliente, cdVisitante, dtData, dsUser, dtRegistro ) values ("{cdCliente}", "{cdVisitante}", "{dtData}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
+def Inserir_TbVisita(data):
+    resultado = supabase.table("TbVisita").insert(data).execute()
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -1365,12 +1160,9 @@ def Selecionar_TbVisitante():
 
 
 # Inserir registros da tabela public.TbVisitante
-def Inserir_TbVisitante(dsNome, nrTelefone, nrDocumento, dsEmail, dsUser, dtRegistro):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.TbVisitante ( dsNome, nrTelefone, nrDocumento, dsEmail, dsUser, dtRegistro ) values ("{dsNome}", "{nrTelefone}", "{nrDocumento}", "{dsEmail}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
+def Inserir_TbVisitante(data):
+    resultado = supabase.table("TbVisitante").insert(data).execute()
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -1889,23 +1681,9 @@ def Selecionar_TbEtiqueta(dsEtiqueta):
 
 
 # Inserir registros da tabela public.TbEtiqueta
-def Inserir_TbEtiqueta(
-    dsEtiqueta,
-    nrFator,
-    nrLargura,
-    nrAltura,
-    nrComprimento,
-    nrPeso,
-    nrCubado,
-    dsUser,
-    dtRegistro,
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.TbEtiqueta (dsEtiqueta, nrFator, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, dsUser, dtRegistro) values ("{dsEtiqueta}", "{nrFator}", "{nrLargura}", "{nrAltura}", "{nrComprimento}", "{nrPeso}", "{nrCubado}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
-    return cursor.lastrowid
+def Inserir_TbEtiqueta(data):
+    resultado = supabase.table("TbEtiqueta").insert(data).execute()
+    return resultado.data
 
 
 # FIM DA FUNÇÃO
@@ -1932,13 +1710,12 @@ def get_Chamados():
 @app.route("/Chamados", methods=["POST"])
 def post_Chamados():
     payload = request.get_json()
-    dtOperacao = payload["dtOperacao"]
-    dsTipo = payload["dsTipo"]
-    dsDescricao = payload["dsDescricao"]
-    nrQtde = payload["nrQtde"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbChamados(dtOperacao, dsTipo, dsDescricao, nrQtde, dsUser, dtRegistro)
+    data, error = valida_e_constroi_insert("TbChamados", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+
+    Inserir_TbChamados(data)
     return "Cadastramento realizado com sucesso"
 
 
@@ -1985,38 +1762,12 @@ def get_Cliente():
 @app.route("/Cliente", methods=["POST"])
 def post_Cliente():
     payload = request.get_json()
-    dsNome = payload["dsNome"]
-    nrCnpj = payload["nrCnpj"]
-    nrIe = payload["nrIe"]
-    nrInscMun = payload["nrInscMun"]
-    dsLogradouro = payload["dsLogradouro"]
-    nrNumero = payload["nrNumero"]
-    dsComplemento = payload["dsComplemento"]
-    dsBairro = payload["dsBairro"]
-    dsCep = payload["dsCep"]
-    dsCidade = payload["dsCidade"]
-    dsUF = payload["dsUF"]
-    dsObs = payload["dsObs"]
-    cdStatus = payload["cdStatus"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbCliente(
-        dsNome,
-        nrCnpj,
-        nrIe,
-        nrInscMun,
-        dsLogradouro,
-        nrNumero,
-        dsComplemento,
-        dsBairro,
-        dsCep,
-        dsCidade,
-        dsUF,
-        dsObs,
-        cdStatus,
-        dsUser,
-        dtRegistro,
-    )
+    data, error = valida_e_constroi_insert("TbCliente", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+
+    Inserir_TbCliente(data)
     return "Cadastramento realizado com sucesso"
 
 
@@ -2063,48 +1814,12 @@ def get_Destinatario(codigo):
 @app.route("/Destinatario", methods=["POST"])
 def post_Destinatario():
     payload = request.get_json()
-    dsNome = payload["dsNome"]
-    nrCnpj = payload["nrCnpj"]
-    nrIe = payload["nrIe"]
-    nrInscMun = payload["nrInscMun"]
-    dsLogradouro = payload["dsLogradouro"]
-    nrNumero = payload["nrNumero"]
-    dsComplemento = payload["dsComplemento"]
-    dsBairro = payload["dsBairro"]
-    dsCep = payload["dsCep"]
-    dsCidade = payload["dsCidade"]
-    dsUF = payload["dsUF"]
-    dsObs = payload["dsObs"]
-    cdStatus = payload["cdStatus"]
-    dsLat = payload["dsLat"]
-    dsLong = payload["dsLong"]
-    nrRaio = payload["nrRaio"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbDestinatario(
-        dsNome,
-        nrCnpj,
-        nrIe,
-        nrInscMun,
-        dsLogradouro,
-        nrNumero,
-        dsComplemento,
-        dsBairro,
-        dsCep,
-        dsCidade,
-        dsUF,
-        dsObs,
-        cdStatus,
-        dsLat,
-        dsLong,
-        nrRaio,
-        dsUser,
-        dtRegistro,
-    )
-    return "Cadastramento realizado com sucesso"
+    data, error = valida_e_constroi_insert("TbDestinatario", payload)
 
-
-# FIM DA FUNÇÃO
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbDestinatario(data)
+    return resultado
 
 
 # Deletar registros da tabela public.TbDestinatario
@@ -2145,27 +1860,12 @@ def get_Dispositivo(codigo):
 @app.route("/Dispositivo", methods=["POST"])
 def post_Dispositivo():
     payload = request.get_json()
-    dsDispositivo = payload["dsDispositivo"]
-    dsModelo = payload["dsModelo"]
-    dsDescricao = payload["dsDescricao"]
-    dsObs = payload["dsObs"]
-    dsLayout = payload["dsLayout"]
-    nrChip = payload["nrChip"]
-    cdStatus = payload["cdStatus"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbDispositivo(
-        dsDispositivo,
-        dsModelo,
-        dsDescricao,
-        dsObs,
-        dsLayout,
-        nrChip,
-        cdStatus,
-        dsUser,
-        dtRegistro,
-    )
-    return payload
+    data, error = valida_e_constroi_insert("TbDispositivo", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbDispositivo(data)
+    return resultado
 
 
 # FIM DA FUNÇÃO
@@ -2200,29 +1900,6 @@ def Alterar_TbDispositivo(Campo, Dado, UpCampo, UpDado):
 def get_Imagens(codigo):
     resultado = Selecionar_TbImagens(codigo)
     return resultado
-
-
-# FIM DA FUNÇÃO
-
-
-# Inserir registros no EndPoint Imagens
-@app.route("/Imagens", methods=["POST"])
-def post_Imagens():
-    payload = request.get_json()
-    dsCaminho = payload["dsCaminho"]
-    cdCodigo = payload["cdCodigo"]
-    cdTipo = payload["cdTipo"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    cdProduto = payload["cdProduto"]
-    nrImagem = payload["nrImagem"]
-    Inserir_TbImagens(
-        dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro, cdProduto, nrImagem
-    )
-    return payload
-
-
-# FIM DA FUNÇÃO
 
 
 # Deletar registros da tabela public.TbImagens
@@ -2276,84 +1953,80 @@ def get_Posicao(codigo):
     return resultado
 
 
-# FIM DA FUNÇÃO
+def altera_status_posicao(cdDispositivo, dsLat, dsLong):
+    dic_endereco_pdv = Selecionar_VwTbDestinatarioDispositivo(cdDispositivo)
+    dic_endereco_pdv = dict(dic_endereco_pdv[0])
 
-dic_endereco_pdv = []
+    dsLatPdv = dic_endereco_pdv["dsLat"]
+    dsLongPdv = dic_endereco_pdv["dsLong"]
+    nrRaio = dic_endereco_pdv["nrRaio"]
+    nrDistancia = calcular_distancia(dsLat, dsLong, dsLatPdv, dsLongPdv)
+
+    # TODO: verificar se necessario. Da pra saber se esta fora de area pegando a ultima posicao. Precisa guardar no dispositivo?
+    if float(nrDistancia) > float(nrRaio):
+        Alterar_StatusTbPosicao(cdDispositivo, 6)
+        blArea = False
+    else:
+        Alterar_StatusTbPosicao(cdDispositivo, 1)
+        blArea = True
+
+    return blArea
+
+
+def inserir_sensor_registros(dic_sensores, tb_posicao):
+    dataSensorRegistro = []
+
+    for sensor in dic_sensores:
+        payload_sensor_registro = {
+            "cdSensor": sensor["cdSensor"],
+            "nrValor": sensor["nrValor"],
+            "cdPosicao": tb_posicao[0]["cdPosicao"],
+            "cdDispositivo": sensor["cdDispositivo"],
+        }
+
+        data, error = valida_e_constroi_insert(
+            "TbSensorRegistro", payload_sensor_registro
+        )
+
+        if error:
+            return jsonify({"error": error}), 400
+
+        dataSensorRegistro.append(data)
+
+    return Inserir_TbSensorRegistro(dataSensorRegistro)
 
 
 @app.route("/Posicao", methods=["POST"])
 def post_Posicao():
     payload = request.get_json()
-    print(payload)
-    dsModelo = payload["dsModelo"]
-    dtData = payload["dtData"]
-    dtHora = payload["dtHora"]
+
     dsLat = payload["dsLat"]
     dsLong = payload["dsLong"]
-    nrTemp = payload["nrTemp"]
-    nrBat = payload["nrBat"]
-    nrSeq = payload["nrSeq"]
-
-    dsArquivo = payload["dsArquivo"]
     cdDispositivo = payload["cdDispositivo"]
-    dsUser = payload["dsUser"]
-    dic = get_endereco_coordenada(dsLat, dsLong)
-    dsEndereco = dic[0]
-    dsNum = dic[1]
-    dsBairro = dic[2]
-    dsCidade = dic[3]
-    dsUF = dic[4]
-    dsCep = dic[5]
-    dsPais = dic[6]
-    dic_endereco_pdv = Selecionar_VwTbDestinatarioDispositivo(cdDispositivo)
-    # print(dic_endereco_pdv)
-    dic_endereco_pdv = dict(dic_endereco_pdv[0])
-    dsLatPdv = dic_endereco_pdv["dsLat"]
-    dsLongPdv = dic_endereco_pdv["dsLong"]
-    nrRaio = dic_endereco_pdv["nrRaio"]
-    DistanciaArea = calcular_distancia(dsLat, dsLong, dsLatPdv, dsLongPdv)
-    nrDistancia = DistanciaArea
-    # print(nrRaio)
-    if float(DistanciaArea) > float(nrRaio):
-        Alterar_StatusTbPosicao(cdDispositivo, 6)
-        blArea = 0
-    else:
-        Alterar_StatusTbPosicao(cdDispositivo, 1)
-        blArea = 1
-    dic_sensores = payload["sensores"]
-    # print(dic_sensores)
-    cd = Inserir_TbPosicao(
-        dsModelo,
-        dtData,
-        dtHora,
-        dsLat,
-        dsLong,
-        nrTemp,
-        nrBat,
-        nrSeq,
-        dsArquivo,
-        cdDispositivo,
-        dsEndereco,
-        dsNum,
-        dsBairro,
-        dsCidade,
-        dsUF,
-        dsCep,
-        dsPais,
-        dsLatPdv,
-        dsLongPdv,
-        nrRaio,
-        blArea,
-        nrDistancia,
-        dsUser,
-    )
-    cdSensor = dic_sensores["cdSensor"]
-    cdPosicao = cd
-    nrValor = dic_sensores["nrValor"]
-    # print(nome)  # Saída: Carlos
-    Inserir_TbSensorRegistro(cdDispositivo, cdSensor, cdPosicao, nrValor)
 
-    return jsonify({"cdPosicao": cd})
+    dict_endereco_coord = get_endereco_coordenada(dsLat, dsLong)
+
+    for key, value in dict_endereco_coord.items():
+        payload[key] = value
+
+    blArea = altera_status_posicao(cdDispositivo, dsLat, dsLong)
+    payload["blArea"] = blArea
+
+    dic_sensores = payload["sensores"]
+    del payload[
+        "sensores"
+    ]  # remove do payload para nao atrapalhar com o inserir tbPosicao
+
+    data, error = valida_e_constroi_insert("TbPosicao", payload)
+    if error:
+        return jsonify({"error": error}), 400
+
+    resultado_posicao = Inserir_TbPosicao(data)
+
+    resultado_sensores = inserir_sensor_registros(dic_sensores, resultado_posicao)
+    resultado_posicao[0]["sensores"] = resultado_sensores
+
+    return resultado_posicao
 
 
 # FIM DA FUNÇÃO
@@ -2391,27 +2064,12 @@ cd = []
 @app.route("/Produto", methods=["POST"])
 def post_Produto():
     payload = request.get_json()
-    dsNome = payload["dsNome"]
-    dsDescricao = payload["dsDescricao"]
-    nrCodigo = payload["nrCodigo"]
-    nrLarg = payload["nrLarg"]
-    nrComp = payload["nrComp"]
-    nrAlt = payload["nrAlt"]
-    cdStatus = payload["cdStatus"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    cd = Inserir_TbProduto(
-        dsNome,
-        dsDescricao,
-        nrCodigo,
-        nrLarg,
-        nrComp,
-        nrAlt,
-        cdStatus,
-        dsUser,
-        dtRegistro,
-    )
-    return jsonify({"cdProduto": cd})
+    data, error = valida_e_constroi_insert("TbProduto", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbProduto(data)
+    return jsonify({"cdProduto": resultado[0]["cdProduto"]})
 
 
 # FIM DA FUNÇÃO
@@ -2452,41 +2110,12 @@ def get_Etiqueta(dsEtiqueta):
 @app.route("/TbEtiqueta", methods=["POST"])
 def post_Etiqueta():
     payload = request.get_json()
-    dsEtiqueta = payload["dsEtiqueta"]
-    nrLargura = payload["nrLargura"]
-    nrAltura = payload["nrAltura"]
-    nrComprimento = payload["nrComprimento"]
-    nrPeso = payload["nrPeso"]
-    nrCubado = payload["nrCubado"]
-    nrFator = payload["nrFator"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    cd = Inserir_TbEtiqueta(
-        dsEtiqueta,
-        nrFator,
-        nrLargura,
-        nrAltura,
-        nrComprimento,
-        nrPeso,
-        nrCubado,
-        dsUser,
-        dtRegistro,
-    )
-    # return payload
-    return jsonify(
-        {
-            "cdCodigo": cd,
-            "dsEtiqueta": dsEtiqueta,
-            "nrLargura": nrLargura,
-            "nrAltura": nrAltura,
-            "nrComprimento": nrComprimento,
-            "nrPeso": nrPeso,
-            "nrCubado": nrCubado,
-            "nrFator": nrFator,
-            "dsUser": dsUser,
-            "dtRegistro": dtRegistro,
-        }
-    )
+    data, error = valida_e_constroi_insert("TbEtiqueta", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbEtiqueta(data)
+    return resultado
 
 
 # FIM DA FUNÇÃO
@@ -2544,17 +2173,12 @@ def get_Relacionamento():
 @app.route("/Relacionamento", methods=["POST"])
 def post_Relacionamento():
     payload = request.get_json()
-    cdPai = payload["cdPai"]
-    cdFilho = payload["cdFilho"]
-    cdTipo = payload["cdTipo"]
-    dsDescricao = payload["dsDescricao"]
-    cdStatus = payload["cdStatus"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbRelacionamento(
-        cdPai, cdFilho, cdTipo, dsDescricao, cdStatus, dsUser, dtRegistro
-    )
-    return payload
+    data, error = valida_e_constroi_insert("TbRelacionamento", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbRelacionamento(data)
+    return resultado
 
 
 # FIM DA FUNÇÃO
@@ -2574,25 +2198,12 @@ def get_Sensor():
 @app.route("/Sensor", methods=["POST"])
 def post_Sensor():
     payload = request.get_json()
-    dsNome = payload["dsNome"]
-    cdTipo = payload["cdTipo"]
-    dsDescricao = payload["dsDescricao"]
-    cdUnidade = payload["cdUnidade"]
-    nrUnidadeIni = payload["nrUnidadeIni"]
-    nrUnidadeFim = payload["nrUnidadeFim"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbSensor(
-        dsNome,
-        cdTipo,
-        dsDescricao,
-        cdUnidade,
-        nrUnidadeIni,
-        nrUnidadeFim,
-        dsUser,
-        dtRegistro,
-    )
-    return payload
+    data, error = valida_e_constroi_insert("TbSensor", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbSensor(data)
+    return resultado
 
 
 # FIM DA FUNÇÃO
@@ -2612,11 +2223,12 @@ def get_Status():
 @app.route("/Status", methods=["POST"])
 def post_Status():
     payload = request.get_json()
-    dsStatus = payload["dsStatus"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbStatus(dsStatus, dsUser, dtRegistro)
-    return payload
+    data, error = valida_e_constroi_insert("TbStatus", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbStatus(data)
+    return resultado
 
 
 # FIM DA FUNÇÃO
@@ -2636,12 +2248,12 @@ def get_Tag():
 @app.route("/Tag", methods=["POST"])
 def post_Tag():
     payload = request.get_json()
-    dsDescricao = payload["dsDescricao"]
-    dsConteudo = payload["dsConteudo"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbTag(dsDescricao, dsConteudo, dsUser, dtRegistro)
-    return payload
+    data, error = valida_e_constroi_insert("TbTag", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbTag(data)
+    return resultado
 
 
 # FIM DA FUNÇÃO
@@ -2661,23 +2273,12 @@ def get_Ticket():
 @app.route("/Ticket", methods=["POST"])
 def post_Ticket():
     payload = request.get_json()
-    dtOperacao = payload["dtOperacao"]
-    dsAtendimento = payload["dsAtendimento"]
-    nrAbertos = payload["nrAbertos"]
-    nrFechados = payload["nrFechados"]
-    nrPendentes = payload["nrPendentes"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbTicket(
-        dtOperacao,
-        dsAtendimento,
-        nrAbertos,
-        nrFechados,
-        nrPendentes,
-        dsUser,
-        dtRegistro,
-    )
-    return payload
+    data, error = valida_e_constroi_insert("TbTicket", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbTicket(data)
+    return resultado
 
 
 # FIM DA FUNÇÃO
@@ -2697,27 +2298,12 @@ def get_TicketResumo():
 @app.route("/TicketResumo", methods=["POST"])
 def post_TicketResumo():
     payload = request.get_json()
-    dtOperacao = payload["dtOperacao"]
-    dsAtendimento = payload["dsAtendimento"]
-    dsNaoAtribuido = payload["dsNaoAtribuido"]
-    dsSemResolucao = payload["dsSemResolucao"]
-    dsAtualizado = payload["dsAtualizado"]
-    dsPendente = payload["dsPendente"]
-    dsResolvido = payload["dsResolvido"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbTicketResumo(
-        dtOperacao,
-        dsAtendimento,
-        dsNaoAtribuido,
-        dsSemResolucao,
-        dsAtualizado,
-        dsPendente,
-        dsResolvido,
-        dsUser,
-        dtRegistro,
-    )
-    return payload
+    data, error = valida_e_constroi_insert("TbTicketResumo", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbTicketResumo(data)
+    return resultado
 
 
 # FIM DA FUNÇÃO
@@ -2734,11 +2320,12 @@ def get_Tipo():
 @app.route("/Tipo", methods=["POST"])
 def post_Tipo():
     payload = request.get_json()
-    dsDescricao = payload["dsDescricao"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbTipo(dsDescricao, dsUser, dtRegistro)
-    return payload
+    data, error = valida_e_constroi_insert("TbTipo", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbTipo(data)
+    return resultado
 
 
 # FIM DA FUNÇÃO
@@ -2784,12 +2371,12 @@ def get_Unidade():
 @app.route("/Unidade", methods=["POST"])
 def post_Unidade():
     payload = request.get_json()
-    dsUnidade = payload["dsUnidade"]
-    dsSimbolo = payload["dsSimbolo"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbUnidade(dsUnidade, dsSimbolo, dsUser, dtRegistro)
-    return payload
+    data, error = valida_e_constroi_insert("TbUnidade", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbUnidade(data)
+    return resultado
 
 
 # FIM DA FUNÇÃO
@@ -2823,14 +2410,12 @@ def get_Usuario():
 @app.route("/Usuario", methods=["POST"])
 def post_Usuario():
     payload = request.get_json()
-    dsNome = payload["dsNome"]
-    dsLogin = payload["dsLogin"]
-    dsSenha = payload["dsSenha"]
-    cdPerfil = payload["cdPerfil"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbUsuario(dsNome, dsLogin, dsSenha, cdPerfil, dsUser, dtRegistro)
-    return payload
+    data, error = valida_e_constroi_insert("TbUsuario", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbUsuario(data)
+    return resultado
 
 
 # FIM DA FUNÇÃO
@@ -2876,13 +2461,12 @@ def get_Visita():
 @app.route("/Visita", methods=["POST"])
 def post_Visita():
     payload = request.get_json()
-    cdCliente = payload["cdCliente"]
-    cdVisitante = payload["cdVisitante"]
-    dtData = payload["dtData"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbVisita(cdCliente, cdVisitante, dtData, dsUser, dtRegistro)
-    return payload
+    data, error = valida_e_constroi_insert("TbVisita", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbVisita(data)
+    return resultado
 
 
 # FIM DA FUNÇÃO
@@ -2928,14 +2512,12 @@ def get_Visitante():
 @app.route("/Visitante", methods=["POST"])
 def post_Visitante():
     payload = request.get_json()
-    dsNome = payload["dsNome"]
-    nrTelefone = payload["nrTelefone"]
-    nrDocumento = payload["nrDocumento"]
-    dsEmail = payload["dsEmail"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbVisitante(dsNome, nrTelefone, nrDocumento, dsEmail, dsUser, dtRegistro)
-    return payload
+    data, error = valida_e_constroi_insert("TbVisitante", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbVisitante(data)
+    return resultado
 
 
 # FIM DA FUNÇÃO
@@ -3245,16 +2827,20 @@ def CadastraImgProduto():
     file.save(pathfile)
     upload_file(pathfile, "dbfilesintellimetrics", "produtos/" + pathfile)
     os.remove(pathfile)
-    Inserir_TbImagens(
-        "produtos/",
-        pathfile,
-        "10",
-        "TESTE",
-        datetime.datetime.now(),
-        cdProduto,
-        nrImagem,
-    )
-    return pathfile
+    payload = {
+        "dsCaminho": "produtos/",
+        "cdCodigo": pathfile,
+        "cdTipo": 10,
+        "dsUser": "TESTE",
+        "cdProduto": int(cdProduto),
+        "nrImagem": int(nrImagem),
+    }
+    data, error = valida_e_constroi_insert("TbImagens", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbImagens(data)
+    return resultado
 
 
 @app.route("/upload", methods=["POST"])
@@ -3314,36 +2900,12 @@ def get_AcessoIntelBras():
 @app.route("/AcessoIntelBras", methods=["POST"])
 def post_AcessoIntelBras():
     payload = request.get_json()
-    dsCardName = payload["dsCardName"]
-    dsCardNo = payload["dsCardNo"]
-    dsDoor = payload["dsDoor"]
-    dsEntry = payload["dsEntry"]
-    dsErrorCode = payload["dsErrorCode"]
-    dsMethod = payload["dsMethod"]
-    dsPassword = payload["dsPassword"]
-    dsReaderID = payload["dsReaderID"]
-    dsStatus = payload["dsStatus"]
-    dsType = payload["dsType"]
-    dsUserId = payload["dsUserId"]
-    dsUserType = payload["dsUserType"]
-    dsUtc = payload["dsUtc"]
-    TbAcessoIntelBrascol = payload["TbAcessoIntelBrascol"]
-    Inserir_TbAcessoIntelBras(
-        dsCardName,
-        dsCardNo,
-        dsDoor,
-        dsEntry,
-        dsErrorCode,
-        dsMethod,
-        dsPassword,
-        dsReaderID,
-        dsStatus,
-        dsType,
-        dsUserId,
-        dsUserType,
-        dsUtc,
-        TbAcessoIntelBrascol,
-    )
+    data, error = valida_e_constroi_insert("TbCAcessoIntelBras", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+
+    Inserir_TbAcessoIntelBras(data)
     return "Cadastramento realizado com sucesso"
 
 
@@ -3602,7 +3164,7 @@ def dados():
 
 def main():
     port = int(os.environ.get("PORT", 8080))
-    app.run(host="127.0.0.1", port=port)
+    app.run(host="127.0.0.1", port=port, debug=True)
 
 
 # port = int(os.environ.get("PORT", 80))
