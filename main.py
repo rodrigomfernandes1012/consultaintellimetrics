@@ -1,23 +1,32 @@
 # SERVER API
-import base64
-import datetime
-from random import random
-import random
-from flask import Flask, jsonify, request, redirect, url_for
-from flask_cors import CORS
-import json
-import mysql.connector
-import requests
-import boto3
-import os
 import ast
+import base64
+import json
+import os
 import time
-import re
+from collections import defaultdict
+from typing import Any, Dict, List
 import pandas as pd
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
 from datetime import datetime
 
+import boto3
+import pandas as pd
+import psycopg2
+import psycopg2.extras
+import requests
+from dotenv import load_dotenv
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+from geopy.distance import geodesic
+from geopy.geocoders import Nominatim
+from supabase import Client, create_client
+
+from utils import valida_e_constroi_insert, valida_e_constroi_update
+
+# possibilita pegar variaveis do .env
+load_dotenv()
 
 # Amazon
 selecao = []
@@ -27,23 +36,27 @@ dic_whats = []
 dic_whats2 = []
 dic_altura = []
 
-
-token = "8c4EF9vXi8TZe6581e0af85c25"
+# Supabase setup client
+url: str = os.getenv("SUPABASE_URL")
+key: str = os.getenv("SUPABASE_KEY")
+supabase: Client = create_client(url, key)
 
 
 def conecta_bd():
-    conexao = mysql.connector.connect(
-        host="dbintellimetrics.c3kc6gou2fhz.us-west-2.rds.amazonaws.com",
-        user="admin",
-        password="IntelliMetr!c$",
-        database="DbIntelliMetrics",
+    conexao = psycopg2.connect(
+        host=os.getenv("DB_HOST"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_DATABASE"),
+        port=os.getenv("DB_PORT"),
     )
     return conexao
 
 
 def envia_whatstexto(msg):
-    import requests
     import json
+
+    import requests
 
     url = "https://app.whatsgw.com.br/api/WhatsGw/Send"
 
@@ -72,9 +85,6 @@ def assinar_arquivo(arquivo):
         ExpiresIn=3600,
     )
     return url
-
-
-# assinar_arquivo()
 
 
 def upload_file(file_name, bucket, object_name):
@@ -130,16 +140,17 @@ def Pegar_Medidas():
     return medidas
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbAcessoIntelBras
+# Selecionar registros da tabela public.TbAcessoIntelBras
 def Selecionar_TbAcessoIntelBras():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdAcessoIntelBras, dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc from DbIntelliMetrics.TbAcessoIntelBras"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbAcessoIntelBras")
+        .select(
+            "cdAcessoIntelBras, dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc"
+        )
+        .execute()
+    )
+    return resultado.data
+
 
 def Selecionar_TbPonto():
     conexao = conecta_bd()
@@ -152,22 +163,20 @@ def Selecionar_TbPonto():
     return resultado
 
 
-
-
-
-
 def Selecionar_VwTbDestinatarioDispositivo(codigoDisp):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdDestinatario, dsLat, dsLong, nrRaio, cdFilho from DbIntelliMetrics.VwTbDestinatarioDispositivo where cdFilho ={codigoDisp} "
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("VwTbDestinatarioDispositivo")
+        .select("cdDestinatario", "dsLat", "dsLong", "nrRaio", "cdFilho")
+        .eq("cdFilho", codigoDisp)
+        .execute()
+    )
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
+# Inserir registros da tabela public.TbAcessoIntelBras
+# def Inserir_TbAcessoIntelBras(data):
+#     resultado = supabase.table("TbAcessoIntelBras").insert(data).execute()
+#     return resultado.data
 
 
 # Inserir registros da tabela DbIntelliMetrics.TbAcessoIntelBras
@@ -190,9 +199,9 @@ def Inserir_TbAcessoIntelBras(
     cursor = conexao.cursor(dictionary=True)
     comando = f'insert into DbIntelliMetrics.TbAcessoIntelBras ( dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc ) values ("{dsCardName}", "{dsCardNo}", "{dsDoor}", "{dsEntry}", "{dsErrorCode}", "{dsMethod}", "{dsPassword}", "{dsReaderID}", "{dsStatus}", "{dsType}", "{dsUserId}", "{dsUserType}", "{dsUtc}")'
     cursor.execute(comando)
-    data = str(datetime.utcfromtimestamp(int(dsUtc)).strftime('%Y-%m-%d %H:%M:%S'))
-    #print(dsCardNo,data)
-    Inserir_TbPonto(dsCardNo,data)
+    data = str(datetime.utcfromtimestamp(int(dsUtc)).strftime("%Y-%m-%d %H:%M:%S"))
+    # print(dsCardNo,data)
+    Inserir_TbPonto(dsCardNo, data)
     conexao.commit()
     cursor.close()
     conexao.close()
@@ -203,9 +212,9 @@ def Inserir_TbPonto(dsCardNo, dsUtc):
     cursor = conexao.cursor(dictionary=True)
     comando = f"select * from DbIntelliMetrics.TbPonto where dsCardNo = '{dsCardNo}' and DATE(dtRegistro) = DATE('{dsUtc}')"
     cursor.execute(comando)
-    #print(comando)
+    # print(comando)
     resultado = cursor.fetchall()
-    #print(resultado)
+    # print(resultado)
     if resultado == []:
         print("vazio")
         dado = "dsRegistro01"
@@ -213,21 +222,21 @@ def Inserir_TbPonto(dsCardNo, dsUtc):
         print(resultado)
 
         for dtregistro in resultado:
-            if dtregistro['dsRegistro06']== None:
+            if dtregistro["dsRegistro06"] == None:
                 dado = "dsRegistro06"
-            if dtregistro['dsRegistro05'] == None:
+            if dtregistro["dsRegistro05"] == None:
                 dado = "dsRegistro05"
-            if dtregistro['dsRegistro04']==None:
+            if dtregistro["dsRegistro04"] == None:
                 dado = "dsRegistro04"
-            if dtregistro['dsRegistro03']==None:
+            if dtregistro["dsRegistro03"] == None:
                 dado = "dsRegistro03"
-            if dtregistro['dsRegistro02']==None:
+            if dtregistro["dsRegistro02"] == None:
                 dado = "dsRegistro02"
-            if dtregistro['dsRegistro01']==None:
+            if dtregistro["dsRegistro01"] == None:
                 dado = "dsRegistro01"
             print(dado)
 
-    if dado=="dsRegistro01":
+    if dado == "dsRegistro01":
         comando = f"insert into DbIntelliMetrics.TbPonto ( dsCardNo, dsRegistro01 ) values ('{dsCardNo}', '{dsUtc}')"
     print(comando)
     if dado == "dsRegistro02":
@@ -251,33 +260,6 @@ def Inserir_TbPonto(dsCardNo, dsUtc):
     cursor.close()
     conexao.close()
 
-#Inserir_TbAcessoIntelBras("rodrigo","17439772801","1","",0,25,"",1,'1',"Entry","17439772806",0,"1722531607")
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbAcessoIntelBras
-def deletar_TbAcessoIntelBras(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbAcessoIntelBras where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbAcessoIntelBras
-def Alterar_TbAcessoIntelBras(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbAcessoIntelBras set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
 
 def calcular_distancia(lat1, lon1, lat2, lon2):
     geolocator = Nominatim(user_agent="my_app")
@@ -285,388 +267,192 @@ def calcular_distancia(lat1, lon1, lat2, lon2):
     return distancia
 
 
-# distancia = calcular_distancia("-23.5006347","-46.4884689","-23.5331802","-46.4659015")
-# distancia = calcular_distancia(lat1, lon1, lat2, lon2)
-
-
-# Selecionar registros da tabela DbIntelliMetrics.VwTbPosicaoAtual
+# Selecionar registros da tabela public.VwTbPosicaoAtual
 def Selecionar_VwTbPosicaoAtual(filtros):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-
-    comando = f"select cdPosicao, \
-    dtRegistro,\
-    cdDispositivo,\
-    dsLat,\
-    dsLong,\
-    dsEndereco,\
-    dsNum,\
-    dsCep,\
-    dsBairro,\
-    dsCidade,\
-    dsUF,\
-    dsPais,\
-    nrBat,\
-    nrCodigo,\
-    cdProduto,\
-    dsProduto,\
-    dsDescricao,\
-    dsStatus,\
-    blArea\
-    from DbIntelliMetrics.VwTbPosicaoAtual WHERE 1=1"
+    query = supabase.table("VwTbPosicaoAtual").select(
+        "cdPosicao",
+        "dtRegistro",
+        "cdDispositivo",
+        "dsLat",
+        "dsLong",
+        "dsEndereco",
+        "dsNum",
+        "dsCep",
+        "dsBairro",
+        "dsCidade",
+        "dsUF",
+        "dsPais",
+        "nrBat",
+        "nrCodigo",
+        "cdProduto",
+        "dsProduto",
+        "dsDescricao",
+        "dsStatus",
+        "blArea",
+    )
 
     for campo, valor in filtros.items():
-        comando += f" AND {campo} = '{valor}'"
+        query = query.eq(campo, valor)
 
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = query.execute()
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
-
-
-# Selecionar registros da tabela DbIntelliMetrics.TbChamados
+# Selecionar registros da tabela public.TbChamados
 def Selecionar_TbChamados():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdChamados, dtOperacao, dsTipo, dsDescricao, nrQtde, dsUser, dtRegistro from DbIntelliMetrics.TbChamados"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbChamados")
+        .select(
+            "cdChamados",
+            "dtOperacao",
+            "dsTipo",
+            "dsDescricao",
+            "nrQtde",
+            "dsUser",
+            "dtRegistro",
+        )
+        .execute()
+    )
+
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
+# Inserir registros da tabela public.TbChamados
+def Inserir_TbChamados(data):
+    resultado = supabase.table("TbChamados").insert(data).execute()
+    return resultado.data
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbChamados
-def Inserir_TbChamados(dtOperacao, dsTipo, dsDescricao, nrQtde, dsUser, dtRegistro):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbChamados ( dtOperacao, dsTipo, dsDescricao, nrQtde, dsUser, dtRegistro ) values ("{dtOperacao}", "{dsTipo}", "{dsDescricao}", "{nrQtde}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbChamados
-def deletar_TbChamados(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbChamados where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbChamados
-def Alterar_TbChamados(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbChamados set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Selecionar registros da tabela DbIntelliMetrics.TbCliente
+# Selecionar registros da tabela public.TbCliente
 def Selecionar_TbCliente():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdCliente, dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsUser, dtRegistro from DbIntelliMetrics.TbCliente"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbCliente")
+        .select(
+            "cdCliente",
+            "dsNome",
+            "nrCnpj",
+            "nrIe",
+            "nrInscMun",
+            "dsLogradouro",
+            "nrNumero",
+            "dsComplemento",
+            "dsBairro",
+            "dsCep",
+            "dsCidade",
+            "dsUF",
+            "dsObs",
+            "cdStatus",
+            "dsUser",
+            "dtRegistro",
+        )
+        .execute()
+    )
+
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
+# Inserir registros da tabela public.TbCliente
+def Inserir_TbCliente(data):
+    resultado = supabase.table("TbCliente").insert(data).execute()
+    return resultado.data
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbCliente
-def Inserir_TbCliente(
-    dsNome,
-    nrCnpj,
-    nrIe,
-    nrInscMun,
-    dsLogradouro,
-    nrNumero,
-    dsComplemento,
-    dsBairro,
-    dsCep,
-    dsCidade,
-    dsUF,
-    dsObs,
-    cdStatus,
-    dsUser,
-    dtRegistro,
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbCliente ( dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsUser, dtRegistro ) values ("{dsNome}", "{nrCnpj}", "{nrIe}", "{nrInscMun}", "{dsLogradouro}", "{nrNumero}", "{dsComplemento}", "{dsBairro}", "{dsCep}", "{dsCidade}", "{dsUF}", "{dsObs}", "{cdStatus}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbCliente
-def deletar_TbCliente(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbCliente where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbCliente
-def Alterar_TbCliente(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbCliente set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Selecionar registros da tabela DbIntelliMetrics.TbDestinatario
+# Selecionar registros da tabela public.TbDestinatario
 def Selecionar_TbDestinatario(codigo):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    if codigo == "0":
-        comando = f"select cdDestinatario, dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsLat, dsLong, nrRaio, dsUser, dtRegistro from DbIntelliMetrics.TbDestinatario"
-    else:
-        comando = f"select cdDestinatario, dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsLat, dsLong, nrRaio, dsUser, dtRegistro from DbIntelliMetrics.TbDestinatario where cdDestinatario ={codigo}"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    query = supabase.table("TbDestinatario").select(
+        "cdDestinatario",
+        "dsNome",
+        "nrCnpj",
+        "nrIe",
+        "nrInscMun",
+        "dsLogradouro",
+        "nrNumero",
+        "dsComplemento",
+        "dsBairro",
+        "dsCep",
+        "dsCidade",
+        "dsUF",
+        "dsObs",
+        "cdStatus",
+        "dsLat",
+        "dsLong",
+        "nrRaio",
+        "dsUser",
+        "dtRegistro",
+    )
 
+    if codigo != "0":
+        query.eq("cdDestinatario", codigo)
 
-# FIM DA FUNÇÃO
+    resultado = query.execute()
+
+    return resultado.data
 
 
 def Selecionar_Lat_Long_Destinatario(codigo):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"SELECT cdDestinatario, dsLat, dsLong, cdFilho FROM DbIntelliMetrics.VwTbDestinatarioDispositivo where cdFilho ={codigo}"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("VwTbDestinatarioDispositivo")
+        .select("cdDestinatario", "dsLat", "dsLong", "cdFilho")
+        .eq("cdFilho", codigo)
+        .execute()
+    )
+
+    return resultado.data
 
 
-# print(Selecionar_Lat_Long_Destinatario(2))
+# Inserir registros da tabela public.TbDestinatario
+def Inserir_TbDestinatario(data):
+    resultado = supabase.table("TbDestinatario").insert(data).execute()
+    return resultado.data
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbDestinatario
-def Inserir_TbDestinatario(
-    dsNome,
-    nrCnpj,
-    nrIe,
-    nrInscMun,
-    dsLogradouro,
-    nrNumero,
-    dsComplemento,
-    dsBairro,
-    dsCep,
-    dsCidade,
-    dsUF,
-    dsObs,
-    cdStatus,
-    dsLat,
-    dsLong,
-    nrRaio,
-    dsUser,
-    dtRegistro,
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbDestinatario ( dsNome, nrCnpj, nrIe, nrInscMun, dsLogradouro, nrNumero, dsComplemento, dsBairro, dsCep, dsCidade, dsUF, dsObs, cdStatus, dsLat, dsLong, nrRaio, dsUser, dtRegistro ) values ("{dsNome}", "{nrCnpj}", "{nrIe}", "{nrInscMun}", "{dsLogradouro}", "{nrNumero}", "{dsComplemento}", "{dsBairro}", "{dsCep}", "{dsCidade}", "{dsUF}", "{dsObs}", "{cdStatus}", "{dsLat}", "{dsLong}", "{nrRaio}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbDestinatario
-def deletar_TbDestinatario(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbDestinatario where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbDestinatario
-def Alterar_TbDestinatario(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbDestinatario set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Selecionar registros da tabela DbIntelliMetrics.TbDispositivo
+# Selecionar registros da tabela public.TbDispositivo
 def Selecionar_TbDispositivo(codigo):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    if codigo == 0:
-        comando = f"select cdDispositivo, dsDispositivo, dsModelo, dsDescricao, dsObs, dsLayout, nrChip, cdStatus, dsUser, dtRegistro from DbIntelliMetrics.TbDispositivo"
-    else:
-        comando = f"select cdDispositivo, dsDispositivo, dsModelo, dsDescricao, dsObs, dsLayout, nrChip, cdStatus, dsUser, dtRegistro from DbIntelliMetrics.TbDispositivo where cdDispositivo={codigo}"
+    query = supabase.table("TbDispositivo").select(
+        "cdDispositivo",
+        "dsDispositivo",
+        "dsModelo",
+        "dsDescricao",
+        "dsObs",
+        "dsLayout",
+        "nrChip",
+        "cdStatus",
+        "dsUser",
+        "dtRegistro",
+    )
 
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    if codigo != "0":
+        query.eq("cdDispositivo", codigo)
 
+    resultado = query.execute()
 
-# FIM DA FUNÇÃO
-
-
-# Inserir registros da tabela DbIntelliMetrics.TbDispositivo
-def Inserir_TbDispositivo(
-    dsDispositivo,
-    dsModelo,
-    dsDescricao,
-    dsObs,
-    dsLayout,
-    nrChip,
-    cdStatus,
-    dsUser,
-    dtRegistro,
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbDispositivo ( dsDispositivo, dsModelo, dsDescricao, dsObs, dsLayout, nrChip, cdStatus, dsUser, dtRegistro ) values ("{dsDispositivo}", "{dsModelo}", "{dsDescricao}", "{dsObs}", "{dsLayout}", "{nrChip}", "{cdStatus}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
+# Inserir registros da tabela public.TbDispositivo
+def Inserir_TbDispositivo(data):
+    resultado = supabase.table("TbDispositivo").insert(data).execute()
+    return resultado.data
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbDispositivo
-def deletar_TbDispositivo(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbDispositivo where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbDispositivo
-def Alterar_TbDispositivo(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbDispositivo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Selecionar registros da tabela DbIntelliMetrics.TbImagens
+# Selecionar registros da tabela public.TbImagens
 def Selecionar_TbImagens(codigo):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    if codigo == "0":
-        comando = f"select cdImagens, dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro from DbIntelliMetrics.TbImagens"
-    else:
-        comando = f'select cdImagens, dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro from DbIntelliMetrics.TbImagens where SUBSTRING_INDEX(cdCodigo, "-", 1) ={codigo}'
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    query = supabase.table("TbImagens").select(
+        "cdImagens, dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro, cdProduto, nrImagem"
+    )
+
+    if codigo != "0":
+        query.eq("cdProduto", codigo)
+
+    resultado = query.execute()
+
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
-
-
-# Inserir registros da tabela DbIntelliMetrics.TbImagens
-def Inserir_TbImagens(
-    dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro, cdProduto, nrImagem
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbImagens ( dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro, cdProduto, nrImagem ) values ("{dsCaminho}", "{cdCodigo}", "{cdTipo}", "{dsUser}", "{dtRegistro}", "{cdProduto}", "{nrImagem}")'
-    # print(comando)
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbImagens
-def deletar_TbImagens(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbImagens where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbImagens
-def Alterar_TbImagens(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbImagens set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO#
-
-
-# Selecionar registros da tabela DbIntelliMetrics.TbPosicao
-# def Selecionar_TbPosicao(codigo):
-#     conexao = conecta_bd()
-#     cursor = conexao.cursor(dictionary=True)
-
-#     if codigo == '0':
-#         comando = f'select cdPosicao, dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dtRegistro from DbIntelliMetrics.TbPosicao'
-#     else:
-#         comando = f'select cdPosicao, dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dtRegistro from DbIntelliMetrics.TbPosicao where cdDispositivo={codigo}'
-#     cursor.execute(comando)
-#     resultado = cursor.fetchall()
-#     cursor.close()
-#     conexao.close()
-#     return  resultado
-# FIM DA FUNÇÃO
-
-# Selecionar_TbDestinatario()
+# Inserir registros da tabela public.TbImagens
+def Inserir_TbImagens(data):
+    resultado = supabase.table("TbImagens").insert(data).execute()
+    return resultado.data
 
 
 def get_endereco_coordenada(lat, long):
@@ -684,991 +470,528 @@ def get_endereco_coordenada(lat, long):
         dsUF = dados.get("region_a")
         dsCep = dados.get("postalcode")
         dsPais = dados.get("country_code")
-        return (dsLogradoruro, dsNum, dsBairro, dsCidade, dsUF, dsCep, dsPais)
+
+    return {
+        "dsLogradoruro": dsLogradoruro,
+        "dsNum": dsNum,
+        "dsBairro": dsBairro,
+        "dsCidade": dsCidade,
+        "dsUF": dsUF,
+        "dsCep": dsCep,
+        "dsPais": dsPais,
+    }
 
 
-# get_endereco_coordenada(lat, long)
+# Inserir registros da tabela public.TbPosicao
+def Inserir_TbPosicao(data):
+    resultado = supabase.table("TbPosicao").insert(data).execute()
+    return resultado.data
 
-
-# Inserir registros da tabela DbIntelliMetrics.TbPosicao
-def Inserir_TbPosicao(
-    dsModelo,
-    dtData,
-    dtHora,
-    dsLat,
-    dsLong,
-    nrTemp,
-    nrBat,
-    nrSeq,
-    dsArquivo,
-    cdDispositivo,
-    dsEndereco,
-    dsNum,
-    dsBairro,
-    dsCidade,
-    dsUF,
-    dsCep,
-    dsPais,
-    dsLatPdv,
-    dsLongPdv,
-    nrRaio,
-    blArea,
-    nrDistancia,
-    dsUser,
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbPosicao ( dsModelo, dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, nrSeq, dsArquivo, cdDispositivo, dsEndereco, dsNum, dsBairro, dsCidade,  dsUF, dsCep, dsPais,  dsLatPdv, dsLongPdv, nrRaio, blArea, nrDistancia, dsUser ) values ("{dsModelo}", "{dtData}", "{dtHora}", "{dsLat}", "{dsLong}", "{nrTemp}", "{nrBat}", "{nrSeq}", "{dsArquivo}", "{cdDispositivo}", "{dsEndereco}", "{dsNum}", "{dsBairro}", "{dsCidade}", "{dsUF}", "{dsCep}","{dsPais}", "{dsLatPdv}", "{dsLongPdv}", "{nrRaio}", "{blArea}", "{nrDistancia}", "{dsUser}")'
-    # print(comando)
-    cursor.execute(comando)
-    conexao.commit()
-    return cursor.lastrowid
 
 def Alterar_StatusTbPosicao(codigo, status):
-    conexao = conecta_bd()
-    cursor = conexao.cursor()
-    comando = f'update DbIntelliMetrics.TbDispositivo set cdStatus= {status}  where cdDispositivo = {codigo}  '
-    cursor.execute(comando)
-    conexao.commit()
+    response = (
+        supabase.table("TbDispositivo")
+        .update({"cdStatus": status})
+        .eq("cdDispositivo", codigo)
+        .execute()
+    )
+    return response.data
 
 
-
-def Inserir_TbSensorRegistro(cdDispositivo, cdSensor, cdPosicao, nrValor):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbSensorRegistro (cdDispositivo, cdSensor, cdPosicao, nrValor) values ("{cdDispositivo}", "{cdSensor}", "{cdPosicao}", "{nrValor}")'
-    cursor.execute(comando)
-    conexao.commit()
-    return cursor.lastrowid
+def Inserir_TbSensorRegistro(data):
+    resultado = supabase.table("TbSensorRegistro").insert(data).execute()
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbPosicao
-def deletar_TbPosicao(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbPosicao where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbPosicao
-def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbPosicao set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Selecionar registros da tabela DbIntelliMetrics.TbProduto
+# Selecionar registros da tabela public.TbProduto
 def Selecionar_TbProduto(codigo):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    # Consulta os dados da tabela produtos
-    comando = f"SELECT cdProduto, dsDescricao, dsNome, nrAlt, nrCodigo, nrComp, nrLarg, nrQtde, dsStatus FROM VwTbProdutoTotalStaus where cdProduto = {codigo}"
-    cursor.execute(comando)
-    produtos = cursor.fetchall()
-
-    # Array para armazenar os resultados
-    produtos_json = []
-
-    # Percorre os produtos
-    for produto in produtos:
-        (
-            cdProduto,
-            dsDescricao,
-            dsNome,
-            nrAlt,
-            nrCodigo,
-            nrComp,
-            nrLarg,
-            nrQtde,
-            dsStatus,
-        ) = produto
-
-        # Consulta os dados da tabela imagens para o produto atual
-        comando = (
-            f"SELECT cdCodigo, dsCaminho  FROM TbImagens WHERE cdProduto = {codigo}"
+    resultado = (
+        supabase.table("VwTbProdutoTotalStaus")
+        .select(
+            "cdProduto",
+            "dsDescricao",
+            "dsNome",
+            "nrAlt",
+            "nrCodigo",
+            "nrComp",
+            "nrLarg",
+            "nrQtde",
+            "dsStatus",
+            "TbImagens(cdCodigo, dsCaminho)",
         )
-        # query = "SELECT cdCodigo, dsCaminho  FROM TbImagens WHERE cdImagens = 26"
-        cursor.execute(comando)
-        imagens = cursor.fetchall()
+        .eq("cdProduto", codigo)
+        .execute()
+    )
 
-        # Array para armazenar as imagens
-        imagens_array = []
-
-        # Percorre as imagens e adiciona ao array
-        for imagem in imagens:
-            cdCodigo, dsCaminho = imagem
-            imagens_array.append({"cdImagens": cdCodigo, "dsCaminho": dsCaminho})
-
-        # Cria um dicionário com os dados do produto e o array de imagens
-        produto_json = {
-            "cdProduto": cdProduto,
-            "dsDescricao": dsDescricao,
-            "dsNome": dsNome,
-            "nrAlt": nrAlt,
-            "nrCodigo": nrCodigo,
-            "nrComp": nrComp,
-            "nrLarg": nrLarg,
-            "nrQtde": nrQtde,
-            "dsStatus": dsStatus,
-            "imagens": imagens_array,
-        }
-        # produtos_json.append(produto_json)
-        produtos_json.append(produto)
-        produtos_json.append(imagens_array)
-
-    # Fecha a conexão com o banco de dados
-    cursor.close()
-    conexao.close()
-    return jsonify(produtos_json)
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
+# Inserir registros da tabela public.TbProduto
+def Inserir_TbProduto(data):
+    resultado = supabase.table("TbProduto").insert(data).execute()
+    return resultado.data
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbProduto
-def Inserir_TbProduto(
-    dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, dsUser, dtRegistro
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbProduto ( dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, dsUser, dtRegistro ) values ("{dsNome}", "{dsDescricao}", "{nrCodigo}", "{nrLarg}", "{nrComp}", "{nrAlt}", "{cdStatus}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
-    return cursor.lastrowid
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbProduto
-def deletar_TbProduto(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbProduto where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Selecionar registros da tabela DbIntelliMetrics.TbRelacionamento
+# Selecionar registros da tabela public.TbRelacionamento
 def Selecionar_TbRelacionamento():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdRelacionamento, cdPai, cdFilho, cdTipo, dsDescricao, cdStatus, dsUser, dtRegistro from DbIntelliMetrics.TbRelacionamento"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbRelacionamento")
+        .select(
+            "cdRelacionamento",
+            "cdPai",
+            "cdFilho",
+            "cdTipo",
+            "dsDescricao",
+            "cdStatus",
+            "dsUser",
+            "dtRegistro",
+        )
+        .execute()
+    )
+
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
+# Inserir registros da tabela public.TbRelacionamento
+def Inserir_TbRelacionamento(data):
+    resultado = supabase.table("TbRelacionamento").insert(data).execute()
+    return resultado.data
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbRelacionamento
-def Inserir_TbRelacionamento(
-    cdPai, cdFilho, cdTipo, dsDescricao, cdStatus, dsUser, dtRegistro
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbRelacionamento ( cdPai, cdFilho, cdTipo, dsDescricao, cdStatus, dsUser, dtRegistro ) values ("{cdPai}", "{cdFilho}", "{cdTipo}", "{dsDescricao}", "{cdStatus}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbRelacionamento
-def deletar_TbRelacionamento(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbRelacionamento where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbRelacionamento
-def Alterar_TbRelacionamento(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbRelacionamento set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Selecionar registros da tabela DbIntelliMetrics.TbSensor
+# Selecionar registros da tabela public.TbSensor
 def Selecionar_TbSensor():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdSensor, dsNome, cdTipo, dsDescricao, cdUnidade, nrUnidadeIni, nrUnidadeFim, dsUser, dtRegistro from DbIntelliMetrics.TbSensor"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbSensor")
+        .select(
+            "cdSensor",
+            "dsNome",
+            "cdTipo",
+            "dsDescricao",
+            "cdUnidade",
+            "nrUnidadeIni",
+            "nrUnidadeFim",
+            "dsUser",
+            "dtRegistro",
+        )
+        .execute()
+    )
+
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
+# Inserir registros da tabela public.TbSensor
+def Inserir_TbSensor(data):
+    resultado = supabase.table("TbSensor").insert(data).execute()
+    return resultado.data
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbSensor
-def Inserir_TbSensor(
-    dsNome,
-    cdTipo,
-    dsDescricao,
-    cdUnidade,
-    nrUnidadeIni,
-    nrUnidadeFim,
-    dsUser,
-    dtRegistro,
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbSensor ( dsNome, cdTipo, dsDescricao, cdUnidade, nrUnidadeIni, nrUnidadeFim, dsUser, dtRegistro ) values ("{dsNome}", "{cdTipo}", "{dsDescricao}", "{cdUnidade}", "{nrUnidadeIni}", "{nrUnidadeFim}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbSensor
-def deletar_TbSensor(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbSensor where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbSensor
-def Alterar_TbSensor(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbSensor set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Selecionar registros da tabela DbIntelliMetrics.TbStatus
+# Selecionar registros da tabela public.TbStatus
 def Selecionar_TbStatus():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = (
-        f"select cdStatus, dsStatus, dsUser, dtRegistro from DbIntelliMetrics.TbStatus"
+    resultado = (
+        supabase.table("TbStatus")
+        .select("cdStatus, dsStatus, dsUser, dtRegistro")
+        .execute()
     )
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
+# Inserir registros da tabela public.TbStatus
+def Inserir_TbStatus(data):
+    resultado = supabase.table("TbStatus").insert(data).execute()
+    return resultado.data
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbStatus
-def Inserir_TbStatus(dsStatus, dsUser, dtRegistro):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbStatus ( dsStatus, dsUser, dtRegistro ) values ("{dsStatus}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbStatus
-def deletar_TbStatus(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbStatus where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbStatus
-def Alterar_TbStatus(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbStatus set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Selecionar registros da tabela DbIntelliMetrics.TbTag
+# Selecionar registros da tabela public.TbTag
 def Selecionar_TbTag():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdTag, dsDescricao, dsConteudo, dsUser, dtRegistro from DbIntelliMetrics.TbTag"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
-
-
-# FIM DA FUNÇÃO
-
-
-# Inserir registros da tabela DbIntelliMetrics.TbTag
-def Inserir_TbTag(dsDescricao, dsConteudo, dsUser, dtRegistro):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbTag ( dsDescricao, dsConteudo, dsUser, dtRegistro ) values ("{dsDescricao}", "{dsConteudo}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbTag
-def deletar_TbTag(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbTag where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbTag
-def Alterar_TbTag(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbTag set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Selecionar registros da tabela DbIntelliMetrics.TbTicket
-def Selecionar_TbTicket():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdTicket, dtOperacao, dsAtendimento, nrAbertos, nrFechados, nrPendentes, dsUser, dtRegistro from DbIntelliMetrics.TbTicket"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
-
-
-# FIM DA FUNÇÃO
-
-
-# Inserir registros da tabela DbIntelliMetrics.TbTicket
-def Inserir_TbTicket(
-    dtOperacao, dsAtendimento, nrAbertos, nrFechados, nrPendentes, dsUser, dtRegistro
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbTicket ( dtOperacao, dsAtendimento, nrAbertos, nrFechados, nrPendentes, dsUser, dtRegistro ) values ("{dtOperacao}", "{dsAtendimento}", "{nrAbertos}", "{nrFechados}", "{nrPendentes}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbTicket
-def deletar_TbTicket(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbTicket where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbTicket
-def Alterar_TbTicket(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbTicket set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Selecionar registros da tabela DbIntelliMetrics.TbTicketResumo
-def Selecionar_TbTicketResumo():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdTicketResumo, dtOperacao, dsAtendimento, dsNaoAtribuido, dsSemResolucao, dsAtualizado, dsPendente, dsResolvido, dsUser, dtRegistro from DbIntelliMetrics.TbTicketResumo"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
-
-
-# FIM DA FUNÇÃO
-
-
-# Inserir registros da tabela DbIntelliMetrics.TbTicketResumo
-def Inserir_TbTicketResumo(
-    dtOperacao,
-    dsAtendimento,
-    dsNaoAtribuido,
-    dsSemResolucao,
-    dsAtualizado,
-    dsPendente,
-    dsResolvido,
-    dsUser,
-    dtRegistro,
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbTicketResumo ( dtOperacao, dsAtendimento, dsNaoAtribuido, dsSemResolucao, dsAtualizado, dsPendente, dsResolvido, dsUser, dtRegistro ) values ("{dtOperacao}", "{dsAtendimento}", "{dsNaoAtribuido}", "{dsSemResolucao}", "{dsAtualizado}", "{dsPendente}", "{dsResolvido}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbTicketResumo
-def deletar_TbTicketResumo(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbTicketResumo where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbTicketResumo
-def Alterar_TbTicketResumo(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbTicketResumo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Selecionar registros da tabela DbIntelliMetrics.TbTipo
-def Selecionar_TbTipo():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = (
-        f"select cdTipo, dsDescricao, dsUser, dtRegistro from DbIntelliMetrics.TbTipo"
+    resultado = (
+        supabase.table("TbTag")
+        .select("cdTag", "dsDescricao", "dsConteudo", "dsUser", "dtRegistro")
+        .execute()
     )
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
+# Inserir registros da tabela public.TbTag
+def Inserir_TbTag(data):
+    resultado = supabase.table("TbTag").insert(data).execute()
+    return resultado.data
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbTipo
-def Inserir_TbTipo(dsDescricao, dsUser, dtRegistro):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbTipo ( dsDescricao, dsUser, dtRegistro ) values ("{dsDescricao}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
+# Selecionar registros da tabela public.TbTicket
+def Selecionar_TbTicket():
+    resultado = (
+        supabase.table("TbTicket")
+        .select(
+            "cdTicket",
+            "dtOperacao",
+            "dsAtendimento",
+            "nrAbertos",
+            "nrFechados",
+            "nrPendentes",
+            "dsUser",
+            "dtRegistro",
+        )
+        .execute()
+    )
+
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
+# Inserir registros da tabela public.TbTicket
+def Inserir_TbTicket(data):
+    resultado = supabase.table("TbTicket").insert(data).execute()
+    return resultado.data
 
 
-# Deletar registros da tabela DbIntelliMetrics.TbTipo
-def deletar_TbTipo(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbTipo where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
+# Selecionar registros da tabela public.TbTicketResumo
+def Selecionar_TbTicketResumo():
+    resultado = (
+        supabase.table("TbTicketResumo")
+        .select(
+            "cdTicketResumo",
+            "dtOperacao",
+            "dsAtendimento",
+            "dsNaoAtribuido",
+            "dsSemResolucao",
+            "dsAtualizado",
+            "dsPendente",
+            "dsResolvido",
+            "dsUser",
+            "dtRegistro",
+        )
+        .execute()
+    )
+
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
+# Inserir registros da tabela public.TbTicketResumo
+def Inserir_TbTicketResumo(data):
+    resultado = supabase.table("TbTicketResumo").insert(data).execute()
+    return resultado.data
 
 
-# Alterar registros da tabela DbIntelliMetrics.TbTipo
-def Alterar_TbTipo(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbTipo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
+# Selecionar registros da tabela public.TbTipo
+def Selecionar_TbTipo():
+    resultado = (
+        supabase.table("TbTipo")
+        .select("cdTipo", "dsDescricao", "dsUser", "dtRegistro")
+        .execute()
+    )
+
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
+# Inserir registros da tabela public.TbTipo
+def Inserir_TbTipo(data):
+    resultado = supabase.table("TbTipo").insert(data).execute()
+    return resultado.data
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbUnidade
+# Selecionar registros da tabela public.TbUnidade
 def Selecionar_TbUnidade():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdUnidade, dsUnidade, dsSimbolo, dsUser, dtRegistro from DbIntelliMetrics.TbUnidade"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbUnidade")
+        .select("cdUnidade", "dsUnidade", "dsSimbolo", "dsUser", "dtRegistro")
+        .execute()
+    )
+
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
+# Inserir registros da tabela public.TbUnidade
+def Inserir_TbUnidade(data):
+    resultado = supabase.table("TbUnidade").insert(data).execute()
+    return resultado.data
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbUnidade
-def Inserir_TbUnidade(dsUnidade, dsSimbolo, dsUser, dtRegistro):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbUnidade ( dsUnidade, dsSimbolo, dsUser, dtRegistro ) values ("{dsUnidade}", "{dsSimbolo}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbUnidade
-def deletar_TbUnidade(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbUnidade where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbUnidade
-def Alterar_TbUnidade(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbUnidade set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Selecionar registros da tabela DbIntelliMetrics.TbUsuario
+# Selecionar registros da tabela public.TbUsuario
 def Selecionar_TbUsuario():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdUsuario, dsNome, dsLogin, dsSenha, cdPerfil, dsUser, dtRegistro from DbIntelliMetrics.TbUsuario"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbUsuario")
+        .select(
+            "cdUsuario",
+            "dsNome",
+            "dsLogin",
+            "dsSenha",
+            "cdPerfil",
+            "dsUser",
+            "dtRegistro",
+        )
+        .execute()
+    )
+
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
+# Inserir registros da tabela public.TbUsuario
+def Inserir_TbUsuario(data):
+    resultado = supabase.table("TbUsuario").insert(data).execute()
+    return resultado.data
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbUsuario
-def Inserir_TbUsuario(dsNome, dsLogin, dsSenha, cdPerfil, dsUser, dtRegistro):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbUsuario ( dsNome, dsLogin, dsSenha, cdPerfil, dsUser, dtRegistro ) values ("{dsNome}", "{dsLogin}", "{dsSenha}", "{cdPerfil}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbUsuario
-def deletar_TbUsuario(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbUsuario where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbUsuario
-def Alterar_TbUsuario(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbUsuario set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Selecionar registros da tabela DbIntelliMetrics.TbVisita
+# Selecionar registros da tabela public.TbVisita
 def Selecionar_TbVisita():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdVisita, cdCliente, cdVisitante, dtData, dsUser, dtRegistro from DbIntelliMetrics.TbVisita"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbVisita")
+        .select(
+            "cdVisita", "cdCliente", "cdVisitante", "dtData", "dsUser", "dtRegistro"
+        )
+        .execute()
+    )
+
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
+# Inserir registros da tabela public.TbVisita
+def Inserir_TbVisita(data):
+    resultado = supabase.table("TbVisita").insert(data).execute()
+    return resultado.data
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbVisita
-def Inserir_TbVisita(cdCliente, cdVisitante, dtData, dsUser, dtRegistro):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbVisita ( cdCliente, cdVisitante, dtData, dsUser, dtRegistro ) values ("{cdCliente}", "{cdVisitante}", "{dtData}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbVisita
-def deletar_TbVisita(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbVisita where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbVisita
-def Alterar_TbVisita(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbVisita set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Selecionar registros da tabela DbIntelliMetrics.TbVisitante
+# Selecionar registros da tabela public.TbVisitante
 def Selecionar_TbVisitante():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdVisitante, dsNome, nrTelefone, nrDocumento, dsEmail, dsUser, dtRegistro from DbIntelliMetrics.TbVisitante"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbVisitante")
+        .select(
+            "cdVisitante",
+            "dsNome",
+            "nrTelefone",
+            "nrDocumento",
+            "dsEmail",
+            "dsUser",
+            "dtRegistro",
+        )
+        .execute()
+    )
+
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
+# Inserir registros da tabela public.TbVisitante
+def Inserir_TbVisitante(data):
+    resultado = supabase.table("TbVisitante").insert(data).execute()
+    return resultado.data
 
 
-# Inserir registros da tabela DbIntelliMetrics.TbVisitante
-def Inserir_TbVisitante(dsNome, nrTelefone, nrDocumento, dsEmail, dsUser, dtRegistro):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbVisitante ( dsNome, nrTelefone, nrDocumento, dsEmail, dsUser, dtRegistro ) values ("{dsNome}", "{nrTelefone}", "{nrDocumento}", "{dsEmail}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbVisitante
-def deletar_TbVisitante(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbVisitante where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbVisitante
-def Alterar_TbVisitante(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbVisitante set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Selecionar registros da tabela DbIntelliMetrics.TbPosicao
+# Selecionar registros da tabela public.TbPosicao
 def Selecionar_TbPosicao(filtros):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
+    query = supabase.table("TbPosicao").select(
+        "dtData",
+        "dtHora",
+        "dsLat",
+        "dsLong",
+        "nrTemp",
+        "nrBat",
+        "dsEndereco",
+        "dtRegistro",
+    )
 
-    # Inicializa a consulta SQL básica
-    comando = "SELECT dtData, dtHora, dsLat, dsLong, nrTemp, nrBat, dsEndereco, dtRegistro FROM DbIntelliMetrics.TbPosicao WHERE 1=1"
-    # Adiciona condições à consulta SQL com base nos filtros fornecidos
+    # Apply filters
     for campo, valor in filtros.items():
         if campo == "dtRegistro":
-            campo = f"DATE({campo})"
+            # Format date as YYYY-MM-DD
             valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
-        comando += f" AND {campo} = '{valor}'"
+            query = query.gte(campo, f'{valor + " 00:00:00"}')
+            query = query.lte(campo, f'{valor + " 23:59:59"}')
+        else:
+            query = query.eq(campo, valor)
 
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = query.execute()
 
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbPosicao
-def deletar_TbPosicao(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbPosicao where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbPosicao
-def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbPosicao set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
+    return resultado.data
 
 
 def Selecionar_VwRelHistoricoDispositivoProduto(filtros):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
+    query = supabase.table("VwRelHistoricoDispositivoProduto").select(
+        "cdProduto",
+        "nrCodigo",
+        "dsDescricao",
+        "dtRegistro",
+        "cdDispositivo",
+        "dsNome",
+        "dsEndereco",
+        "nrBatPercentual",
+        "nrPorta",
+        "nrTemperatura",
+        "dsProdutoItem",
+        "nrQtdItens",
+        "dsStatus",
+        "dsStatusDispositivo",
+        "cdSensor",
+    )
 
-    comando = f"select cdProduto, nrCodigo, dsDescricao, dtRegistro, cdDispositivo, dsNome, dsEndereco, nrBatPercentual, nrPorta, nrTemperatura, dsProdutoItem, nrQtdItens, dsStatus, dsStatusDispositivo, cdSensor from VwRelHistoricoDispositivoProduto where 1=1"
-    # Adiciona condições à consulta SQL com base nos filtros fornecidos
+    # Apply filters
     for campo, valor in filtros.items():
         if campo == "dtRegistro":
-            campo = f"DATE({campo})"
+            # Format date as YYYY-MM-DD
             valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
-        comando += f" AND {campo} = '{valor}'"
+            query = query.gte(campo, f'{valor + " 00:00:00"}')
+            query = query.lte(campo, f'{valor + " 23:59:59"}')
+        else:
+            query = query.eq(campo, valor)
 
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
+    resultado = query.execute()
 
-    return resultado
+    return resultado.data
+
 
 # busca dados de VwRelHistoricoDispositivoProduto, mas retorna cada produtoItem como uma coluna.
 def Selecionar_HistoricoPaginaDispositivo(filtros):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
+    resultado = Selecionar_VwRelHistoricoDispositivoProduto
 
-    comando = f"select cdProduto, nrCodigo, dsDescricao, dtRegistro, cdDispositivo, dsNome, dsEndereco, nrBatPercentual, nrPorta, nrTemperatura, dsProdutoItem, nrQtdItens, dsStatus, dsStatusDispositivo, cdSensor from VwRelHistoricoDispositivoProduto where 1=1"
-    # Adiciona condições à consulta SQL com base nos filtros fornecidos
-    for campo, valor in filtros.items():
-        if campo == "dtRegistro":
-            campo = f"DATE({campo})"
-            valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
-        comando += f" AND {campo} = '{valor}'"
-
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    
     if len(resultado) == 0:
         return resultado
 
     # Convert the result to a pandas DataFrame
     df = pd.DataFrame(resultado)
-    
+
     # Retain the original data for merging later
-    original_df = df.drop(columns=['nrQtdItens', 'dsProdutoItem', 'cdSensor']).drop_duplicates()
-    
+    original_df = df.drop(
+        columns=["nrQtdItens", "dsProdutoItem", "cdSensor"]
+    ).drop_duplicates()
+
     # Pivot the data
-    pivot_df = df.pivot_table(index='dtRegistro', columns=['dsProdutoItem', 'cdSensor'], values='nrQtdItens', fill_value=0)
-    
+    pivot_df = df.pivot_table(
+        index="dtRegistro",
+        columns=["dsProdutoItem", "cdSensor"],
+        values="nrQtdItens",
+        fill_value=0,
+    )
+
     # Flatten the multi-index columns
     pivot_df.columns = [f"{item[0]}_{item[1]}" for item in pivot_df.columns]
-    
+
     # Reset index to have dtRegistro as a column again
     pivot_df = pivot_df.reset_index()
-    
+
     # Merge the pivoted data with the original data
-    final_df = pd.merge(original_df, pivot_df, on='dtRegistro', how='left')
-    
-    result_json = final_df.to_json(orient='records', date_format='iso')
+    final_df = pd.merge(original_df, pivot_df, on="dtRegistro", how="left")
+
+    result_json = final_df.to_json(orient="records", date_format="iso")
 
     return result_json
 
 
 def Selecionar_VwRelDadosDispositivo(filtros):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
+    query = supabase.table("VwRelDadosDispositivo").select(
+        "cdProduto",
+        "dsNome",
+        "cdDispositivo",
+        "nrBat",
+        "dsNomeDest",
+        "dsEnderecoDest",
+        "nrNumeroDest",
+        "dsBairroDest",
+        "dsCidadeDest",
+        "dsUfDest",
+        "dsCepDest",
+        "dsLatDest",
+        "dsLongDest",
+        "dsRaio",
+        "dsEnderecoAtual",
+        "dsNumeroAtual",
+        "dsBairroAtual",
+        "dsCidadeAtual",
+        "dsUFAtual",
+        "dsCEPAtual",
+        "dsLatAtual",
+        "dsLongAtual",
+        "blArea",
+        "dtRegistro",
+        "dtCadastro",
+    )
 
-    comando = f"select cdProduto, dsNome, cdDispositivo, nrBat, dsNomeDest, dsEnderecoDest, nrNumeroDest, dsBairroDest, dsCidadeDest, dsUfDest, dsCepDest, dsLatDest, dsLongDest, dsRaio, dsEnderecoAtual, dsNumeroAtual, dsBairroAtual, dsCidadeAtual, dsUFAtual, dsCEPAtual, dsLatAtual, dsLongAtual, blArea, dtRegistro, dtCadastro from VwRelDadosDispositivo where 1=1"
-    # Adiciona condições à consulta SQL com base nos filtros fornecidos
+    # Apply filters
     for campo, valor in filtros.items():
         if campo == "dtRegistro":
-            campo = f"DATE({campo})"
+            # Format date as YYYY-MM-DD
             valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
-        comando += f" AND {campo} = '{valor}'"
+            query = query.gte(campo, f'{valor + " 00:00:00"}')
+            query = query.lte(campo, f'{valor + " 23:59:59"}')
+        else:
+            query = query.eq(campo, valor)
 
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = query.execute()
+
+    return resultado.data
 
 
-# Selecionar registros da tabela DbIntelliMetrics.TbProdutoTipo
+# Selecionar registros da tabela public.TbProdutoTipo
 def Selecionar_VwTbProdutoTipo(codigo):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    if codigo == "0":
-        comando = f"select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, cdDispositivo, dsDispositivo, dsModelo, DescDispositivo, dsObs, dsLayout, nrChip, StatusDispositivo from DbIntelliMetrics.VwTbProdutoTipo"
-    else:
-        comando = f'select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, cdDispositivo, dsDispositivo, dsModelo, DescDispositivo, dsObs, dsLayout, nrChip, StatusDispositivo from DbIntelliMetrics.VwTbProdutoTipo where cdProduto = "{codigo}"'
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    query = supabase.table("VwTbProdutoTipo").select(
+        "cdProduto",
+        "dsNome",
+        "dsDescricao",
+        "nrCodigo",
+        "nrLarg",
+        "nrComp",
+        "nrAlt",
+        "cdStatus",
+        "cdDispositivo",
+        "dsDispositivo",
+        "dsModelo",
+        "DescDispositivo",
+        "dsObs",
+        "dsLayout",
+        "nrChip",
+        "StatusDispositivo",
+    )
+
+    if codigo != "0":
+        query.eq("cdProduto", codigo)
+
+    resultado = query.execute()
+
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
-
-
-# Inserir registros da tabela DbIntelliMetrics.VwTbProdutoTipo
-def Inserir_VwTbProdutoTipo(
-    dsNome,
-    dsDescricao,
-    nrCodigo,
-    nrLarg,
-    nrComp,
-    nrAlt,
-    cdStatus,
-    cdDispositivo,
-    dsDispositivo,
-    dsModelo,
-    DescDispositivo,
-    dsObs,
-    dsLayout,
-    nrChip,
-    StatusDispositivo,
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.VwTbProdutoTipo ( dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, cdStatus, cdDispositivo, dsDispositivo, dsModelo, DescDispositivo, dsObs, dsLayout, nrChip, StatusDispositivo ) values ("{dsNome}", "{dsDescricao}", "{nrCodigo}", "{nrLarg}", "{nrComp}", "{nrAlt}", "{cdStatus}", "{cdDispositivo}", "{dsDispositivo}", "{dsModelo}", "{DescDispositivo}", "{dsObs}", "{dsLayout}", "{nrChip}", "{StatusDispositivo}")'
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.VwTbProdutoTipo
-def deletar_VwTbProdutoTipo(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.VwTbProdutoTipo where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.VwTbProdutoTipo
-def Alterar_VwTbProdutoTipo(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.VwTbProdutoTipo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Selecionar registros da tabela DbIntelliMetrics.VwTbProdutoTotalStaus
+# Selecionar registros da tabela public.VwTbProdutoTotalStaus
 def Selecionar_VwTbProdutoTotalStaus(codigo):
-    try:
-        # Conecta ao banco de dados
-        conexao = conecta_bd()
-        cursor = conexao.cursor(dictionary=True)
+    query = supabase.table("VwTbProdutoTotalStaus").select(
+        "cdProduto",
+        "dsDescricao",
+        "dsNome",
+        "nrAlt",
+        "nrCodigo",
+        "nrComp",
+        "nrLarg",
+        "nrQtde",
+        "dsStatus",
+        "QtdeTotal",
+        "imagens:TbImagens(cdCodigo, dsCaminho)",
+    )
 
-        # Consulta os dados da tabela produtos
-        comandoProduto = "SELECT cdProduto, dsDescricao, dsNome, nrAlt, nrCodigo, nrComp, nrLarg, dsStatus, nrQtde, QtdeTotal FROM VwTbProdutoTotalStaus"
-        comandoImagem = "SELECT cdCodigo, dsCaminho, cdProduto FROM TbImagens"
+    if codigo != "0":
+        query.eq("cdProduto", codigo)
 
-        if codigo != "0":
-            comandoProduto = comandoProduto + f" where cdProduto = {codigo}"
-            comandoImagem = comandoImagem + f" WHERE cdProduto = {codigo}"
+    resultado = query.execute()
 
-        cursor.execute(comandoProduto)
-        produtos = cursor.fetchall()
+    # Dictionary to store the results
+    produtos_dict: Dict[str, Any] = defaultdict(
+        lambda: {
+            "cdProduto": None,
+            "dsDescricao": None,
+            "dsNome": None,
+            "nrAlt": None,
+            "nrCodigo": None,
+            "nrComp": None,
+            "nrLarg": None,
+            "QtdeTotal": None,
+            "imagens": None,
+            "status": [],
+        }
+    )
 
-        cursor.execute(comandoImagem)
-        imagens = cursor.fetchall()
+    # Iterate through the products
+    for produto in resultado.data:
+        cdProduto = produto["cdProduto"]
 
-        # dicionario para armazenar os resultados
-        produtos_json = {}
-
-        # Percorre os produtos
-        for produto in produtos:
-            cdProduto = produto["cdProduto"]
-
-            # cria produto no dicionario se ainda nao existe
-            if cdProduto not in produtos_json:
-                produtos_json[cdProduto] = {
+        # Initialize product if not already present
+        if produtos_dict[cdProduto]["cdProduto"] is None:
+            produtos_dict[cdProduto].update(
+                {
                     "cdProduto": produto["cdProduto"],
                     "dsDescricao": produto["dsDescricao"],
                     "dsNome": produto["dsNome"],
@@ -1677,108 +1000,76 @@ def Selecionar_VwTbProdutoTotalStaus(codigo):
                     "nrComp": produto["nrComp"],
                     "nrLarg": produto["nrLarg"],
                     "QtdeTotal": produto["QtdeTotal"],
-                    "status": [],
-                    "imagens": [],
+                    "imagens": produto["imagens"],
                 }
+            )
 
-            # adiciona status no array
-            if produto["nrQtde"] and produto["dsStatus"]:
-                produtos_json[cdProduto]["status"].append(
-                    {"dsStatus": produto["dsStatus"], "nrQtde": produto["nrQtde"]}
-                )
+        # Add status to the status list
+        if produto["nrQtde"] and produto["dsStatus"]:
+            produtos_dict[cdProduto]["status"].append(
+                {"dsStatus": produto["dsStatus"], "nrQtde": produto["nrQtde"]}
+            )
 
-        # adiciona imagens nos produtos corretos
-        for img in imagens:
-            cdProduto = img["cdProduto"]
-            if cdProduto in produtos_json:
-                produtos_json[cdProduto]["imagens"].append(img)
+    # Convert to list for JSON serialization
+    produtos_list: List[Dict[str, Any]] = list(produtos_dict.values())
 
-        # Fecha a conexão com o banco de dados
-        cursor.close()
-        conexao.close()
-
-        return jsonify(list(produtos_json.values()))
-
-    except mysql.connector.Error as error:
-        return jsonify({"error": f"Erro ao acessar o banco de dados: {error}"})
-
-
-# FIM DA FUNÇÃO
+    return jsonify(produtos_list)
 
 
 def Selecionar_VwTbProdutoTotal(codigo):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    if codigo == "0":
-        comando = f"select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, nrQtde from DbIntelliMetrics.VwTbProdutoTotal"
-    else:
-        comando = f"select cdProduto, dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, nrQtde from DbIntelliMetrics.VwTbProdutoTotal where cdProduto = {codigo}"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    print(comando)
-    return resultado
-
-
-# FIM DA FUNÇÃO
-
-
-# Inserir registros da tabela DbIntelliMetrics.VwTbProdutoTotalStaus
-def Inserir_VwTbProdutoTotalStaus(
-    dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.VwTbProdutoTotalStaus ( dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde ) values ("{dsNome}", "{dsDescricao}", "{nrCodigo}", "{nrLarg}", "{nrComp}", "{nrAlt}", "{Status}", "{nrQtde}")'
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.VwTbProdutoTotalStaus
-def deletar_VwTbProdutoTotalStaus(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = (
-        f'delete from DbIntelliMetrics.VwTbProdutoTotalStaus where {Campo}="{Dado}"  '
+    query = supabase.table("VwTbProdutoTotal").select(
+        "cdProduto",
+        "dsNome",
+        "dsDescricao",
+        "nrCodigo",
+        "nrLarg",
+        "nrComp",
+        "nrAlt",
+        "cdStatus",
+        "cdDispositivo",
+        "dsDispositivo",
+        "dsModelo",
+        "DescDispositivo",
+        "dsObs",
+        "dsLayout",
+        "nrChip",
+        "StatusDispositivo",
+        "nrQtde",
     )
-    cursor.execute(comando)
-    conexao.commit()
+
+    if codigo != "0":
+        query.eq("cdProduto", codigo)
+
+    resultado = query.execute()
+
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.VwTbProdutoTotalStaus
-def Alterar_VwTbProdutoTotalStaus(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.VwTbProdutoTotalStaus set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Selecionar registros da tabela DbIntelliMetrics.TbFuncionario
+# Selecionar registros da tabela public.TbFuncionario
 def Selecionar_TbFuncionario():
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdFuncionario, dsBairro, dsCidade, dsComplemento, dsFuncao, dsLogradouro, dsNomeEmpregado, dsNumCasa, dsUser, dtRegistro, nrCodEmpregado, TbFuncionariocol from DbIntelliMetrics.TbFuncionario"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    resultado = (
+        supabase.table("TbFuncionario")
+        .select(
+            "cdFuncionario",
+            "dsBairro",
+            "dsCidade",
+            "dsComplemento",
+            "dsFuncao",
+            "dsLogradouro",
+            "dsNomeEmpregado",
+            "dsNumCasa",
+            "dsUser",
+            "dtRegistro",
+            "nrCodEmpregado",
+            "TbFuncionariocol",
+        )
+        .execute()
+    )
+
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
-
-
-# Inserir registros da tabela DbIntelliMetrics.TbFuncionario
+# Inserir registros da tabela public.TbFuncionario
 def Inserir_TbFuncionario(
     dsBairro,
     dsCidade,
@@ -1793,77 +1084,37 @@ def Inserir_TbFuncionario(
     TbFuncionariocol,
 ):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbFuncionario ( dsBairro, dsCidade, dsComplemento, dsFuncao, dsLogradouro, dsNomeEmpregado, dsNumCasa, dsUser, dtRegistro, nrCodEmpregado, TbFuncionariocol ) values ("{dsBairro}", "{dsCidade}", "{dsComplemento}", "{dsFuncao}", "{dsLogradouro}", "{dsNomeEmpregado}", "{dsNumCasa}", "{dsUser}", "{dtRegistro}", "{nrCodEmpregado}", "{TbFuncionariocol}")'
+    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    comando = f'insert into public.TbFuncionario ( dsBairro, dsCidade, dsComplemento, dsFuncao, dsLogradouro, dsNomeEmpregado, dsNumCasa, dsUser, dtRegistro, nrCodEmpregado, TbFuncionariocol ) values ("{dsBairro}", "{dsCidade}", "{dsComplemento}", "{dsFuncao}", "{dsLogradouro}", "{dsNomeEmpregado}", "{dsNumCasa}", "{dsUser}", "{dtRegistro}", "{nrCodEmpregado}", "{TbFuncionariocol}")'
     cursor.execute(comando)
     conexao.commit()
 
 
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbFuncionario
-def deletar_TbFuncionario(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbFuncionario where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbFuncionario
-def Alterar_TbFuncionario(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbFuncionario set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Selecionar registros da tabela DbIntelliMetrics.TbFuncionario
+# Selecionar registros da tabela public.TbFuncionario
 def Selecionar_TbEtiqueta(dsEtiqueta):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    if dsEtiqueta == "0":
-        comando = f"select dsEtiqueta, nrFator, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, dsUser, dtRegistro from DbIntelliMetrics.TbEtiqueta order by cdEtiqueta desc"
-    else:
-        comando = f"select dsEtiqueta, nrFator, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, dsUser, dtRegistro from DbIntelliMetrics.TbEtiqueta where dsEtiqueta ={dsEtiqueta}"
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
+    query = supabase.table("TbEtiqueta").select(
+        "dsEtiqueta",
+        "nrFator",
+        "nrLargura",
+        "nrAltura",
+        "nrComprimento",
+        "nrPeso",
+        "nrCubado",
+        "dsUser",
+        "dtRegistro",
+    )
+
+    if dsEtiqueta != "0":
+        query.eq("dsEtiqueta", dsEtiqueta)
+
+    resultado = query.order("cdEtiqueta", desc=True).execute()
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
-
-
-# Inserir registros da tabela DbIntelliMetrics.TbEtiqueta
-def Inserir_TbEtiqueta(
-    dsEtiqueta,
-    nrFator,
-    nrLargura,
-    nrAltura,
-    nrComprimento,
-    nrPeso,
-    nrCubado,
-    dsUser,
-    dtRegistro,
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbEtiqueta (dsEtiqueta, nrFator, nrLargura, nrAltura, nrComprimento, nrPeso, nrCubado, dsUser, dtRegistro) values ("{dsEtiqueta}", "{nrFator}", "{nrLargura}", "{nrAltura}", "{nrComprimento}", "{nrPeso}", "{nrCubado}", "{dsUser}", "{dtRegistro}")'
-    cursor.execute(comando)
-    conexao.commit()
-    return cursor.lastrowid
-
-
-# FIM DA FUNÇÃO
+# Inserir registros da tabela public.TbEtiqueta
+def Inserir_TbEtiqueta(data):
+    resultado = supabase.table("TbEtiqueta").insert(data).execute()
+    return resultado.data
 
 
 app = Flask(__name__)  # cria o site
@@ -1880,47 +1131,19 @@ def get_Chamados():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros no EndPoint Chamados
 @app.route("/Chamados", methods=["POST"])
 def post_Chamados():
     payload = request.get_json()
-    dtOperacao = payload["dtOperacao"]
-    dsTipo = payload["dsTipo"]
-    dsDescricao = payload["dsDescricao"]
-    nrQtde = payload["nrQtde"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbChamados(dtOperacao, dsTipo, dsDescricao, nrQtde, dsUser, dtRegistro)
+    data, error = valida_e_constroi_insert("TbChamados", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+
+    Inserir_TbChamados(data)
     return "Cadastramento realizado com sucesso"
 
 
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbChamados
-def deletar_TbChamados(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbChamados where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbChamados
-def Alterar_TbChamados(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbChamados set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 # https://replit.taxidigital.net/Cliente
 
 
@@ -1931,69 +1154,17 @@ def get_Cliente():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros no EndPoint Cliente
 @app.route("/Cliente", methods=["POST"])
 def post_Cliente():
     payload = request.get_json()
-    dsNome = payload["dsNome"]
-    nrCnpj = payload["nrCnpj"]
-    nrIe = payload["nrIe"]
-    nrInscMun = payload["nrInscMun"]
-    dsLogradouro = payload["dsLogradouro"]
-    nrNumero = payload["nrNumero"]
-    dsComplemento = payload["dsComplemento"]
-    dsBairro = payload["dsBairro"]
-    dsCep = payload["dsCep"]
-    dsCidade = payload["dsCidade"]
-    dsUF = payload["dsUF"]
-    dsObs = payload["dsObs"]
-    cdStatus = payload["cdStatus"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbCliente(
-        dsNome,
-        nrCnpj,
-        nrIe,
-        nrInscMun,
-        dsLogradouro,
-        nrNumero,
-        dsComplemento,
-        dsBairro,
-        dsCep,
-        dsCidade,
-        dsUF,
-        dsObs,
-        cdStatus,
-        dsUser,
-        dtRegistro,
-    )
+    data, error = valida_e_constroi_insert("TbCliente", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+
+    Inserir_TbCliente(data)
     return "Cadastramento realizado com sucesso"
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbCliente
-def deletar_TbCliente(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbCliente where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbCliente
-def Alterar_TbCliente(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbCliente set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
 
 
 # FIM DA FUNÇÃO
@@ -2007,78 +1178,18 @@ def get_Destinatario(codigo):
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros no EndPoint Destinatario
 @app.route("/Destinatario", methods=["POST"])
 def post_Destinatario():
     payload = request.get_json()
-    dsNome = payload["dsNome"]
-    nrCnpj = payload["nrCnpj"]
-    nrIe = payload["nrIe"]
-    nrInscMun = payload["nrInscMun"]
-    dsLogradouro = payload["dsLogradouro"]
-    nrNumero = payload["nrNumero"]
-    dsComplemento = payload["dsComplemento"]
-    dsBairro = payload["dsBairro"]
-    dsCep = payload["dsCep"]
-    dsCidade = payload["dsCidade"]
-    dsUF = payload["dsUF"]
-    dsObs = payload["dsObs"]
-    cdStatus = payload["cdStatus"]
-    dsLat = payload["dsLat"]
-    dsLong = payload["dsLong"]
-    nrRaio = payload["nrRaio"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbDestinatario(
-        dsNome,
-        nrCnpj,
-        nrIe,
-        nrInscMun,
-        dsLogradouro,
-        nrNumero,
-        dsComplemento,
-        dsBairro,
-        dsCep,
-        dsCidade,
-        dsUF,
-        dsObs,
-        cdStatus,
-        dsLat,
-        dsLong,
-        nrRaio,
-        dsUser,
-        dtRegistro,
-    )
-    return "Cadastramento realizado com sucesso"
+    data, error = valida_e_constroi_insert("TbDestinatario", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbDestinatario(data)
+    return resultado
 
 
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbDestinatario
-def deletar_TbDestinatario(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbDestinatario where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbDestinatario
-def Alterar_TbDestinatario(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbDestinatario set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 # https://replit.taxidigital.net/Dispositivo
 
 
@@ -2089,60 +1200,18 @@ def get_Dispositivo(codigo):
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros no EndPoint Dispositivo
 @app.route("/Dispositivo", methods=["POST"])
 def post_Dispositivo():
     payload = request.get_json()
-    dsDispositivo = payload["dsDispositivo"]
-    dsModelo = payload["dsModelo"]
-    dsDescricao = payload["dsDescricao"]
-    dsObs = payload["dsObs"]
-    dsLayout = payload["dsLayout"]
-    nrChip = payload["nrChip"]
-    cdStatus = payload["cdStatus"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbDispositivo(
-        dsDispositivo,
-        dsModelo,
-        dsDescricao,
-        dsObs,
-        dsLayout,
-        nrChip,
-        cdStatus,
-        dsUser,
-        dtRegistro,
-    )
-    return payload
+    data, error = valida_e_constroi_insert("TbDispositivo", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbDispositivo(data)
+    return resultado
 
 
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbDispositivo
-def deletar_TbDispositivo(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbDispositivo where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbDispositivo
-def Alterar_TbDispositivo(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbDispositivo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 # https://replit.taxidigital.net/Imagens
 
 
@@ -2153,50 +1222,6 @@ def get_Imagens(codigo):
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
-# Inserir registros no EndPoint Imagens
-@app.route("/Imagens", methods=["POST"])
-def post_Imagens():
-    payload = request.get_json()
-    dsCaminho = payload["dsCaminho"]
-    cdCodigo = payload["cdCodigo"]
-    cdTipo = payload["cdTipo"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    cdProduto = payload["cdProduto"]
-    nrImagem = payload["nrImagem"]
-    Inserir_TbImagens(
-        dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro, cdProduto, nrImagem
-    )
-    return payload
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbImagens
-def deletar_TbImagens(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbImagens where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbImagens
-def Alterar_TbImagens(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbImagens set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 # https://replit.taxidigital.net/Posicao
 
 
@@ -2225,147 +1250,95 @@ def get_Posicao(codigo):
     return resultado
 
 
-# FIM DA FUNÇÃO
+def altera_status_posicao(cdDispositivo, dsLat, dsLong):
+    dic_endereco_pdv = Selecionar_VwTbDestinatarioDispositivo(cdDispositivo)
+    dic_endereco_pdv = dict(dic_endereco_pdv[0])
 
-dic_endereco_pdv = []
+    dsLatPdv = dic_endereco_pdv["dsLat"]
+    dsLongPdv = dic_endereco_pdv["dsLong"]
+    nrRaio = dic_endereco_pdv["nrRaio"]
+    nrDistancia = calcular_distancia(dsLat, dsLong, dsLatPdv, dsLongPdv)
+
+    # TODO: verificar se necessario. Da pra saber se esta fora de area pegando a ultima posicao. Precisa guardar no dispositivo?
+    if float(nrDistancia) > float(nrRaio):
+        Alterar_StatusTbPosicao(cdDispositivo, 6)
+        blArea = False
+    else:
+        Alterar_StatusTbPosicao(cdDispositivo, 1)
+        blArea = True
+
+    return blArea
+
+
+def inserir_sensor_registros(dic_sensores, tb_posicao):
+    dataSensorRegistro = []
+
+    for sensor in dic_sensores:
+        payload_sensor_registro = {
+            "cdSensor": sensor["cdSensor"],
+            "nrValor": sensor["nrValor"],
+            "cdPosicao": tb_posicao[0]["cdPosicao"],
+            "cdDispositivo": sensor["cdDispositivo"],
+        }
+
+        data, error = valida_e_constroi_insert(
+            "TbSensorRegistro", payload_sensor_registro
+        )
+
+        if error:
+            return jsonify({"error": error}), 400
+
+        dataSensorRegistro.append(data)
+
+    return Inserir_TbSensorRegistro(dataSensorRegistro)
 
 
 @app.route("/Posicao", methods=["POST"])
 def post_Posicao():
     payload = request.get_json()
-    print(payload)
-    dsModelo = payload["dsModelo"]
-    dtData = payload["dtData"]
-    dtHora = payload["dtHora"]
+
     dsLat = payload["dsLat"]
     dsLong = payload["dsLong"]
-    nrTemp = payload["nrTemp"]
-    nrBat = payload["nrBat"]
-    nrSeq = payload["nrSeq"]
-
-    dsArquivo = payload["dsArquivo"]
     cdDispositivo = payload["cdDispositivo"]
-    dsUser = payload["dsUser"]
-    dic = get_endereco_coordenada(dsLat, dsLong)
-    dsEndereco = dic[0]
-    dsNum = dic[1]
-    dsBairro = dic[2]
-    dsCidade = dic[3]
-    dsUF = dic[4]
-    dsCep = dic[5]
-    dsPais = dic[6]
-    dic_endereco_pdv = Selecionar_VwTbDestinatarioDispositivo(cdDispositivo)
-    # print(dic_endereco_pdv)
-    dic_endereco_pdv = dict(dic_endereco_pdv[0])
-    dsLatPdv = dic_endereco_pdv["dsLat"]
-    dsLongPdv = dic_endereco_pdv["dsLong"]
-    nrRaio = dic_endereco_pdv["nrRaio"]
-    DistanciaArea = calcular_distancia(dsLat, dsLong, dsLatPdv, dsLongPdv)
-    nrDistancia = DistanciaArea
-    # print(nrRaio)
-    if float(DistanciaArea) > float(nrRaio):
-        Alterar_StatusTbPosicao(cdDispositivo, 6)
-        blArea = 0
-    else:
-        Alterar_StatusTbPosicao(cdDispositivo, 1)
-        blArea = 1
+
+    dict_endereco_coord = get_endereco_coordenada(dsLat, dsLong)
+
+    for key, value in dict_endereco_coord.items():
+        payload[key] = value
+
+    blArea = altera_status_posicao(cdDispositivo, dsLat, dsLong)
+    payload["blArea"] = blArea
+
     dic_sensores = payload["sensores"]
-    # print(dic_sensores)
-    cd = Inserir_TbPosicao(
-        dsModelo,
-        dtData,
-        dtHora,
-        dsLat,
-        dsLong,
-        nrTemp,
-        nrBat,
-        nrSeq,
-        dsArquivo,
-        cdDispositivo,
-        dsEndereco,
-        dsNum,
-        dsBairro,
-        dsCidade,
-        dsUF,
-        dsCep,
-        dsPais,
-        dsLatPdv,
-        dsLongPdv,
-        nrRaio,
-        blArea,
-        nrDistancia,
-        dsUser,
-    )
-    cdSensor = dic_sensores["cdSensor"]
-    nrValor = dic_sensores["nrValor"]
-    cdSensor1 = dic_sensores["cdSensor1"]
-    nrValor1 = dic_sensores["nrValor1"]
-    cdPosicao = cd
+    del payload[
+        "sensores"
+    ]  # remove do payload para nao atrapalhar com o inserir tbPosicao
 
-    # print(nome)  # Saída: Carlos
-    Inserir_TbSensorRegistro(cdDispositivo, cdSensor, cdPosicao, nrValor)
-    Inserir_TbSensorRegistro(cdDispositivo, cdSensor1, cdPosicao, nrValor1)
+    data, error = valida_e_constroi_insert("TbPosicao", payload)
+    if error:
+        return jsonify({"error": error}), 400
 
-    return jsonify({"cdPosicao": cd})
+    resultado_posicao = Inserir_TbPosicao(data)
+
+    resultado_sensores = inserir_sensor_registros(dic_sensores, resultado_posicao)
+    resultado_posicao[0]["sensores"] = resultado_sensores
+
+    return resultado_posicao
 
 
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbPosicao
-def deletar_TbPosicao(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbPosicao where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbPosicao
-def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbPosicao set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 # https://replit.taxidigital.net/Produto
-
-cd = []
 
 
 # Inserir registros no EndPoint Produto
 @app.route("/Produto", methods=["POST"])
 def post_Produto():
     payload = request.get_json()
-    dsNome = payload["dsNome"]
-    dsDescricao = payload["dsDescricao"]
-    nrCodigo = payload["nrCodigo"]
-    nrLarg = payload["nrLarg"]
-    nrComp = payload["nrComp"]
-    nrAlt = payload["nrAlt"]
-    cdStatus = payload["cdStatus"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    cd = Inserir_TbProduto(
-        dsNome,
-        dsDescricao,
-        nrCodigo,
-        nrLarg,
-        nrComp,
-        nrAlt,
-        cdStatus,
-        dsUser,
-        dtRegistro,
-    )
-    return jsonify({"cdProduto": cd})
+    data, error = valida_e_constroi_insert("TbProduto", payload)
 
-
-# FIM DA FUNÇÃO
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbProduto(data)
+    return jsonify({"cdProduto": resultado[0]["cdProduto"]})
 
 
 @app.route("/Produto/<codigo>")
@@ -2376,19 +1349,20 @@ def get_Produto(codigo):
 
 @app.route("/Produto/<codigo>", methods=["PUT"])
 def update_Produto(codigo):
-    data = request.get_json()
-    Alterar_TbProduto("cdProduto", codigo, data)
-    return jsonify({"message": "Produto atualizado com sucesso"})
+    payload = request.get_json()
+    data, error = valida_e_constroi_update("cdProduto", payload)
+    if error:
+        return jsonify({"error": error}), 400
+
+    resultado = Alterar_TbProduto("cdProduto", codigo, data)
+
+    return resultado
 
 
 @app.route("/Produto/<codigo>", methods=["DELETE"])
 def delete_Produto(codigo):
-
-    deletar_TbProduto("cdProduto", codigo)
+    deletar_TbProduto(codigo)
     return jsonify({"message": "Produto deletado com sucesso"})
-
-
-# FIM DA FUNÇÃO
 
 
 @app.route("/Etiqueta/<dsEtiqueta>", methods=["GET"])
@@ -2397,88 +1371,32 @@ def get_Etiqueta(dsEtiqueta):
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 @app.route("/TbEtiqueta", methods=["POST"])
 def post_Etiqueta():
     payload = request.get_json()
-    dsEtiqueta = payload["dsEtiqueta"]
-    nrLargura = payload["nrLargura"]
-    nrAltura = payload["nrAltura"]
-    nrComprimento = payload["nrComprimento"]
-    nrPeso = payload["nrPeso"]
-    nrCubado = payload["nrCubado"]
-    nrFator = payload["nrFator"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    cd = Inserir_TbEtiqueta(
-        dsEtiqueta,
-        nrFator,
-        nrLargura,
-        nrAltura,
-        nrComprimento,
-        nrPeso,
-        nrCubado,
-        dsUser,
-        dtRegistro,
+    data, error = valida_e_constroi_insert("TbEtiqueta", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbEtiqueta(data)
+    return resultado
+
+
+# Deletar registros da tabela public.TbProduto
+def deletar_TbProduto(cdProduto):
+    resultado = (
+        supabase.table("TbProduto").delete().eq("cdProduto", cdProduto).execute()
     )
-    # return payload
-    return jsonify(
-        {
-            "cdCodigo": cd,
-            "dsEtiqueta": dsEtiqueta,
-            "nrLargura": nrLargura,
-            "nrAltura": nrAltura,
-            "nrComprimento": nrComprimento,
-            "nrPeso": nrPeso,
-            "nrCubado": nrCubado,
-            "nrFator": nrFator,
-            "dsUser": dsUser,
-            "dtRegistro": dtRegistro,
-        }
-    )
+    return resultado.data
 
 
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbProduto
-def deletar_TbProduto(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbProduto where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbProduto
+# Alterar registros da tabela public.TbProduto
 def Alterar_TbProduto(Campo, Dado, UpData):
-    comando = "update DbIntelliMetrics.TbProduto set"
-
-    for campos in UpData:
-        comando += f' {campos}="{UpData[campos]}",'
-
-    comando = comando[:-1]
-    comando += f' where {Campo}="{Dado}"'
-
-    conexao = conecta_bd()
-    cursor = conexao.cursor()
-    cursor.execute(comando)
-    conexao.commit()
+    response = supabase.table("TbProduto").update(UpData).eq(Campo, Dado).execute()
+    return response.data, response.error
 
 
-# FIM DA FUNÇÃO
 # https://replit.taxidigital.net/Relacionamento
-# mycursor = mydb.cursor()
-# sql = "UPDATE customers SET address = 'Canyon 123' WHERE address = 'Valley 345'"
-
-# mycursor.execute(sql)
-
-# mydb.commit()
 
 
 # Selecionar registros no EndPoint Relacionamento
@@ -2488,27 +1406,16 @@ def get_Relacionamento():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros no EndPoint Relacionamento
 @app.route("/Relacionamento", methods=["POST"])
 def post_Relacionamento():
     payload = request.get_json()
-    cdPai = payload["cdPai"]
-    cdFilho = payload["cdFilho"]
-    cdTipo = payload["cdTipo"]
-    dsDescricao = payload["dsDescricao"]
-    cdStatus = payload["cdStatus"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbRelacionamento(
-        cdPai, cdFilho, cdTipo, dsDescricao, cdStatus, dsUser, dtRegistro
-    )
-    return payload
+    data, error = valida_e_constroi_insert("TbRelacionamento", payload)
 
-
-# FIM DA FUNÇÃO
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbRelacionamento(data)
+    return resultado
 
 
 # Selecionar registros no EndPoint Sensor
@@ -2518,35 +1425,16 @@ def get_Sensor():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros no EndPoint Sensor
 @app.route("/Sensor", methods=["POST"])
 def post_Sensor():
     payload = request.get_json()
-    dsNome = payload["dsNome"]
-    cdTipo = payload["cdTipo"]
-    dsDescricao = payload["dsDescricao"]
-    cdUnidade = payload["cdUnidade"]
-    nrUnidadeIni = payload["nrUnidadeIni"]
-    nrUnidadeFim = payload["nrUnidadeFim"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbSensor(
-        dsNome,
-        cdTipo,
-        dsDescricao,
-        cdUnidade,
-        nrUnidadeIni,
-        nrUnidadeFim,
-        dsUser,
-        dtRegistro,
-    )
-    return payload
+    data, error = valida_e_constroi_insert("TbSensor", payload)
 
-
-# FIM DA FUNÇÃO
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbSensor(data)
+    return resultado
 
 
 # Selecionar registros no EndPoint Status
@@ -2556,21 +1444,16 @@ def get_Status():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros no EndPoint Status
 @app.route("/Status", methods=["POST"])
 def post_Status():
     payload = request.get_json()
-    dsStatus = payload["dsStatus"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbStatus(dsStatus, dsUser, dtRegistro)
-    return payload
+    data, error = valida_e_constroi_insert("TbStatus", payload)
 
-
-# FIM DA FUNÇÃO
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbStatus(data)
+    return resultado
 
 
 # Selecionar registros no EndPoint Tag
@@ -2580,22 +1463,16 @@ def get_Tag():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros no EndPoint Tag
 @app.route("/Tag", methods=["POST"])
 def post_Tag():
     payload = request.get_json()
-    dsDescricao = payload["dsDescricao"]
-    dsConteudo = payload["dsConteudo"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbTag(dsDescricao, dsConteudo, dsUser, dtRegistro)
-    return payload
+    data, error = valida_e_constroi_insert("TbTag", payload)
 
-
-# FIM DA FUNÇÃO
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbTag(data)
+    return resultado
 
 
 # Selecionar registros no EndPoint Ticket
@@ -2605,33 +1482,16 @@ def get_Ticket():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros no EndPoint Ticket
 @app.route("/Ticket", methods=["POST"])
 def post_Ticket():
     payload = request.get_json()
-    dtOperacao = payload["dtOperacao"]
-    dsAtendimento = payload["dsAtendimento"]
-    nrAbertos = payload["nrAbertos"]
-    nrFechados = payload["nrFechados"]
-    nrPendentes = payload["nrPendentes"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbTicket(
-        dtOperacao,
-        dsAtendimento,
-        nrAbertos,
-        nrFechados,
-        nrPendentes,
-        dsUser,
-        dtRegistro,
-    )
-    return payload
+    data, error = valida_e_constroi_insert("TbTicket", payload)
 
-
-# FIM DA FUNÇÃO
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbTicket(data)
+    return resultado
 
 
 # Selecionar registros no EndPoint TicketResumo
@@ -2641,37 +1501,16 @@ def get_TicketResumo():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros no EndPoint TicketResumo
 @app.route("/TicketResumo", methods=["POST"])
 def post_TicketResumo():
     payload = request.get_json()
-    dtOperacao = payload["dtOperacao"]
-    dsAtendimento = payload["dsAtendimento"]
-    dsNaoAtribuido = payload["dsNaoAtribuido"]
-    dsSemResolucao = payload["dsSemResolucao"]
-    dsAtualizado = payload["dsAtualizado"]
-    dsPendente = payload["dsPendente"]
-    dsResolvido = payload["dsResolvido"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbTicketResumo(
-        dtOperacao,
-        dsAtendimento,
-        dsNaoAtribuido,
-        dsSemResolucao,
-        dsAtualizado,
-        dsPendente,
-        dsResolvido,
-        dsUser,
-        dtRegistro,
-    )
-    return payload
+    data, error = valida_e_constroi_insert("TbTicketResumo", payload)
 
-
-# FIM DA FUNÇÃO
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbTicketResumo(data)
+    return resultado
 
 
 # Selecionar registros no EndPoint Tipo
@@ -2681,58 +1520,18 @@ def get_Tipo():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
-def Selecionar_NrImagensMaior(codigo):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    if codigo == "0":
-        comando = f'select  SUBSTRING_INDEX(cdCodigo, "-",1) as cdProduto, max(SUBSTRING_INDEX(SUBSTRING_INDEX(cdCodigo, "-",-1),".",1)) as nrMaior from DbIntelliMetrics.TbImagens where cdTipo = 10  group by cdProduto order by cdProduto'
-    else:
-        comando = f'select  SUBSTRING_INDEX(cdCodigo, "-",1) as cdProduto, max(SUBSTRING_INDEX(SUBSTRING_INDEX(cdCodigo, "-",-1),".",1)) as nrMaior from DbIntelliMetrics.TbImagens where cdTipo = 10 and cdCodigo = {codigo} group by cdProduto'
-    cursor.execute(comando)
-    resultado = cursor.fetchall()
-    cursor.close()
-    conexao.close()
-    return resultado
-
-
 # Inserir registros no EndPoint Tipo
 @app.route("/Tipo", methods=["POST"])
 def post_Tipo():
     payload = request.get_json()
-    dsDescricao = payload["dsDescricao"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbTipo(dsDescricao, dsUser, dtRegistro)
-    return payload
+    data, error = valida_e_constroi_insert("TbTipo", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbTipo(data)
+    return resultado
 
 
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbTipo
-def deletar_TbTipo(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbTipo where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbTipo
-def Alterar_TbTipo(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbTipo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 # https://replit.taxidigital.net/Unidade
 
 
@@ -2743,33 +1542,18 @@ def get_Unidade():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros no EndPoint Unidade
 @app.route("/Unidade", methods=["POST"])
 def post_Unidade():
     payload = request.get_json()
-    dsUnidade = payload["dsUnidade"]
-    dsSimbolo = payload["dsSimbolo"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbUnidade(dsUnidade, dsSimbolo, dsUser, dtRegistro)
-    return payload
+    data, error = valida_e_constroi_insert("TbUnidade", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbUnidade(data)
+    return resultado
 
 
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbUnidade
-def Alterar_TbUnidade(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbUnidade set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 # https://replit.taxidigital.net/Usuario
 
 
@@ -2780,47 +1564,18 @@ def get_Usuario():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros no EndPoint Usuario
 @app.route("/Usuario", methods=["POST"])
 def post_Usuario():
     payload = request.get_json()
-    dsNome = payload["dsNome"]
-    dsLogin = payload["dsLogin"]
-    dsSenha = payload["dsSenha"]
-    cdPerfil = payload["cdPerfil"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbUsuario(dsNome, dsLogin, dsSenha, cdPerfil, dsUser, dtRegistro)
-    return payload
+    data, error = valida_e_constroi_insert("TbUsuario", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbUsuario(data)
+    return resultado
 
 
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbUsuario
-def deletar_TbUsuario(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbUsuario where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbUsuario
-def Alterar_TbUsuario(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbUsuario set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 # https://replit.taxidigital.net/Visita
 
 
@@ -2831,46 +1586,18 @@ def get_Visita():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros no EndPoint Visita
 @app.route("/Visita", methods=["POST"])
 def post_Visita():
     payload = request.get_json()
-    cdCliente = payload["cdCliente"]
-    cdVisitante = payload["cdVisitante"]
-    dtData = payload["dtData"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbVisita(cdCliente, cdVisitante, dtData, dsUser, dtRegistro)
-    return payload
+    data, error = valida_e_constroi_insert("TbVisita", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbVisita(data)
+    return resultado
 
 
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbVisita
-def deletar_TbVisita(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbVisita where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbVisita
-def Alterar_TbVisita(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbVisita set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
 # https://replit.taxidigital.net/Visitante
 
 
@@ -2881,72 +1608,16 @@ def get_Visitante():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 # Inserir registros no EndPoint Visitante
 @app.route("/Visitante", methods=["POST"])
 def post_Visitante():
     payload = request.get_json()
-    dsNome = payload["dsNome"]
-    nrTelefone = payload["nrTelefone"]
-    nrDocumento = payload["nrDocumento"]
-    dsEmail = payload["dsEmail"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    Inserir_TbVisitante(dsNome, nrTelefone, nrDocumento, dsEmail, dsUser, dtRegistro)
-    return payload
+    data, error = valida_e_constroi_insert("TbVisitante", payload)
 
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbVisitante
-def deletar_TbVisitante(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbVisitante where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbVisitante
-def Alterar_TbVisitante(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbVisitante set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-# https://replit.taxidigital.net/TbPosicao
-
-
-# Deletar registros da tabela DbIntelliMetrics.TbPosicao
-def deletar_TbPosicao(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.TbPosicao where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.TbPosicao
-def Alterar_TbPosicao(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.TbPosicao set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-# https://replit.taxidigital.net/TbProdutoTipo
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbVisitante(data)
+    return resultado
 
 
 # Selecionar registros no EndPoint TbProdutoTipo
@@ -2955,74 +1626,6 @@ def get_TbProdutoTipo(codigo):
     resultado = Selecionar_VwTbProdutoTipo(codigo)
     return resultado
 
-
-# FIM DA FUNÇÃO
-
-
-# Inserir registros no EndPoint TbProdutoTipo
-@app.route("/TbProdutoTipo", methods=["POST"])
-def post_TbProdutoTipo():
-    payload = request.get_json()
-    dsNome = payload["dsNome"]
-    dsDescricao = payload["dsDescricao"]
-    nrCodigo = payload["nrCodigo"]
-    nrLarg = payload["nrLarg"]
-    nrComp = payload["nrComp"]
-    nrAlt = payload["nrAlt"]
-    cdStatus = payload["cdStatus"]
-    cdDispositivo = payload["cdDispositivo"]
-    dsDispositivo = payload["dsDispositivo"]
-    dsModelo = payload["dsModelo"]
-    DescDispositivo = payload["DescDispositivo"]
-    dsObs = payload["dsObs"]
-    dsLayout = payload["dsLayout"]
-    nrChip = payload["nrChip"]
-    StatusDispositivo = payload["StatusDispositivo"]
-    Inserir_VwTbProdutoTipo(
-        dsNome,
-        dsDescricao,
-        nrCodigo,
-        nrLarg,
-        nrComp,
-        nrAlt,
-        cdStatus,
-        cdDispositivo,
-        dsDispositivo,
-        dsModelo,
-        DescDispositivo,
-        dsObs,
-        dsLayout,
-        nrChip,
-        StatusDispositivo,
-    )
-    return payload
-
-
-# FIM DA FUNÇÃO
-
-
-# Deletar registros da tabela DbIntelliMetrics.VwTbProdutoTipo
-def deletar_VwTbProdutoTipo(Campo, Dado):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f'delete from DbIntelliMetrics.VwTbProdutoTipo where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-
-
-# Alterar registros da tabela DbIntelliMetrics.VwTbProdutoTipo
-def Alterar_VwTbProdutoTipo(Campo, Dado, UpCampo, UpDado):
-    conexao = conecta_bd()
-    comando = f'update DbIntelliMetrics.VwTbProdutoTipo set  {UpCampo}="{UpDado}"  where {Campo}="{Dado}"  '
-    cursor.execute(comando)
-    conexao.commit()
-
-
-# FIM DA FUNÇÃO
-# https://replit.taxidigital.net/TbProdutoTotalStaus
 
 # endpoint usado para Pagina de Dispositivo. Mesmo do que o VwRelHistoricoDispositivoProduto,
 # mas com produtos sendo retornados como colunas.
@@ -3041,6 +1644,7 @@ def get_HistoricoPaginaDispositivo(codigo):
 
     resultado = Selecionar_HistoricoPaginaDispositivo(filtros)
     return resultado
+
 
 @app.route("/VwRelHistoricoDispositivoProduto/<codigo>")
 def get_RelHistoricoDispositivoProduto(codigo):
@@ -3083,35 +1687,6 @@ def get_TbProdutoTotalStaus(codigo):
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-# Selecionar registros no EndPoint TbProdutoTotalStaus
-
-img = {"Imagens": []}
-status = {"Status": []}
-produto = {"Produto": []}
-resultado = []
-
-
-# alunos = {"alunos": []}
-@app.route("/TbProdutoTotal/<codigo>")
-def get_TbProdutoTotal(codigo):
-
-    # resultado = Selecionar_VwTbProdutoTotal(codigo)
-    produto["Produto"] = Selecionar_VwTbProdutoTotal(codigo)
-    status["Status"] = Selecionar_VwTbProdutoTotalStaus(codigo)
-    img["Imagens"] = Selecionar_TbImagens(codigo)
-    resultado.append(produto)
-    resultado.append(status)
-    resultado.append(img)
-    return resultado
-
-
-# FIM DA FUNÇÃO
-
-# https://replit.taxidigital.net/TbPosicaoAtual
-
-
 # Selecionar registros no EndPoint TbPosicaoAtual
 @app.route("/TbPosicaoAtual/<codigo>")
 def get_TbPosicaoAtual(codigo):
@@ -3128,40 +1703,11 @@ def get_TbPosicaoAtual(codigo):
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
-# Inserir registros no EndPoint TbProdutoTotalStaus
-@app.route("/TbProdutoTotalStaus/", methods=["POST"])
-def post_TbProdutoTotalStaus():
-    payload = request.get_json()
-    dsNome = payload["dsNome"]
-    dsDescricao = payload["dsDescricao"]
-    nrCodigo = payload["nrCodigo"]
-    nrLarg = payload["nrLarg"]
-    nrComp = payload["nrComp"]
-    nrAlt = payload["nrAlt"]
-    Status = payload["Status"]
-    nrQtde = payload["nrQtde"]
-    Inserir_VwTbProdutoTotalStaus(
-        dsNome, dsDescricao, nrCodigo, nrLarg, nrComp, nrAlt, Status, nrQtde
-    )
-    return payload
-
-
-# FIM DA FUNÇÃO
-
-# https://replit.taxidigital.net/Funcionario
-
-
 # Selecionar registros no EndPoint Funcionario
 @app.route("/Funcionario")
 def get_Funcionario():
     resultado = Selecionar_TbFuncionario()
     return resultado
-
-
-# FIM DA FUNÇÃO
 
 
 # Inserir registros no EndPoint Funcionario
@@ -3195,8 +1741,6 @@ def post_Funcionario():
     return payload
 
 
-# FIM DA FUNÇÃO
-
 # Fim do Gerador de API
 
 ## atulizado em 04052024
@@ -3214,9 +1758,6 @@ def post_Foto():
     return payload
 
 
-# FIM DA FUNÇÃO
-
-
 @app.route("/CadastraImgProduto", methods=["POST"])
 def CadastraImgProduto():
 
@@ -3228,16 +1769,20 @@ def CadastraImgProduto():
     file.save(pathfile)
     upload_file(pathfile, "dbfilesintellimetrics", "produtos/" + pathfile)
     os.remove(pathfile)
-    Inserir_TbImagens(
-        "produtos/",
-        pathfile,
-        "10",
-        "TESTE",
-        datetime.datetime.now(),
-        cdProduto,
-        nrImagem,
-    )
-    return pathfile
+    payload = {
+        "dsCaminho": "produtos/",
+        "cdCodigo": pathfile,
+        "cdTipo": 10,
+        "dsUser": "TESTE",
+        "cdProduto": int(cdProduto),
+        "nrImagem": int(nrImagem),
+    }
+    data, error = valida_e_constroi_insert("TbImagens", payload)
+
+    if error:
+        return jsonify({"error": error}), 400
+    resultado = Inserir_TbImagens(data)
+    return resultado
 
 
 @app.route("/upload", methods=["POST"])
@@ -3280,24 +1825,17 @@ def Assinada():
     return result
 
 
-# Selecionar_NrImagensMaior
-
-
-@app.route("/NrImagensMaior/<codigo>")
-def get_NrImagensMaior(codigo):
-    resultado = Selecionar_NrImagensMaior(codigo)
-    return resultado
-
-
 # https://replit.taxidigital.net/AcessoIntelBras
 
 
 # Selecionar registros no EndPoint AcessoIntelBras
 
+
 @app.route("/Ponto")
 def get_Ponto():
     resultado = Selecionar_TbPonto()
     return resultado
+
 
 @app.route("/AcessoIntelBras", methods=["GET"])
 def get_AcessoIntelBras():
@@ -3305,35 +1843,52 @@ def get_AcessoIntelBras():
     return resultado
 
 
+# Inserir registros no EndPoint AcessoIntelBras
+# @app.route("/AcessoIntelBras", methods=["POST"])
+# def post_AcessoIntelBras():
+#     payload = request.get_json()
+#     data, error = valida_e_constroi_insert("TbAcessoIntelBras", payload)
 
-# FIM DA FUNÇÃO
+#     if error:
+#         return jsonify({"error": error}), 400
 
-@app.route('/AcessoIntelBras', methods=['POST'])
+#     Inserir_TbAcessoIntelBras(data)
+
+
+@app.route("/AcessoIntelBras", methods=["POST"])
 def post_AcessoIntelBras():
     payload = request.get_json()
-    dsCardName = payload ['dsCardName']
-    dsCardNo = payload ['dsCardNo']
-    dsDoor = payload ['dsDoor']
-    dsEntry = payload ['dsEntry']
-    dsErrorCode = payload ['dsErrorCode']
-    dsMethod = payload ['dsMethod']
-    dsPassword = payload ['dsPassword']
-    dsReaderID = payload ['dsReaderID']
-    dsStatus = payload ['dsStatus']
-    dsType = payload ['dsType']
-    dsUserId = payload ['dsUserId']
-    dsUserType = payload ['dsUserType']
-    dsUtc = payload ['dsUtc']
-   # TbAcessoIntelBrascol = payload ['TbAcessoIntelBrascol']
+    dsCardName = payload["dsCardName"]
+    dsCardNo = payload["dsCardNo"]
+    dsDoor = payload["dsDoor"]
+    dsEntry = payload["dsEntry"]
+    dsErrorCode = payload["dsErrorCode"]
+    dsMethod = payload["dsMethod"]
+    dsPassword = payload["dsPassword"]
+    dsReaderID = payload["dsReaderID"]
+    dsStatus = payload["dsStatus"]
+    dsType = payload["dsType"]
+    dsUserId = payload["dsUserId"]
+    dsUserType = payload["dsUserType"]
+    dsUtc = payload["dsUtc"]
+    # TbAcessoIntelBrascol = payload ['TbAcessoIntelBrascol']
     if dsStatus == "1":
-        Inserir_TbAcessoIntelBras(dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc)
+        Inserir_TbAcessoIntelBras(
+            dsCardName,
+            dsCardNo,
+            dsDoor,
+            dsEntry,
+            dsErrorCode,
+            dsMethod,
+            dsPassword,
+            dsReaderID,
+            dsStatus,
+            dsType,
+            dsUserId,
+            dsUserType,
+            dsUtc,
+        )
     return "Cadastramento realizado com sucesso"
-#FIM DA FUNÇÃO
-
-
-
-
-# FIM DA FUNÇÃO
 
 
 @app.route("/notification", methods=["POST"])
@@ -3555,9 +2110,6 @@ def get_Medidas():
     return resultado
 
 
-# FIM DA FUNÇÃO
-
-
 @app.route("/medidassensor", methods=["GET", "POST"])
 def dados():
     payload = request.get_json()
@@ -3575,22 +2127,17 @@ def dados():
         "pesoreal": pesoreal,
         "cubado": cubado,
     }
-    # print(dic_altura)
+
     return dic_altura
 
 
-# FIM DA FUNÇÃO
-
-
-# app.run(port=8080, host='0.0.0.0', debug=True, threaded=True)
-# app.run(host="0.0.0.0")  # coloca o site no ar#
-
-
 def main():
-   # port = int(os.environ.get("PORT", 8080))
-   # app.run(host="127.0.0.1", port=port)
-    port = int(os.environ.get("PORT", 80))
-    app.run(host="192.168.15.200", port=port)
+    port = int(os.getenv("APP_PORT", 80))
+    host = os.getenv("APP_HOST", "192.168.15.200")
+    env = os.getenv("ENV", "local")
+
+    debug = False if env != "local" else True
+    app.run(host=host, port=port, debug=debug)
 
 
 if __name__ == "__main__":
