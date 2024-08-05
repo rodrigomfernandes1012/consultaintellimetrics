@@ -6,7 +6,6 @@ import os
 import time
 from collections import defaultdict
 from typing import Any, Dict, List
-import re
 import pandas as pd
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
@@ -2132,15 +2131,13 @@ def dados():
     return dic_altura
 
 
-# app.run(port=8080, host='0.0.0.0', debug=True, threaded=True)
-# app.run(host="0.0.0.0")  # coloca o site no ar#
-
-
 def main():
-    # port = int(os.environ.get("PORT", 8080))
-    # app.run(host="127.0.0.1", port=port)
-    port = int(os.environ.get("PORT", 80))
-    app.run(host="192.168.15.200", port=port)
+    port = int(os.getenv("APP_PORT", 80))
+    host = os.getenv("APP_HOST", "192.168.15.200")
+    env = os.getenv("ENV", "local")
+
+    debug = False if env != "local" else True
+    app.run(host=host, port=port, debug=debug)
 
 
 if __name__ == "__main__":
