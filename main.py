@@ -10,6 +10,7 @@ import pandas as pd
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
 from datetime import datetime
+import jwt
 
 import boto3
 import pandas as pd
@@ -87,16 +88,24 @@ def assinar_arquivo(arquivo):
     return url
 
 
-def upload_file(file_name, bucket, object_name):
-    client = boto3.client("s3")
-    try:
-        response = client.upload_file(
-            file_name, bucket, object_name, ExtraArgs={"ACL": "public-read"}
+def upload_file(file_name, bucket, token):
+    # client = boto3.client("s3")
+    # try:
+    #     response = client.upload_file(
+    #         file_name, bucket, object_name, ExtraArgs={"ACL": "public-read"}
+    #     )
+    # except ClientError as e:
+    #     logging.error(e)
+    #     return False
+    # return True
+    with open(file_name, "rb") as f:
+        supabase.storage.from_(bucket).upload(
+            file=f,
+            path=file_name,
+            file_options={
+                "content-type": "image/jpeg"
+            },
         )
-    except ClientError as e:
-        logging.error(e)
-        return False
-    return True
 
 
 ##DAQUI PRA BAIXO GERADOR DE API CONSULTAS NO BANCO
@@ -1070,24 +1079,9 @@ def Selecionar_TbFuncionario():
 
 
 # Inserir registros da tabela public.TbFuncionario
-def Inserir_TbFuncionario(
-    dsBairro,
-    dsCidade,
-    dsComplemento,
-    dsFuncao,
-    dsLogradouro,
-    dsNomeEmpregado,
-    dsNumCasa,
-    dsUser,
-    dtRegistro,
-    nrCodEmpregado,
-    TbFuncionariocol,
-):
-    conexao = conecta_bd()
-    cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    comando = f'insert into public.TbFuncionario ( dsBairro, dsCidade, dsComplemento, dsFuncao, dsLogradouro, dsNomeEmpregado, dsNumCasa, dsUser, dtRegistro, nrCodEmpregado, TbFuncionariocol ) values ("{dsBairro}", "{dsCidade}", "{dsComplemento}", "{dsFuncao}", "{dsLogradouro}", "{dsNomeEmpregado}", "{dsNumCasa}", "{dsUser}", "{dtRegistro}", "{nrCodEmpregado}", "{TbFuncionariocol}")'
-    cursor.execute(comando)
-    conexao.commit()
+def Inserir_TbFuncionario(data):
+    resultado = supabase.table("TbFuncionario").insert(data).execute()
+    return resultado.data
 
 
 # Selecionar registros da tabela public.TbFuncionario
@@ -1138,7 +1132,7 @@ def post_Chamados():
     data, error = valida_e_constroi_insert("TbChamados", payload)
 
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({"message": error}), 400
 
     Inserir_TbChamados(data)
     return "Cadastramento realizado com sucesso"
@@ -1161,7 +1155,7 @@ def post_Cliente():
     data, error = valida_e_constroi_insert("TbCliente", payload)
 
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({"message": error}), 400
 
     Inserir_TbCliente(data)
     return "Cadastramento realizado com sucesso"
@@ -1185,7 +1179,7 @@ def post_Destinatario():
     data, error = valida_e_constroi_insert("TbDestinatario", payload)
 
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({"message": error}), 400
     resultado = Inserir_TbDestinatario(data)
     return resultado
 
@@ -1207,7 +1201,7 @@ def post_Dispositivo():
     data, error = valida_e_constroi_insert("TbDispositivo", payload)
 
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({"message": error}), 400
     resultado = Inserir_TbDispositivo(data)
     return resultado
 
@@ -1286,7 +1280,7 @@ def inserir_sensor_registros(dic_sensores, tb_posicao):
         )
 
         if error:
-            return jsonify({"error": error}), 400
+            return jsonify({"message": error}), 400
 
         dataSensorRegistro.append(data)
 
@@ -1316,7 +1310,7 @@ def post_Posicao():
 
     data, error = valida_e_constroi_insert("TbPosicao", payload)
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({"message": error}), 400
 
     resultado_posicao = Inserir_TbPosicao(data)
 
@@ -1336,7 +1330,7 @@ def post_Produto():
     data, error = valida_e_constroi_insert("TbProduto", payload)
 
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({"message": error}), 400
     resultado = Inserir_TbProduto(data)
     return jsonify({"cdProduto": resultado[0]["cdProduto"]})
 
@@ -1352,7 +1346,7 @@ def update_Produto(codigo):
     payload = request.get_json()
     data, error = valida_e_constroi_update("cdProduto", payload)
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({"message": error}), 400
 
     resultado = Alterar_TbProduto("cdProduto", codigo, data)
 
@@ -1377,7 +1371,7 @@ def post_Etiqueta():
     data, error = valida_e_constroi_insert("TbEtiqueta", payload)
 
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({"message": error}), 400
     resultado = Inserir_TbEtiqueta(data)
     return resultado
 
@@ -1413,7 +1407,7 @@ def post_Relacionamento():
     data, error = valida_e_constroi_insert("TbRelacionamento", payload)
 
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({"message": error}), 400
     resultado = Inserir_TbRelacionamento(data)
     return resultado
 
@@ -1432,7 +1426,7 @@ def post_Sensor():
     data, error = valida_e_constroi_insert("TbSensor", payload)
 
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({"message": error}), 400
     resultado = Inserir_TbSensor(data)
     return resultado
 
@@ -1451,7 +1445,7 @@ def post_Status():
     data, error = valida_e_constroi_insert("TbStatus", payload)
 
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({"message": error}), 400
     resultado = Inserir_TbStatus(data)
     return resultado
 
@@ -1470,7 +1464,7 @@ def post_Tag():
     data, error = valida_e_constroi_insert("TbTag", payload)
 
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({"message": error}), 400
     resultado = Inserir_TbTag(data)
     return resultado
 
@@ -1489,7 +1483,7 @@ def post_Ticket():
     data, error = valida_e_constroi_insert("TbTicket", payload)
 
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({"message": error}), 400
     resultado = Inserir_TbTicket(data)
     return resultado
 
@@ -1508,7 +1502,7 @@ def post_TicketResumo():
     data, error = valida_e_constroi_insert("TbTicketResumo", payload)
 
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({"message": error}), 400
     resultado = Inserir_TbTicketResumo(data)
     return resultado
 
@@ -1527,7 +1521,7 @@ def post_Tipo():
     data, error = valida_e_constroi_insert("TbTipo", payload)
 
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({"message": error}), 400
     resultado = Inserir_TbTipo(data)
     return resultado
 
@@ -1549,7 +1543,7 @@ def post_Unidade():
     data, error = valida_e_constroi_insert("TbUnidade", payload)
 
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({"message": error}), 400
     resultado = Inserir_TbUnidade(data)
     return resultado
 
@@ -1571,7 +1565,7 @@ def post_Usuario():
     data, error = valida_e_constroi_insert("TbUsuario", payload)
 
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({"message": error}), 400
     resultado = Inserir_TbUsuario(data)
     return resultado
 
@@ -1593,7 +1587,7 @@ def post_Visita():
     data, error = valida_e_constroi_insert("TbVisita", payload)
 
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({"message": error}), 400
     resultado = Inserir_TbVisita(data)
     return resultado
 
@@ -1615,7 +1609,7 @@ def post_Visitante():
     data, error = valida_e_constroi_insert("TbVisitante", payload)
 
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({"message": error}), 400
     resultado = Inserir_TbVisitante(data)
     return resultado
 
@@ -1714,31 +1708,13 @@ def get_Funcionario():
 @app.route("/Funcionario", methods=["POST"])
 def post_Funcionario():
     payload = request.get_json()
-    dsBairro = payload["dsBairro"]
-    dsCidade = payload["dsCidade"]
-    dsComplemento = payload["dsComplemento"]
-    dsFuncao = payload["dsFuncao"]
-    dsLogradouro = payload["dsLogradouro"]
-    dsNomeEmpregado = payload["dsNomeEmpregado"]
-    dsNumCasa = payload["dsNumCasa"]
-    dsUser = payload["dsUser"]
-    dtRegistro = payload["dtRegistro"]
-    nrCodEmpregado = payload["nrCodEmpregado"]
-    TbFuncionariocol = payload["TbFuncionariocol"]
-    Inserir_TbFuncionario(
-        dsBairro,
-        dsCidade,
-        dsComplemento,
-        dsFuncao,
-        dsLogradouro,
-        dsNomeEmpregado,
-        dsNumCasa,
-        dsUser,
-        dtRegistro,
-        nrCodEmpregado,
-        TbFuncionariocol,
-    )
-    return payload
+    data, error = valida_e_constroi_insert("TbFuncionario", payload)
+
+    if error:
+        return jsonify({"message": error}), 400
+
+    resultado = Inserir_TbFuncionario(data)
+    return resultado
 
 
 # Fim do Gerador de API
@@ -1758,8 +1734,30 @@ def post_Foto():
     return payload
 
 
+def verify_token(token):
+    try:
+        decoded_token = jwt.decode(token, options={"verify_signature": False})
+        return decoded_token
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None
+
+
 @app.route("/CadastraImgProduto", methods=["POST"])
 def CadastraImgProduto():
+    auth_header = request.headers.get("Authorization", None)
+    if auth_header is None or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    token = auth_header.split("Bearer ")[1]
+    user_info = verify_token(token)
+    if user_info is None:
+        return jsonify({"error": "Invalid token"}), 401
+
+    user_id = user_info.get("sub")
+    if not user_id:
+        return jsonify({"error": "User ID not found in token"}), 401
 
     file = request.files["arquivo"]
     pathfile = file.filename
@@ -1767,7 +1765,14 @@ def CadastraImgProduto():
     nrImagem = pathfile.split("-")[1]
     nrImagem = nrImagem.split(".")[0]
     file.save(pathfile)
-    upload_file(pathfile, "dbfilesintellimetrics", "produtos/" + pathfile)
+    try:
+        upload_file(file_name=pathfile, bucket="produtos", token=token)
+    except Exception as e:
+        os.remove(pathfile)
+        print(e)
+        print(pathfile)
+        return jsonify({"message": "erro ao fazer upload da imagem"}), 400
+
     os.remove(pathfile)
     payload = {
         "dsCaminho": "produtos/",
@@ -1780,7 +1785,7 @@ def CadastraImgProduto():
     data, error = valida_e_constroi_insert("TbImagens", payload)
 
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({"message": error}), 400
     resultado = Inserir_TbImagens(data)
     return resultado
 
@@ -1850,7 +1855,7 @@ def get_AcessoIntelBras():
 #     data, error = valida_e_constroi_insert("TbAcessoIntelBras", payload)
 
 #     if error:
-#         return jsonify({"error": error}), 400
+#         return jsonify({"message": error}), 400
 
 #     Inserir_TbAcessoIntelBras(data)
 

@@ -1,5 +1,6 @@
 from constantes import campos_tabelas
 
+
 def valida_campo(field, value, field_type, required):
     """
     Valida o valor de um campo com base no tipo e se é obrigatório.
@@ -23,18 +24,23 @@ def valida_campo(field, value, field_type, required):
             return True, None
 
     # Validate the type
-    if (field_type == "integer" or field_type == "bigint") and not isinstance(value, int):
+    if (field_type == "integer" or field_type == "bigint") and not isinstance(
+        value, int
+    ):
         return False, f"Campo {field} deve ser do tipo inteiro."
     elif field_type in ("text", "character varying") and not isinstance(value, str):
         return False, f"Campo {field} deve ser do tipo texto."
     elif field_type == "boolean" and not isinstance(value, bool):
         return False, f"Campo {field} deve ser do tipo boolean."
-    elif field_type in ("double precision", "real") and not isinstance(value, float):
+    elif field_type in ("double precision", "real") and (
+        not isinstance(value, float) and not isinstance(value, int)
+    ):
         return False, f"Campo {field} deve ser do tipo número com precisão dupla."
     elif field_type == "timestamp" and not isinstance(value, str):
         return False, f"Campo {field} deve ser do tipo timestamp."
 
     return True, None
+
 
 def valida_e_constroi_insert(table, payload):
     """
@@ -72,6 +78,7 @@ def valida_e_constroi_insert(table, payload):
             data[field] = value
 
     return data, None
+
 
 def valida_e_constroi_update(table, payload):
     """
