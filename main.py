@@ -51,6 +51,12 @@ def conecta_bd():
     )
     return conexao
 
+def get_supabase_client(token):
+    headers = {"Authorization": f"Bearer {token}"}
+    supabase_client: Client = create_client(
+        url, key, options=ClientOptions(headers=headers)
+    )
+    return supabase_client
 
 def envia_whatstexto(msg):
     import json
@@ -835,7 +841,7 @@ def Selecionar_VwRelHistoricoDispositivoProduto(filtros):
 
 # busca dados de VwRelHistoricoDispositivoProduto, mas retorna cada produtoItem como uma coluna.
 def Selecionar_HistoricoPaginaDispositivo(filtros):
-    resultado = Selecionar_VwRelHistoricoDispositivoProduto
+    resultado = Selecionar_VwRelHistoricoDispositivoProduto(filtros)
 
     if len(resultado) == 0:
         return resultado
