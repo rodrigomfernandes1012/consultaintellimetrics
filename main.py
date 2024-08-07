@@ -5,14 +5,11 @@ import json
 import os
 import time
 from collections import defaultdict
-from typing import Any, Dict, List
-import pandas as pd
-from geopy.geocoders import Nominatim
-from geopy.distance import geodesic
 from datetime import datetime
-import jwt
+from typing import Any, Dict, List
 
 import boto3
+import jwt
 import pandas as pd
 import psycopg2
 import psycopg2.extras
@@ -23,6 +20,7 @@ from flask_cors import CORS
 from geopy.distance import geodesic
 from geopy.geocoders import Nominatim
 from supabase import Client, create_client
+from supabase.client import ClientOptions
 
 from utils import valida_e_constroi_insert, valida_e_constroi_update
 
@@ -89,27 +87,17 @@ def assinar_arquivo(arquivo):
 
 
 def upload_file(file_name, bucket, token):
-    # client = boto3.client("s3")
-    # try:
-    #     response = client.upload_file(
-    #         file_name, bucket, object_name, ExtraArgs={"ACL": "public-read"}
-    #     )
-    # except ClientError as e:
-    #     logging.error(e)
-    #     return False
-    # return True
+    headers = {"Authorization": f"Bearer {token}"}
+    file_supabase: Client = create_client(
+        url, key, options=ClientOptions(headers=headers)
+    )
+
     with open(file_name, "rb") as f:
-        supabase.storage.from_(bucket).upload(
+        file_supabase.storage.from_(bucket).upload(
             file=f,
             path=file_name,
-            file_options={
-                "content-type": "image/jpeg"
-            },
+            file_options={"content-type": "image/jpeg"},
         )
-
-
-##DAQUI PRA BAIXO GERADOR DE API CONSULTAS NO BANCO
-##ATUALIZADO EM 29-05-2024
 
 
 def guarda_medidas(altura, largura, comprimento, pesoreal, cubado):
@@ -119,7 +107,6 @@ def guarda_medidas(altura, largura, comprimento, pesoreal, cubado):
         comprimento = str(comprimento).ljust(10)
         cubado = str(cubado).ljust(10)
         pesoreal = str(pesoreal).ljust(20)
-        # linha = f"'altura':{altura}, 'largura':{largura}, 'comprimento':{comprimento}, 'pesoreal':{pesoreal}, 'cubado':{cubado}"
         linha = f"{altura}{comprimento}{cubado}{largura}{pesoreal}"
         arquivo.write(linha)
     arquivo.close()
