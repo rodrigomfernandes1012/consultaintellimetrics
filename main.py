@@ -146,7 +146,7 @@ def Selecionar_TbAcessoIntelBras():
 def Selecionar_TbPonto():
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f"select cdPonto, cdAcessoIntelbras, dsCardNo, dsCardName, DATE_FORMAT(STR_TO_DATE(dsRegistro01, '%Y-%m-%d %H:%i:%s'), '%d/%m/%Y') AS dsData, DATE_FORMAT(STR_TO_DATE(dsRegistro01, '%Y-%m-%d %H:%i:%s'), '%H:%i') AS dsRegistro01, DATE_FORMAT(STR_TO_DATE(dsRegistro02, '%Y-%m-%d %H:%i:%s'), '%H:%i') AS dsRegistro02, DATE_FORMAT(STR_TO_DATE(dsRegistro03, '%Y-%m-%d %H:%i:%s'), '%H:%i') AS dsRegistro03, DATE_FORMAT(STR_TO_DATE(dsRegistro04, '%Y-%m-%d %H:%i:%s'), '%H:%i') AS dsRegistro04, DATE_FORMAT(STR_TO_DATE(dsRegistro05, '%Y-%m-%d %H:%i:%s'), '%H:%i') AS dsRegistro05, DATE_FORMAT(STR_TO_DATE(dsRegistro06, '%Y-%m-%d %H:%i:%s'), '%H:%i') AS dsRegistro06, dtRegistro  from DbIntelliMetrics.TbPonto;"
+    comando = f"select cdPonto, cdAcessoIntelbras, dsCardNo, dsCardName, DATE_FORMAT(STR_TO_DATE(dsRegistro01, '%Y-%m-%d %H:%i:%s'), '%d/%m/%Y') AS dsData,  DATE_FORMAT(STR_TO_DATE(dsRegistro01, '%Y-%m-%d %H:%i:%s'), '%H:%i') AS dsRegistro01, DATE_FORMAT(STR_TO_DATE(dsRegistro02, '%Y-%m-%d %H:%i:%s'), '%H:%i') AS dsRegistro02, DATE_FORMAT(STR_TO_DATE(dsRegistro03, '%Y-%m-%d %H:%i:%s'), '%H:%i') AS dsRegistro03, DATE_FORMAT(STR_TO_DATE(dsRegistro04, '%Y-%m-%d %H:%i:%s'), '%H:%i') AS dsRegistro04, DATE_FORMAT(STR_TO_DATE(dsRegistro05, '%Y-%m-%d %H:%i:%s'), '%H:%i') AS dsRegistro05, DATE_FORMAT(STR_TO_DATE(dsRegistro06, '%Y-%m-%d %H:%i:%s'), '%H:%i') AS dsRegistro06, dtRegistro  from DbIntelliMetrics.TbPonto;"
     cursor.execute(comando)
     resultado = cursor.fetchall()
     cursor.close()
@@ -200,9 +200,14 @@ def Inserir_TbAcessoIntelBras(
     conexao.close()
     return resultado
 
-
-
-
+def Alterar_TbPonto(cdPonto, dsRegistro01, dsRegistro02, dsRegistro03,dsRegistro04):
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    comando = f"update DbIntelliMetrics.TbPonto set dsRegistro01 = '{dsRegistro01}', dsRegistro02 = '{dsRegistro02}', dsRegistro03 = '{dsRegistro03}', dsRegistro04 = '{dsRegistro04}' where cdPonto = '{cdPonto}'"
+    cursor.execute(comando)
+    conexao.commit()
+    cursor.close()
+    conexao.close()
 
 def Inserir_TbPonto(dsCardNo, dsCardName, dsUtc):
     conexao = conecta_bd()
@@ -244,7 +249,7 @@ def Inserir_TbPonto(dsCardNo, dsCardName, dsUtc):
 
     if dado=="dsRegistro01":
         comando = f"insert into DbIntelliMetrics.TbPonto ( dsCardNo, dsCardName, dsRegistro01 ) values ('{dsCardNo}', '{dsCardName}', '{dsUtc}')"
-        print(comando)
+        #print(comando)
     if dado == "dsRegistro02":
         comando = f"update DbIntelliMetrics.TbPonto set dsRegistro02 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro02 is null and dsRegistro01 = '{data1}' "
 
@@ -3309,10 +3314,7 @@ def get_NrImagensMaior(codigo):
 
 # Selecionar registros no EndPoint AcessoIntelBras
 
-@app.route("/Ponto")
-def get_Ponto():
-    resultado = Selecionar_TbPonto()
-    return resultado
+
 
 @app.route("/AcessoIntelBras", methods=["GET"])
 def get_AcessoIntelBras():
@@ -3345,7 +3347,28 @@ def post_AcessoIntelBras():
     return "Cadastramento realizado com sucesso"
 #FIM DA FUNÇÃO
 
+@app.route("/Ponto")
+def get_Ponto():
+    resultado = Selecionar_TbPonto()
+    return resultado
 
+
+dic_dados = []
+@app.route('/AlteraPonto', methods=['PUT'])
+def AlteraPonto():
+    payload = request.get_json()
+    #dic_dados.append(payload)
+    print(payload)
+
+
+    for dados in payload:
+        cdPonto = int(dados['cdPonto'])
+        dsRegistro01 = dados['dsRegistro01']
+        dsRegistro02 = dados['dsRegistro02']
+        dsRegistro03 = dados['dsRegistro03']
+        dsRegistro04 = dados['dsRegistro04']
+        Alterar_TbPonto(cdPonto, dsRegistro01, dsRegistro02, dsRegistro03, dsRegistro04 )
+    return "Alterado com sucesso"
 
 
 # FIM DA FUNÇÃO
