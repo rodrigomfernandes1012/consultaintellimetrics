@@ -391,17 +391,6 @@ def Selecionar_TbDestinatario(codigo):
     return resultado.data
 
 
-def Selecionar_Lat_Long_Destinatario(codigo):
-    resultado = (
-        supabase.table("VwTbDestinatarioDispositivo")
-        .select("cdDestinatario", "dsLat", "dsLong", "cdFilho")
-        .eq("cdFilho", codigo)
-        .execute()
-    )
-
-    return resultado.data
-
-
 # Inserir registros da tabela public.TbDestinatario
 def Inserir_TbDestinatario(data):
     resultado = supabase.table("TbDestinatario").insert(data).execute()
@@ -465,7 +454,7 @@ def get_endereco_coordenada(lat, long):
 
     for campos in adress:
         dados = campos["properties"]
-        dsLogradoruro = dados.get("street")
+        dsLogradouro = dados.get("street")
         dsNum = dados.get("housenumber")
         dsBairro = dados.get("neighbourhood")
         dsCidade = dados.get("locality")
@@ -474,7 +463,7 @@ def get_endereco_coordenada(lat, long):
         dsPais = dados.get("country_code")
 
     return {
-        "dsLogradoruro": dsLogradoruro,
+        "dsLogradouro": dsLogradouro,
         "dsNum": dsNum,
         "dsBairro": dsBairro,
         "dsCidade": dsCidade,
@@ -876,8 +865,9 @@ def Selecionar_HistoricoPaginaDispositivo(filtros):
     return result_json
 
 
-def Selecionar_VwRelDadosDispositivo(filtros):
-    query = supabase.table("VwRelDadosDispositivo").select(
+def Selecionar_VwRelDadosDispositivo(filtros, token):
+    supabase_client = get_supabase_client(token)
+    query = supabase_client.table("VwRelDadosDispositivo").select(
         "cdProduto",
         "dsNome",
         "cdDispositivo",
@@ -1652,6 +1642,19 @@ def get_RelHistoricoDispositivoProduto(codigo):
 
 @app.route("/VwRelDadosDispositivo/<codigo>")
 def get_RelVwRelDadosDispositivo(codigo):
+    auth_header = request.headers.get("Authorization", None)
+    if auth_header is None or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    token = auth_header.split("Bearer ")[1]
+    user_info = verify_token(token)
+    if user_info is None:
+        return jsonify({"error": "Invalid token"}), 401
+
+    user_id = user_info.get("sub")
+    if not user_id:
+        return jsonify({"error": "User ID not found in token"}), 401
+    
     filtros = {
         "dtRegistro": request.args.get("dtRegistro"),
     }
@@ -1663,7 +1666,7 @@ def get_RelVwRelDadosDispositivo(codigo):
     if codigo != "0":
         filtros["cdDispositivo"] = codigo
 
-    resultado = Selecionar_VwRelDadosDispositivo(filtros)
+    resultado = Selecionar_VwRelDadosDispositivo(filtros, token)
     return resultado
 
 

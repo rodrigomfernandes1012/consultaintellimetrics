@@ -28,7 +28,9 @@ def valida_campo(field, value, field_type, required):
         value, int
     ):
         return False, f"Campo {field} deve ser do tipo inteiro."
-    elif field_type in ("text", "character varying") and not isinstance(value, str):
+    elif field_type in ("text", "character varying", "uuid") and not isinstance(
+        value, str
+    ):
         return False, f"Campo {field} deve ser do tipo texto."
     elif field_type == "boolean" and not isinstance(value, bool):
         return False, f"Campo {field} deve ser do tipo boolean."
@@ -36,7 +38,9 @@ def valida_campo(field, value, field_type, required):
         not isinstance(value, float) and not isinstance(value, int)
     ):
         return False, f"Campo {field} deve ser do tipo número com precisão dupla."
-    elif field_type == "timestamp" and not isinstance(value, str):
+    elif field_type in ("timestamp", "timestamp with time zone") and not isinstance(
+        value, str
+    ):
         return False, f"Campo {field} deve ser do tipo timestamp."
 
     return True, None
