@@ -233,43 +233,28 @@ def Inserir_TbPonto(dsCardNo, dsCardName, dsUtc):
         print(resultado)
 
         for dtregistro in resultado:
-            if dtregistro['dsRegistro06']== None:
-                dado = "dsRegistro06"
-                data1 = dtregistro['dsRegistro01']
-            if dtregistro['dsRegistro05'] == None:
-                dado = "dsRegistro05"
-                data1 = dtregistro['dsRegistro01']
+
             if dtregistro['dsRegistro04']==None:
-                dado = "dsRegistro04"
-                data1 = dtregistro['dsRegistro01']
+                comando = f"update DbIntelliMetrics.TbPonto set dsRegistro04 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro04 is null and dsRegistro01 = '{data1}'"
+                cursor.execute(comando)
+                conexao.commit()
+
             if dtregistro['dsRegistro03']==None:
-                dado = "dsRegistro03"
-                data1 = dtregistro['dsRegistro01']
+                comando = f"update DbIntelliMetrics.TbPonto set dsRegistro03 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro03 is null and dsRegistro01 = '{data1}'"
+                cursor.execute(comando)
+                conexao.commit()
+
             if dtregistro['dsRegistro02']==None:
-                dado = "dsRegistro02"
-                data1 = dtregistro['dsRegistro01']
+                comando = f"update DbIntelliMetrics.TbPonto set dsRegistro02 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro02 is null and dsRegistro01 = '{data1}' "
+                cursor.execute(comando)
+                conexao.commit()
+
             if dtregistro['dsRegistro01']==None:
                 comando = f"insert into DbIntelliMetrics.TbPonto ( dsCardNo, dsCardName, dsRegistro01 ) values ('{dsCardNo}', '{dsCardName}', '{dsUtc}')"
                 cursor.execute(comando)
                 conexao.commit()
 
 
-
-
-            if dado == "dsRegistro02":
-                comando = f"update DbIntelliMetrics.TbPonto set dsRegistro02 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro02 is null and dsRegistro01 = '{data1}' "
-
-            if dado == "dsRegistro03":
-                comando = f"update DbIntelliMetrics.TbPonto set dsRegistro03 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro03 is null and dsRegistro01 = '{data1}'"
-
-            if dado == "dsRegistro04":
-                comando = f"update DbIntelliMetrics.TbPonto set dsRegistro04 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro04 is null and dsRegistro01 = '{data1}'"
-
-            if dado == "dsRegistro05":
-                comando = f"update DbIntelliMetrics.TbPonto set dsRegistro05 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro05 is null and dsRegistro01 = '{data1}'"
-
-            if dado == "dsRegistro06":
-                comando = f"update DbIntelliMetrics.TbPonto set dsRegistro06 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro06 is null and dsRegistro01 = '{data1}'"
 
 
     cursor.execute(comando)
