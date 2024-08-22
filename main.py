@@ -39,7 +39,17 @@ def conecta_bd():
         database="DbIntelliMetrics",
     )
     return conexao
+def obter_ip_publico():
+    # Verifica o cabeçalho X-Forwarded-For
+    ip = request.headers.get('X-Forwarded-For')
+    if ip:
+        # O X-Forwarded-For pode retornar uma lista de IPs; pegamos o primeiro
+        ip = ip.split(',')[0]
+    else:
+        # Se não houver X-Forwarded-For, pega o remote_addr
+        ip = request.remote_addr
 
+    return ip
 
 def envia_whatstexto(msg):
     import requests
@@ -3377,7 +3387,7 @@ def AlteraPonto():
 @app.route("/notification", methods=["POST"])
 def event_receiver():
     if request.method == "POST":
-
+        print(obter_ip_publico())
         res = request.data
         data_list = res.split(b"--myboundary\r\n")
 
