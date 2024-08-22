@@ -224,7 +224,7 @@ def Inserir_TbPonto(dsCardNo, dsCardName, dsUtc):
     cursor = conexao.cursor(dictionary=True)
     comando = f"select * from DbIntelliMetrics.TbPonto where dsCardNo = '{dsCardNo}' and DATE(dsRegistro01) = DATE('{dsUtc}') order by cdAcessoIntelBras asc"
     cursor.execute(comando)
-    print(comando)
+    #print(comando)
     resultado = cursor.fetchall()
     #print(resultado)
     if resultado == []:
@@ -238,29 +238,32 @@ def Inserir_TbPonto(dsCardNo, dsCardName, dsUtc):
                 comando = f"update DbIntelliMetrics.TbPonto set dsRegistro04 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro04 is null and dsRegistro01 = '{data1}'"
                 cursor.execute(comando)
                 conexao.commit()
+                cursor.close()
+                conexao.close()
 
             if dtregistro['dsRegistro03']==None:
                 comando = f"update DbIntelliMetrics.TbPonto set dsRegistro03 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro03 is null and dsRegistro01 = '{data1}'"
                 cursor.execute(comando)
                 conexao.commit()
+                cursor.close()
+                conexao.close()
 
             if dtregistro['dsRegistro02']==None:
                 comando = f"update DbIntelliMetrics.TbPonto set dsRegistro02 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro02 is null and dsRegistro01 = '{data1}' "
                 cursor.execute(comando)
                 conexao.commit()
+                cursor.close()
+                conexao.close()
 
             if dtregistro['dsRegistro01']==None:
                 comando = f"insert into DbIntelliMetrics.TbPonto ( dsCardNo, dsCardName, dsRegistro01 ) values ('{dsCardNo}', '{dsCardName}', '{dsUtc}')"
                 cursor.execute(comando)
                 conexao.commit()
+                cursor.close()
+                conexao.close()
 
 
 
-
-    cursor.execute(comando)
-    #conexao.commit()
-    cursor.close()
-    conexao.close()
 
 #Inserir_TbAcessoIntelBras("rodrigo","17439772801","1","",0,25,"",1,'1',"Entry","17439772806",0,"1722531607")
 
