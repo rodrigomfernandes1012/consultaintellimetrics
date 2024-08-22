@@ -258,7 +258,7 @@ def Inserir_TbPonto(dsCardNo, dsCardName, dsUtc):
 
 
     cursor.execute(comando)
-    conexao.commit()
+    #conexao.commit()
     cursor.close()
     conexao.close()
 
