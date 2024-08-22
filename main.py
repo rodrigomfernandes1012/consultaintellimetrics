@@ -3398,9 +3398,9 @@ def event_receiver():
                     a_type = lines[0].split(b": ")[1]
 
                     if a_type == b"image/jpeg":
-                        # image_data = b"\r\n".join(lines[3:-3])
+                        image_data = b"\r\n".join(lines[3:-3])
                         image_data = lines[3:-3]
-                        print(image_data)
+                        #print(image_data)
                     else:
                         text_data = b"\r\n".join(lines[3:-1])
 
@@ -3409,10 +3409,10 @@ def event_receiver():
         json_object = json.dumps(evento_dict, indent=4)
         resp_dict = json.loads(json_object)
 
-        print(resp_dict)
+        #print(resp_dict)
 
         event_code = resp_dict.get("Events")[0].get("Code")
-        print("################## ", event_code, " ##################")
+        #print("################## ", event_code, " ##################")
 
         if event_code == "AccessControl":
             event_data = resp_dict.get("Events")[0].get("Data")
@@ -3432,21 +3432,21 @@ def event_receiver():
             user_type = event_data.get("UserType")
             pwd = event_data.get("DynPWD")
 
-            print("UserID: ", user_id)
+            #print("UserID: ", user_id)
             print("UserType", user_type)
-            print("CardName: ", card_name)
-            print("CardNo: ", card_no)
-            print("CardType: ", card_type)
-            print("Password: ", pwd)
-            print("Door: ", door)
-            print("ErrorCode: ", error_code)
-            print("Method: ", method)
-            print("ReaderID: ", reader_id)
-            print("Status: ", event_status)
-            print("Type: ", event_type)
-            print("Entry: ", event_entry)
-            print("UTC: ", event_utc)
-            print(49 * "#")
+            #print("CardName: ", card_name)
+            #print("CardNo: ", card_no)
+            #print("CardType: ", card_type)
+            #print("Password: ", pwd)
+            #print("Door: ", door)
+            #print("ErrorCode: ", error_code)
+            #print("Method: ", method)
+            #print("ReaderID: ", reader_id)
+            #print("Status: ", event_status)
+            #print("Type: ", event_type)
+            #print("Entry: ", event_entry)
+            #print("UTC: ", event_utc)
+            #print(49 * "#")
             Inserir_TbAcessoIntelBras(
                 card_name,
                 card_no,
@@ -3492,9 +3492,9 @@ def event_receiver():
             door_status = event_data.get("Status")
             door_utc = event_data.get("UTC")
 
-            print("Door Status: ", door_status)
-            print("UTC", door_utc)
-            print(20 * "#")
+           # print("Door Status: ", door_status)
+           # print("UTC", door_utc)
+           # print(20 * "#")
             return jsonify({"message": "xxxxxxx", "code": "200", "auth": "false"})
 
         elif event_code == "BreakIn":
@@ -3503,9 +3503,9 @@ def event_receiver():
             door_name = event_data.get("Name")
             door_utc = event_data.get("UTC")
 
-            print("Door Name: ", door_name)
-            print("UTC", door_utc)
-            print(49 * "#")
+           # print("Door Name: ", door_name)
+           # print("UTC", door_utc)
+           # print(49 * "#")
             return jsonify({"message": "", "code": "200", "auth": "false"})
 
     return jsonify({"message": "acesso ok entra", "code": "200", "auth": "false"})
