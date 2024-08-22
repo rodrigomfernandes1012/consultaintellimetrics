@@ -228,9 +228,7 @@ def Inserir_TbPonto(dsCardNo, dsCardName, dsUtc):
     resultado = cursor.fetchall()
     #print(resultado)
     if resultado == []:
-
-        dado = "dsRegistro01"
-        data = ""
+        print("vazio")
     else:
         print(resultado)
 
@@ -251,15 +249,13 @@ def Inserir_TbPonto(dsCardNo, dsCardName, dsUtc):
                 dado = "dsRegistro02"
                 data1 = dtregistro['dsRegistro01']
             if dtregistro['dsRegistro01']==None:
-                dado = "dsRegistro01"
-                data1 = dtregistro['dsRegistro01']
-
-
-
-
-            if dado == "dsRegistro01":
                 comando = f"insert into DbIntelliMetrics.TbPonto ( dsCardNo, dsCardName, dsRegistro01 ) values ('{dsCardNo}', '{dsCardName}', '{dsUtc}')"
-                #print(comando)
+                cursor.execute(comando)
+                conexao.commit()
+
+
+
+
             if dado == "dsRegistro02":
                 comando = f"update DbIntelliMetrics.TbPonto set dsRegistro02 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro02 is null and dsRegistro01 = '{data1}' "
 
