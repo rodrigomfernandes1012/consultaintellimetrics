@@ -1,3 +1,6 @@
+from geopy.distance import geodesic
+from geopy.geocoders import Nominatim
+
 from constantes import campos_tabelas
 
 
@@ -46,13 +49,14 @@ def valida_campo(field, value, field_type, required):
     return True, None
 
 
-def valida_e_constroi_insert(table, payload):
+def valida_e_constroi_insert(table, payload, ignorar_fields=None):
     """
     Valida e constrói o dicionário de dados para inserção em uma tabela com base no payload fornecido.
 
     Parâmetros:
     - table (str): Nome da tabela onde os dados serão inseridos.
     - payload (dict): Dicionário contendo os dados para inserção.
+    - ignorar_fields (list): Opcional. Lista de fields para ignorar validação
 
     Retorna:
     - dict: Dicionário com os dados validados e prontos para inserção.
@@ -65,6 +69,9 @@ def valida_e_constroi_insert(table, payload):
     data = {}
 
     for field, attributes in fields.items():
+        if ignorar_fields and len(ignorar_fields) and field in ignorar_fields:
+            continue
+        
         required = attributes["required"]
         field_type = attributes["type"]
 
@@ -120,3 +127,9 @@ def valida_e_constroi_update(table, payload):
         return None, "Nenhum campo válido para atualizar."
 
     return data, None
+
+
+def calcular_distancia(lat1, lon1, lat2, lon2):
+    geolocator = Nominatim(user_agent="my_app")
+    distancia = geodesic((lat1, lon1), (lat2, lon2)).kilometers
+    return distancia

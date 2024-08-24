@@ -13,13 +13,12 @@ import jwt
 import pandas as pd
 import psycopg2
 import psycopg2.extras
-import requests
+
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from geopy.distance import geodesic
-from geopy.geocoders import Nominatim
-from supabase import Client, create_client
+
+from db_utils import Client, create_client
 from supabase.client import ClientOptions
 
 from utils import valida_e_constroi_insert, valida_e_constroi_update
@@ -28,9 +27,6 @@ from utils import valida_e_constroi_insert, valida_e_constroi_update
 load_dotenv()
 
 # Amazon
-selecao = []
-dicionario = []
-dic2 = []
 dic_whats = []
 dic_whats2 = []
 dic_altura = []
@@ -38,7 +34,7 @@ dic_altura = []
 # Supabase setup client
 url: str = os.getenv("SUPABASE_URL")
 key: str = os.getenv("SUPABASE_KEY")
-supabase: Client = create_client(url, key)
+supabase_api: Client = create_client(url, key)
 
 
 def conecta_bd():
@@ -51,12 +47,14 @@ def conecta_bd():
     )
     return conexao
 
+
 def get_supabase_client(token):
     headers = {"Authorization": f"Bearer {token}"}
     supabase_client: Client = create_client(
         url, key, options=ClientOptions(headers=headers)
     )
     return supabase_client
+
 
 def envia_whatstexto(msg):
     import json
@@ -92,18 +90,7 @@ def assinar_arquivo(arquivo):
     return url
 
 
-def upload_file(file_name, bucket, token):
-    headers = {"Authorization": f"Bearer {token}"}
-    file_supabase: Client = create_client(
-        url, key, options=ClientOptions(headers=headers)
-    )
 
-    with open(file_name, "rb") as f:
-        file_supabase.storage.from_(bucket).upload(
-            file=f,
-            path=file_name,
-            file_options={"content-type": "image/jpeg"},
-        )
 
 
 def guarda_medidas(altura, largura, comprimento, pesoreal, cubado):
@@ -145,7 +132,7 @@ def Pegar_Medidas():
 # Selecionar registros da tabela public.TbAcessoIntelBras
 def Selecionar_TbAcessoIntelBras():
     resultado = (
-        supabase.table("TbAcessoIntelBras")
+        supabase_api.table("TbAcessoIntelBras")
         .select(
             "cdAcessoIntelBras, dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc"
         )
@@ -165,19 +152,12 @@ def Selecionar_TbPonto():
     return resultado
 
 
-def Selecionar_VwTbDestinatarioDispositivo(codigoDisp):
-    resultado = (
-        supabase.table("VwTbDestinatarioDispositivo")
-        .select("cdDestinatario", "dsLat", "dsLong", "nrRaio", "cdFilho")
-        .eq("cdFilho", codigoDisp)
-        .execute()
-    )
-    return resultado.data
+
 
 
 # Inserir registros da tabela public.TbAcessoIntelBras
 # def Inserir_TbAcessoIntelBras(data):
-#     resultado = supabase.table("TbAcessoIntelBras").insert(data).execute()
+#     resultado = supabase_api.table("TbAcessoIntelBras").insert(data).execute()
 #     return resultado.data
 
 
@@ -263,15 +243,12 @@ def Inserir_TbPonto(dsCardNo, dsUtc):
     conexao.close()
 
 
-def calcular_distancia(lat1, lon1, lat2, lon2):
-    geolocator = Nominatim(user_agent="my_app")
-    distancia = geodesic((lat1, lon1), (lat2, lon2)).kilometers
-    return distancia
+
 
 
 # Selecionar registros da tabela public.VwTbPosicaoAtual
 def Selecionar_VwTbPosicaoAtual(filtros):
-    query = supabase.table("VwTbPosicaoAtual").select(
+    query = supabase_api.table("VwTbPosicaoAtual").select(
         "cdPosicao",
         "dtRegistro",
         "cdDispositivo",
@@ -303,7 +280,7 @@ def Selecionar_VwTbPosicaoAtual(filtros):
 # Selecionar registros da tabela public.TbChamados
 def Selecionar_TbChamados():
     resultado = (
-        supabase.table("TbChamados")
+        supabase_api.table("TbChamados")
         .select(
             "cdChamados",
             "dtOperacao",
@@ -321,167 +298,22 @@ def Selecionar_TbChamados():
 
 # Inserir registros da tabela public.TbChamados
 def Inserir_TbChamados(data):
-    resultado = supabase.table("TbChamados").insert(data).execute()
+    resultado = supabase_api.table("TbChamados").insert(data).execute()
     return resultado.data
 
 
-# Selecionar registros da tabela public.TbCliente
-def Selecionar_TbCliente():
-    resultado = (
-        supabase.table("TbCliente")
-        .select(
-            "cdCliente",
-            "dsNome",
-            "nrCnpj",
-            "nrIe",
-            "nrInscMun",
-            "dsLogradouro",
-            "nrNumero",
-            "dsComplemento",
-            "dsBairro",
-            "dsCep",
-            "dsCidade",
-            "dsUF",
-            "dsObs",
-            "cdStatus",
-            "dsUser",
-            "dtRegistro",
-        )
-        .execute()
-    )
-
-    return resultado.data
 
 
-# Inserir registros da tabela public.TbCliente
-def Inserir_TbCliente(data):
-    resultado = supabase.table("TbCliente").insert(data).execute()
-    return resultado.data
 
 
-# Selecionar registros da tabela public.TbDestinatario
-def Selecionar_TbDestinatario(codigo):
-    query = supabase.table("TbDestinatario").select(
-        "cdDestinatario",
-        "dsNome",
-        "nrCnpj",
-        "nrIe",
-        "nrInscMun",
-        "dsLogradouro",
-        "nrNumero",
-        "dsComplemento",
-        "dsBairro",
-        "dsCep",
-        "dsCidade",
-        "dsUF",
-        "dsObs",
-        "cdStatus",
-        "dsLat",
-        "dsLong",
-        "nrRaio",
-        "dsUser",
-        "dtRegistro",
-    )
-
-    if codigo != "0":
-        query.eq("cdDestinatario", codigo)
-
-    resultado = query.execute()
-
-    return resultado.data
 
 
-# Inserir registros da tabela public.TbDestinatario
-def Inserir_TbDestinatario(data):
-    resultado = supabase.table("TbDestinatario").insert(data).execute()
-    return resultado.data
 
-
-# Selecionar registros da tabela public.TbDispositivo
-def Selecionar_TbDispositivo(codigo):
-    query = supabase.table("TbDispositivo").select(
-        "cdDispositivo",
-        "dsDispositivo",
-        "dsModelo",
-        "dsDescricao",
-        "dsObs",
-        "dsLayout",
-        "nrChip",
-        "cdStatus",
-        "dsUser",
-        "dtRegistro",
-    )
-
-    if codigo != "0":
-        query.eq("cdDispositivo", codigo)
-
-    resultado = query.execute()
-
-    return resultado.data
-
-
-# Inserir registros da tabela public.TbDispositivo
-def Inserir_TbDispositivo(data):
-    resultado = supabase.table("TbDispositivo").insert(data).execute()
-    return resultado.data
-
-
-# Selecionar registros da tabela public.TbImagens
-def Selecionar_TbImagens(codigo):
-    query = supabase.table("TbImagens").select(
-        "cdImagens, dsCaminho, cdCodigo, cdTipo, dsUser, dtRegistro, cdProduto, nrImagem"
-    )
-
-    if codigo != "0":
-        query.eq("cdProduto", codigo)
-
-    resultado = query.execute()
-
-    return resultado.data
-
-
-# Inserir registros da tabela public.TbImagens
-def Inserir_TbImagens(data):
-    resultado = supabase.table("TbImagens").insert(data).execute()
-    return resultado.data
-
-
-def get_endereco_coordenada(lat, long):
-    payload = f"http://osm.taxidigital.net:4000/v1/reverse?point.lon={long}&point.lat={lat}&layers=address&sources=oa&size=1&cdFilial=0&cdTipoOrigem=0"
-    requisicao = requests.get(payload)
-    dic = requisicao.json()
-    adress = dic["features"]
-
-    for campos in adress:
-        dados = campos["properties"]
-        dsLogradouro = dados.get("street")
-        dsNum = dados.get("housenumber")
-        dsBairro = dados.get("neighbourhood")
-        dsCidade = dados.get("locality")
-        dsUF = dados.get("region_a")
-        dsCep = dados.get("postalcode")
-        dsPais = dados.get("country_code")
-
-    return {
-        "dsLogradouro": dsLogradouro,
-        "dsNum": dsNum,
-        "dsBairro": dsBairro,
-        "dsCidade": dsCidade,
-        "dsUF": dsUF,
-        "dsCep": dsCep,
-        "dsPais": dsPais,
-    }
-
-
-# Inserir registros da tabela public.TbPosicao
-def Inserir_TbPosicao(data):
-    resultado = supabase.table("TbPosicao").insert(data).execute()
-    return resultado.data
 
 
 def Alterar_StatusTbPosicao(codigo, status):
     response = (
-        supabase.table("TbDispositivo")
+        supabase_api.table("TbDispositivo")
         .update({"cdStatus": status})
         .eq("cdDispositivo", codigo)
         .execute()
@@ -489,15 +321,13 @@ def Alterar_StatusTbPosicao(codigo, status):
     return response.data
 
 
-def Inserir_TbSensorRegistro(data):
-    resultado = supabase.table("TbSensorRegistro").insert(data).execute()
-    return resultado.data
+
 
 
 # Selecionar registros da tabela public.TbProduto
 def Selecionar_TbProduto(codigo):
     resultado = (
-        supabase.table("VwTbProdutoTotalStaus")
+        supabase_api.table("VwTbProdutoTotalStaus")
         .select(
             "cdProduto",
             "dsDescricao",
@@ -519,14 +349,14 @@ def Selecionar_TbProduto(codigo):
 
 # Inserir registros da tabela public.TbProduto
 def Inserir_TbProduto(data):
-    resultado = supabase.table("TbProduto").insert(data).execute()
+    resultado = supabase_api.table("TbProduto").insert(data).execute()
     return resultado.data
 
 
 # Selecionar registros da tabela public.TbRelacionamento
 def Selecionar_TbRelacionamento():
     resultado = (
-        supabase.table("TbRelacionamento")
+        supabase_api.table("TbRelacionamento")
         .select(
             "cdRelacionamento",
             "cdPai",
@@ -545,14 +375,14 @@ def Selecionar_TbRelacionamento():
 
 # Inserir registros da tabela public.TbRelacionamento
 def Inserir_TbRelacionamento(data):
-    resultado = supabase.table("TbRelacionamento").insert(data).execute()
+    resultado = supabase_api.table("TbRelacionamento").insert(data).execute()
     return resultado.data
 
 
 # Selecionar registros da tabela public.TbSensor
 def Selecionar_TbSensor():
     resultado = (
-        supabase.table("TbSensor")
+        supabase_api.table("TbSensor")
         .select(
             "cdSensor",
             "dsNome",
@@ -572,14 +402,14 @@ def Selecionar_TbSensor():
 
 # Inserir registros da tabela public.TbSensor
 def Inserir_TbSensor(data):
-    resultado = supabase.table("TbSensor").insert(data).execute()
+    resultado = supabase_api.table("TbSensor").insert(data).execute()
     return resultado.data
 
 
 # Selecionar registros da tabela public.TbStatus
 def Selecionar_TbStatus():
     resultado = (
-        supabase.table("TbStatus")
+        supabase_api.table("TbStatus")
         .select("cdStatus, dsStatus, dsUser, dtRegistro")
         .execute()
     )
@@ -588,14 +418,14 @@ def Selecionar_TbStatus():
 
 # Inserir registros da tabela public.TbStatus
 def Inserir_TbStatus(data):
-    resultado = supabase.table("TbStatus").insert(data).execute()
+    resultado = supabase_api.table("TbStatus").insert(data).execute()
     return resultado.data
 
 
 # Selecionar registros da tabela public.TbTag
 def Selecionar_TbTag():
     resultado = (
-        supabase.table("TbTag")
+        supabase_api.table("TbTag")
         .select("cdTag", "dsDescricao", "dsConteudo", "dsUser", "dtRegistro")
         .execute()
     )
@@ -605,14 +435,14 @@ def Selecionar_TbTag():
 
 # Inserir registros da tabela public.TbTag
 def Inserir_TbTag(data):
-    resultado = supabase.table("TbTag").insert(data).execute()
+    resultado = supabase_api.table("TbTag").insert(data).execute()
     return resultado.data
 
 
 # Selecionar registros da tabela public.TbTicket
 def Selecionar_TbTicket():
     resultado = (
-        supabase.table("TbTicket")
+        supabase_api.table("TbTicket")
         .select(
             "cdTicket",
             "dtOperacao",
@@ -631,14 +461,14 @@ def Selecionar_TbTicket():
 
 # Inserir registros da tabela public.TbTicket
 def Inserir_TbTicket(data):
-    resultado = supabase.table("TbTicket").insert(data).execute()
+    resultado = supabase_api.table("TbTicket").insert(data).execute()
     return resultado.data
 
 
 # Selecionar registros da tabela public.TbTicketResumo
 def Selecionar_TbTicketResumo():
     resultado = (
-        supabase.table("TbTicketResumo")
+        supabase_api.table("TbTicketResumo")
         .select(
             "cdTicketResumo",
             "dtOperacao",
@@ -659,14 +489,14 @@ def Selecionar_TbTicketResumo():
 
 # Inserir registros da tabela public.TbTicketResumo
 def Inserir_TbTicketResumo(data):
-    resultado = supabase.table("TbTicketResumo").insert(data).execute()
+    resultado = supabase_api.table("TbTicketResumo").insert(data).execute()
     return resultado.data
 
 
 # Selecionar registros da tabela public.TbTipo
 def Selecionar_TbTipo():
     resultado = (
-        supabase.table("TbTipo")
+        supabase_api.table("TbTipo")
         .select("cdTipo", "dsDescricao", "dsUser", "dtRegistro")
         .execute()
     )
@@ -676,14 +506,14 @@ def Selecionar_TbTipo():
 
 # Inserir registros da tabela public.TbTipo
 def Inserir_TbTipo(data):
-    resultado = supabase.table("TbTipo").insert(data).execute()
+    resultado = supabase_api.table("TbTipo").insert(data).execute()
     return resultado.data
 
 
 # Selecionar registros da tabela public.TbUnidade
 def Selecionar_TbUnidade():
     resultado = (
-        supabase.table("TbUnidade")
+        supabase_api.table("TbUnidade")
         .select("cdUnidade", "dsUnidade", "dsSimbolo", "dsUser", "dtRegistro")
         .execute()
     )
@@ -693,14 +523,14 @@ def Selecionar_TbUnidade():
 
 # Inserir registros da tabela public.TbUnidade
 def Inserir_TbUnidade(data):
-    resultado = supabase.table("TbUnidade").insert(data).execute()
+    resultado = supabase_api.table("TbUnidade").insert(data).execute()
     return resultado.data
 
 
 # Selecionar registros da tabela public.TbUsuario
 def Selecionar_TbUsuario():
     resultado = (
-        supabase.table("TbUsuario")
+        supabase_api.table("TbUsuario")
         .select(
             "cdUsuario",
             "dsNome",
@@ -718,14 +548,14 @@ def Selecionar_TbUsuario():
 
 # Inserir registros da tabela public.TbUsuario
 def Inserir_TbUsuario(data):
-    resultado = supabase.table("TbUsuario").insert(data).execute()
+    resultado = supabase_api.table("TbUsuario").insert(data).execute()
     return resultado.data
 
 
 # Selecionar registros da tabela public.TbVisita
 def Selecionar_TbVisita():
     resultado = (
-        supabase.table("TbVisita")
+        supabase_api.table("TbVisita")
         .select(
             "cdVisita", "cdCliente", "cdVisitante", "dtData", "dsUser", "dtRegistro"
         )
@@ -737,14 +567,14 @@ def Selecionar_TbVisita():
 
 # Inserir registros da tabela public.TbVisita
 def Inserir_TbVisita(data):
-    resultado = supabase.table("TbVisita").insert(data).execute()
+    resultado = supabase_api.table("TbVisita").insert(data).execute()
     return resultado.data
 
 
 # Selecionar registros da tabela public.TbVisitante
 def Selecionar_TbVisitante():
     resultado = (
-        supabase.table("TbVisitante")
+        supabase_api.table("TbVisitante")
         .select(
             "cdVisitante",
             "dsNome",
@@ -762,40 +592,13 @@ def Selecionar_TbVisitante():
 
 # Inserir registros da tabela public.TbVisitante
 def Inserir_TbVisitante(data):
-    resultado = supabase.table("TbVisitante").insert(data).execute()
+    resultado = supabase_api.table("TbVisitante").insert(data).execute()
     return resultado.data
 
-
-# Selecionar registros da tabela public.TbPosicao
-def Selecionar_TbPosicao(filtros):
-    query = supabase.table("TbPosicao").select(
-        "dtData",
-        "dtHora",
-        "dsLat",
-        "dsLong",
-        "nrTemp",
-        "nrBat",
-        "dsEndereco",
-        "dtRegistro",
-    )
-
-    # Apply filters
-    for campo, valor in filtros.items():
-        if campo == "dtRegistro":
-            # Format date as YYYY-MM-DD
-            valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
-            query = query.gte(campo, f'{valor + " 00:00:00"}')
-            query = query.lte(campo, f'{valor + " 23:59:59"}')
-        else:
-            query = query.eq(campo, valor)
-
-    resultado = query.execute()
-
-    return resultado.data
 
 
 def Selecionar_VwRelHistoricoDispositivoProduto(filtros):
-    query = supabase.table("VwRelHistoricoDispositivoProduto").select(
+    query = supabase_api.table("VwRelHistoricoDispositivoProduto").select(
         "cdProduto",
         "nrCodigo",
         "dsDescricao",
@@ -912,7 +715,7 @@ def Selecionar_VwRelDadosDispositivo(filtros, token):
 
 # Selecionar registros da tabela public.TbProdutoTipo
 def Selecionar_VwTbProdutoTipo(codigo):
-    query = supabase.table("VwTbProdutoTipo").select(
+    query = supabase_api.table("VwTbProdutoTipo").select(
         "cdProduto",
         "dsNome",
         "dsDescricao",
@@ -939,77 +742,8 @@ def Selecionar_VwTbProdutoTipo(codigo):
     return resultado.data
 
 
-# Selecionar registros da tabela public.VwTbProdutoTotalStaus
-def Selecionar_VwTbProdutoTotalStaus(codigo):
-    query = supabase.table("VwTbProdutoTotalStaus").select(
-        "cdProduto",
-        "dsDescricao",
-        "dsNome",
-        "nrAlt",
-        "nrCodigo",
-        "nrComp",
-        "nrLarg",
-        "nrQtde",
-        "dsStatus",
-        "QtdeTotal",
-        "imagens:TbImagens(cdCodigo, dsCaminho)",
-    )
-
-    if codigo != "0":
-        query.eq("cdProduto", codigo)
-
-    resultado = query.execute()
-
-    # Dictionary to store the results
-    produtos_dict: Dict[str, Any] = defaultdict(
-        lambda: {
-            "cdProduto": None,
-            "dsDescricao": None,
-            "dsNome": None,
-            "nrAlt": None,
-            "nrCodigo": None,
-            "nrComp": None,
-            "nrLarg": None,
-            "QtdeTotal": None,
-            "imagens": None,
-            "status": [],
-        }
-    )
-
-    # Iterate through the products
-    for produto in resultado.data:
-        cdProduto = produto["cdProduto"]
-
-        # Initialize product if not already present
-        if produtos_dict[cdProduto]["cdProduto"] is None:
-            produtos_dict[cdProduto].update(
-                {
-                    "cdProduto": produto["cdProduto"],
-                    "dsDescricao": produto["dsDescricao"],
-                    "dsNome": produto["dsNome"],
-                    "nrAlt": produto["nrAlt"],
-                    "nrCodigo": produto["nrCodigo"],
-                    "nrComp": produto["nrComp"],
-                    "nrLarg": produto["nrLarg"],
-                    "QtdeTotal": produto["QtdeTotal"],
-                    "imagens": produto["imagens"],
-                }
-            )
-
-        # Add status to the status list
-        if produto["nrQtde"] and produto["dsStatus"]:
-            produtos_dict[cdProduto]["status"].append(
-                {"dsStatus": produto["dsStatus"], "nrQtde": produto["nrQtde"]}
-            )
-
-    # Convert to list for JSON serialization
-    produtos_list: List[Dict[str, Any]] = list(produtos_dict.values())
-
-    return jsonify(produtos_list)
-
-
 def Selecionar_VwTbProdutoTotal(codigo):
-    query = supabase.table("VwTbProdutoTotal").select(
+    query = supabase_api.table("VwTbProdutoTotal").select(
         "cdProduto",
         "dsNome",
         "dsDescricao",
@@ -1040,7 +774,7 @@ def Selecionar_VwTbProdutoTotal(codigo):
 # Selecionar registros da tabela public.TbFuncionario
 def Selecionar_TbFuncionario():
     resultado = (
-        supabase.table("TbFuncionario")
+        supabase_api.table("TbFuncionario")
         .select(
             "cdFuncionario",
             "dsBairro",
@@ -1063,13 +797,13 @@ def Selecionar_TbFuncionario():
 
 # Inserir registros da tabela public.TbFuncionario
 def Inserir_TbFuncionario(data):
-    resultado = supabase.table("TbFuncionario").insert(data).execute()
+    resultado = supabase_api.table("TbFuncionario").insert(data).execute()
     return resultado.data
 
 
 # Selecionar registros da tabela public.TbFuncionario
 def Selecionar_TbEtiqueta(dsEtiqueta):
-    query = supabase.table("TbEtiqueta").select(
+    query = supabase_api.table("TbEtiqueta").select(
         "dsEtiqueta",
         "nrFator",
         "nrLargura",
@@ -1090,7 +824,7 @@ def Selecionar_TbEtiqueta(dsEtiqueta):
 
 # Inserir registros da tabela public.TbEtiqueta
 def Inserir_TbEtiqueta(data):
-    resultado = supabase.table("TbEtiqueta").insert(data).execute()
+    resultado = supabase_api.table("TbEtiqueta").insert(data).execute()
     return resultado.data
 
 
@@ -1119,188 +853,6 @@ def post_Chamados():
 
     Inserir_TbChamados(data)
     return "Cadastramento realizado com sucesso"
-
-
-# https://replit.taxidigital.net/Cliente
-
-
-# Selecionar registros no EndPoint Cliente
-@app.route("/Cliente")
-def get_Cliente():
-    resultado = Selecionar_TbCliente()
-    return resultado
-
-
-# Inserir registros no EndPoint Cliente
-@app.route("/Cliente", methods=["POST"])
-def post_Cliente():
-    payload = request.get_json()
-    data, error = valida_e_constroi_insert("TbCliente", payload)
-
-    if error:
-        return jsonify({"message": error}), 400
-
-    Inserir_TbCliente(data)
-    return "Cadastramento realizado com sucesso"
-
-
-# FIM DA FUNÇÃO
-# https://replit.taxidigital.net/Destinatario
-
-
-# Selecionar registros no EndPoint Destinatario
-@app.route("/Destinatario/<codigo>")
-def get_Destinatario(codigo):
-    resultado = Selecionar_TbDestinatario(codigo)
-    return resultado
-
-
-# Inserir registros no EndPoint Destinatario
-@app.route("/Destinatario", methods=["POST"])
-def post_Destinatario():
-    payload = request.get_json()
-    data, error = valida_e_constroi_insert("TbDestinatario", payload)
-
-    if error:
-        return jsonify({"message": error}), 400
-    resultado = Inserir_TbDestinatario(data)
-    return resultado
-
-
-# https://replit.taxidigital.net/Dispositivo
-
-
-# Selecionar registros no EndPoint Dispositivo
-@app.route("/Dispositivo/<codigo>")
-def get_Dispositivo(codigo):
-    resultado = Selecionar_TbDispositivo(codigo)
-    return resultado
-
-
-# Inserir registros no EndPoint Dispositivo
-@app.route("/Dispositivo", methods=["POST"])
-def post_Dispositivo():
-    payload = request.get_json()
-    data, error = valida_e_constroi_insert("TbDispositivo", payload)
-
-    if error:
-        return jsonify({"message": error}), 400
-    resultado = Inserir_TbDispositivo(data)
-    return resultado
-
-
-# https://replit.taxidigital.net/Imagens
-
-
-# Selecionar registros no EndPoint Imagens
-@app.route("/Imagens/<codigo>")
-def get_Imagens(codigo):
-    resultado = Selecionar_TbImagens(codigo)
-    return resultado
-
-
-# https://replit.taxidigital.net/Posicao
-
-
-# Selecionar registros no EndPoint Posicao
-@app.route("/Posicao/<codigo>")
-def get_Posicao(codigo):
-    filtros = {
-        "dtData": request.args.get("dtData"),
-        "dtHora": request.args.get("dtHora"),
-        "dsLat": request.args.get("dsLat"),
-        "dsLong": request.args.get("dsLong"),
-        "nrTemp": request.args.get("nrTemp"),
-        "nrBat": request.args.get("nrBat"),
-        "dsEndereco": request.args.get("dsEndereco"),
-        "dtRegistro": request.args.get("dtRegistro"),
-    }
-
-    # Remove filtros que nao tem valor
-    filtros = {k: v for k, v in filtros.items() if v is not None}
-
-    # Adiciona o codigo como um filtro se for diferente de 0
-    if codigo != "0":
-        filtros["cdDispositivo"] = codigo
-
-    resultado = Selecionar_TbPosicao(filtros)
-    return resultado
-
-
-def altera_status_posicao(cdDispositivo, dsLat, dsLong):
-    dic_endereco_pdv = Selecionar_VwTbDestinatarioDispositivo(cdDispositivo)
-    dic_endereco_pdv = dict(dic_endereco_pdv[0])
-
-    dsLatPdv = dic_endereco_pdv["dsLat"]
-    dsLongPdv = dic_endereco_pdv["dsLong"]
-    nrRaio = dic_endereco_pdv["nrRaio"]
-    nrDistancia = calcular_distancia(dsLat, dsLong, dsLatPdv, dsLongPdv)
-
-    # TODO: verificar se necessario. Da pra saber se esta fora de area pegando a ultima posicao. Precisa guardar no dispositivo?
-    if float(nrDistancia) > float(nrRaio):
-        Alterar_StatusTbPosicao(cdDispositivo, 6)
-        blArea = False
-    else:
-        Alterar_StatusTbPosicao(cdDispositivo, 1)
-        blArea = True
-
-    return blArea
-
-
-def inserir_sensor_registros(dic_sensores, tb_posicao):
-    dataSensorRegistro = []
-
-    for sensor in dic_sensores:
-        payload_sensor_registro = {
-            "cdSensor": sensor["cdSensor"],
-            "nrValor": sensor["nrValor"],
-            "cdPosicao": tb_posicao[0]["cdPosicao"],
-            "cdDispositivo": sensor["cdDispositivo"],
-        }
-
-        data, error = valida_e_constroi_insert(
-            "TbSensorRegistro", payload_sensor_registro
-        )
-
-        if error:
-            return jsonify({"message": error}), 400
-
-        dataSensorRegistro.append(data)
-
-    return Inserir_TbSensorRegistro(dataSensorRegistro)
-
-
-@app.route("/Posicao", methods=["POST"])
-def post_Posicao():
-    payload = request.get_json()
-
-    dsLat = payload["dsLat"]
-    dsLong = payload["dsLong"]
-    cdDispositivo = payload["cdDispositivo"]
-
-    dict_endereco_coord = get_endereco_coordenada(dsLat, dsLong)
-
-    for key, value in dict_endereco_coord.items():
-        payload[key] = value
-
-    blArea = altera_status_posicao(cdDispositivo, dsLat, dsLong)
-    payload["blArea"] = blArea
-
-    dic_sensores = payload["sensores"]
-    del payload[
-        "sensores"
-    ]  # remove do payload para nao atrapalhar com o inserir tbPosicao
-
-    data, error = valida_e_constroi_insert("TbPosicao", payload)
-    if error:
-        return jsonify({"message": error}), 400
-
-    resultado_posicao = Inserir_TbPosicao(data)
-
-    resultado_sensores = inserir_sensor_registros(dic_sensores, resultado_posicao)
-    resultado_posicao[0]["sensores"] = resultado_sensores
-
-    return resultado_posicao
 
 
 # https://replit.taxidigital.net/Produto
@@ -1362,14 +914,14 @@ def post_Etiqueta():
 # Deletar registros da tabela public.TbProduto
 def deletar_TbProduto(cdProduto):
     resultado = (
-        supabase.table("TbProduto").delete().eq("cdProduto", cdProduto).execute()
+        supabase_api.table("TbProduto").delete().eq("cdProduto", cdProduto).execute()
     )
     return resultado.data
 
 
 # Alterar registros da tabela public.TbProduto
 def Alterar_TbProduto(Campo, Dado, UpData):
-    response = supabase.table("TbProduto").update(UpData).eq(Campo, Dado).execute()
+    response = supabase_api.table("TbProduto").update(UpData).eq(Campo, Dado).execute()
     return response.data, response.error
 
 
@@ -1654,7 +1206,7 @@ def get_RelVwRelDadosDispositivo(codigo):
     user_id = user_info.get("sub")
     if not user_id:
         return jsonify({"error": "User ID not found in token"}), 401
-    
+
     filtros = {
         "dtRegistro": request.args.get("dtRegistro"),
     }
@@ -1667,13 +1219,6 @@ def get_RelVwRelDadosDispositivo(codigo):
         filtros["cdDispositivo"] = codigo
 
     resultado = Selecionar_VwRelDadosDispositivo(filtros, token)
-    return resultado
-
-
-# Selecionar registros no EndPoint TbProdutoTotalStaus
-@app.route("/TbProdutoTotalStaus/<codigo>")
-def get_TbProdutoTotalStaus(codigo):
-    resultado = Selecionar_VwTbProdutoTotalStaus(codigo)
     return resultado
 
 
@@ -1740,50 +1285,7 @@ def verify_token(token):
         return None
 
 
-@app.route("/CadastraImgProduto", methods=["POST"])
-def CadastraImgProduto():
-    auth_header = request.headers.get("Authorization", None)
-    if auth_header is None or not auth_header.startswith("Bearer "):
-        return jsonify({"error": "Unauthorized"}), 401
 
-    token = auth_header.split("Bearer ")[1]
-    user_info = verify_token(token)
-    if user_info is None:
-        return jsonify({"error": "Invalid token"}), 401
-
-    user_id = user_info.get("sub")
-    if not user_id:
-        return jsonify({"error": "User ID not found in token"}), 401
-
-    file = request.files["arquivo"]
-    pathfile = file.filename
-    cdProduto = pathfile.split("-")[0]
-    nrImagem = pathfile.split("-")[1]
-    nrImagem = nrImagem.split(".")[0]
-    file.save(pathfile)
-    try:
-        upload_file(file_name=pathfile, bucket="produtos", token=token)
-    except Exception as e:
-        os.remove(pathfile)
-        print(e)
-        print(pathfile)
-        return jsonify({"message": "erro ao fazer upload da imagem"}), 400
-
-    os.remove(pathfile)
-    payload = {
-        "dsCaminho": "produtos/",
-        "cdCodigo": pathfile,
-        "cdTipo": 10,
-        "dsUser": "TESTE",
-        "cdProduto": int(cdProduto),
-        "nrImagem": int(nrImagem),
-    }
-    data, error = valida_e_constroi_insert("TbImagens", payload)
-
-    if error:
-        return jsonify({"message": error}), 400
-    resultado = Inserir_TbImagens(data)
-    return resultado
 
 
 @app.route("/upload", methods=["POST"])
