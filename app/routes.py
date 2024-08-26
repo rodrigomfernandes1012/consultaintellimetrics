@@ -4,7 +4,7 @@ from flask import Blueprint, jsonify, request
 
 from db_utils import get_supabase_client_from_request
 from db_utils.storage import upload_file
-from utils import valida_e_constroi_insert
+from utils import valida_e_constroi_insert, valida_e_constroi_update
 
 from .services import (
     Inserir_TbCliente,
@@ -22,6 +22,9 @@ from .services import (
     get_endereco_coordenada,
     is_dentro_area,
     prepara_insert_registros,
+    Inserir_TbProduto,
+    Alterar_TbProduto,
+    deletar_TbProduto,
 )
 
 main = Blueprint("main", __name__)
@@ -29,7 +32,14 @@ main = Blueprint("main", __name__)
 
 @main.route("/TbProdutoTotalStatus/<codigo>")
 def get_TbProdutoTotalStatus(codigo):
-    resultado = Selecionar_VwTbProdutoTotalStatus(codigo)
+    supabase_client, error = get_supabase_client_from_request(request=request)
+
+    if error or supabase_client is None:
+        return jsonify({"message": error}), 401
+
+    resultado = Selecionar_VwTbProdutoTotalStatus(
+        cdProdutoFiltro=codigo, db_client=supabase_client
+    )
     return resultado
 
 
@@ -183,7 +193,6 @@ def get_Posicao(codigo):
     return resultado
 
 
-# TODO!!!!
 @main.route("/Posicao", methods=["POST"])
 def post_Posicao():
     payload = request.get_json()
@@ -240,12 +249,52 @@ def post_Posicao():
     # insere posicao e registros. AVISO: se o primeiro insert funcionar e o segundo falhar,
     # havera uma posicao sem um sensor registro correspondente
     resultado_posicao = Inserir_TbPosicao(dataTbPosicao)
-    
+
     for sensor in dataSensorRegistro:
         sensor["cdPosicao"] = resultado_posicao[0]["cdPosicao"]
-    
+
     resultado_sensores = Inserir_TbSensorRegistro(dataSensorRegistro)
 
     resultado_posicao[0]["sensores"] = resultado_sensores
 
     return resultado_posicao
+
+
+@main.route("/Produto", methods=["POST"])
+def post_Produto():
+    supabase_client, error = get_supabase_client_from_request(request=request)
+
+    if error or supabase_client is None:
+        return jsonify({"message": error}), 401
+
+    payload = request.get_json()
+    data, error = valida_e_constroi_insert("TbProduto", payload)
+
+    if error:
+        return jsonify({"message": error}), 400
+
+    resultado = Inserir_TbProduto(data=data, db_client=supabase_client)
+    return resultado
+
+
+@main.route("/Produto/<codigo>", methods=["PUT"])
+def update_Produto(codigo):
+    supabase_client, error = get_supabase_client_from_request(request=request)
+
+    if error or supabase_client is None:
+        return jsonify({"message": error}), 401
+
+    payload = request.get_json()
+    data, error = valida_e_constroi_update("TbProduto", payload)
+    if error:
+        return jsonify({"message": error}), 400
+
+    resultado = Alterar_TbProduto(Campo="cdProduto", Dado=codigo, UpData=data, db_client=supabase_client)
+
+    return resultado
+
+
+@main.route("/Produto/<codigo>", methods=["DELETE"])
+def delete_Produto(codigo):
+    deletar_TbProduto(codigo)
+    return jsonify({"message": "Produto deletado com sucesso"})

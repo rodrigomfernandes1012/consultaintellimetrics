@@ -9,8 +9,8 @@ from db_utils import supabase_api
 from utils import calcular_distancia, valida_e_constroi_insert
 
 
-def Selecionar_VwTbProdutoTotalStatus(cdProdutoFiltro, cdCliente):
-    query = supabase_api.table("VwTbProdutoTotalStatus").select(
+def Selecionar_VwTbProdutoTotalStatus(cdProdutoFiltro, db_client=supabase_api):
+    query = db_client.table("VwTbProdutoTotalStatus").select(
         "cdProduto",
         "dsDescricao",
         "dsNome",
@@ -21,14 +21,12 @@ def Selecionar_VwTbProdutoTotalStatus(cdProdutoFiltro, cdCliente):
         "nrQtde",
         "StatusDispositivo",
         "QtdeTotal",
-        "cdCliente" "imagens:TbImagens(cdCodigo, dsCaminho)",
+        "cdCliente",
+        "imagens:TbImagens(cdCodigo, dsCaminho)",
     )
 
     if cdProdutoFiltro != "0":
         query.eq("cdProduto", cdProdutoFiltro)
-
-    if cdCliente:
-        query.eq("cdCliente", cdCliente)
 
     resultado = query.execute()
 
@@ -287,5 +285,22 @@ def Selecionar_VwTbDestinatarioDispositivo(codigoDisp):
         .select("*")
         .eq("cdDispositivo", codigoDisp)
         .execute()
+    )
+    return resultado.data
+
+
+def Inserir_TbProduto(data, db_client=supabase_api):
+    resultado = db_client.table("TbProduto").insert(data).execute()
+    return resultado.data
+
+
+def Alterar_TbProduto(Campo, Dado, UpData, db_client=supabase_api):
+    response = db_client.table("TbProduto").update(UpData).eq(Campo, Dado).execute()
+    return response.data
+
+
+def deletar_TbProduto(cdProduto):
+    resultado = (
+        supabase_api.table("TbProduto").delete().eq("cdProduto", cdProduto).execute()
     )
     return resultado.data

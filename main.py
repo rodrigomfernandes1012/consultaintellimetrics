@@ -324,33 +324,7 @@ def Alterar_StatusTbPosicao(codigo, status):
 
 
 
-# Selecionar registros da tabela public.TbProduto
-def Selecionar_TbProduto(codigo):
-    resultado = (
-        supabase_api.table("VwTbProdutoTotalStaus")
-        .select(
-            "cdProduto",
-            "dsDescricao",
-            "dsNome",
-            "nrAlt",
-            "nrCodigo",
-            "nrComp",
-            "nrLarg",
-            "nrQtde",
-            "dsStatus",
-            "TbImagens(cdCodigo, dsCaminho)",
-        )
-        .eq("cdProduto", codigo)
-        .execute()
-    )
 
-    return resultado.data
-
-
-# Inserir registros da tabela public.TbProduto
-def Inserir_TbProduto(data):
-    resultado = supabase_api.table("TbProduto").insert(data).execute()
-    return resultado.data
 
 
 # Selecionar registros da tabela public.TbRelacionamento
@@ -855,43 +829,6 @@ def post_Chamados():
     return "Cadastramento realizado com sucesso"
 
 
-# https://replit.taxidigital.net/Produto
-
-
-# Inserir registros no EndPoint Produto
-@app.route("/Produto", methods=["POST"])
-def post_Produto():
-    payload = request.get_json()
-    data, error = valida_e_constroi_insert("TbProduto", payload)
-
-    if error:
-        return jsonify({"message": error}), 400
-    resultado = Inserir_TbProduto(data)
-    return jsonify({"cdProduto": resultado[0]["cdProduto"]})
-
-
-@app.route("/Produto/<codigo>")
-def get_Produto(codigo):
-    resultado = Selecionar_TbProduto(codigo)
-    return resultado
-
-
-@app.route("/Produto/<codigo>", methods=["PUT"])
-def update_Produto(codigo):
-    payload = request.get_json()
-    data, error = valida_e_constroi_update("cdProduto", payload)
-    if error:
-        return jsonify({"message": error}), 400
-
-    resultado = Alterar_TbProduto("cdProduto", codigo, data)
-
-    return resultado
-
-
-@app.route("/Produto/<codigo>", methods=["DELETE"])
-def delete_Produto(codigo):
-    deletar_TbProduto(codigo)
-    return jsonify({"message": "Produto deletado com sucesso"})
 
 
 @app.route("/Etiqueta/<dsEtiqueta>", methods=["GET"])
@@ -911,42 +848,6 @@ def post_Etiqueta():
     return resultado
 
 
-# Deletar registros da tabela public.TbProduto
-def deletar_TbProduto(cdProduto):
-    resultado = (
-        supabase_api.table("TbProduto").delete().eq("cdProduto", cdProduto).execute()
-    )
-    return resultado.data
-
-
-# Alterar registros da tabela public.TbProduto
-def Alterar_TbProduto(Campo, Dado, UpData):
-    response = supabase_api.table("TbProduto").update(UpData).eq(Campo, Dado).execute()
-    return response.data, response.error
-
-
-# https://replit.taxidigital.net/Relacionamento
-
-
-# Selecionar registros no EndPoint Relacionamento
-@app.route("/Relacionamento")
-def get_Relacionamento():
-    resultado = Selecionar_TbRelacionamento()
-    return resultado
-
-
-# Inserir registros no EndPoint Relacionamento
-@app.route("/Relacionamento", methods=["POST"])
-def post_Relacionamento():
-    payload = request.get_json()
-    data, error = valida_e_constroi_insert("TbRelacionamento", payload)
-
-    if error:
-        return jsonify({"message": error}), 400
-    resultado = Inserir_TbRelacionamento(data)
-    return resultado
-
-
 # Selecionar registros no EndPoint Sensor
 @app.route("/Sensor")
 def get_Sensor():
@@ -963,25 +864,6 @@ def post_Sensor():
     if error:
         return jsonify({"message": error}), 400
     resultado = Inserir_TbSensor(data)
-    return resultado
-
-
-# Selecionar registros no EndPoint Status
-@app.route("/Status")
-def get_Status():
-    resultado = Selecionar_TbStatus()
-    return resultado
-
-
-# Inserir registros no EndPoint Status
-@app.route("/Status", methods=["POST"])
-def post_Status():
-    payload = request.get_json()
-    data, error = valida_e_constroi_insert("TbStatus", payload)
-
-    if error:
-        return jsonify({"message": error}), 400
-    resultado = Inserir_TbStatus(data)
     return resultado
 
 
