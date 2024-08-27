@@ -173,11 +173,11 @@ campos_tabelas = {
     "TbSensor": {
         "cdDispositivo": {"type": "integer", "required": True},
         "cdProdutoItem": {"type": "integer", "required": False},
-        "cdUnidade": {"type": "integer", "required": False},
+        "cdUnidade": {"type": "string", "required": False},
         "nrUnidadeIni": {"type": "integer", "required": False},
         "nrUnidadeFim": {"type": "integer", "required": False},
         "dtRegistro": {"type": "timestamp", "required": False},
-        "cdTipoSensor": {"type": "bigint", "required": False},
+        "cdTipoSensor": {"type": "bigint", "required": True},
         "cdUser": {"type": "uuid", "required": False},
     },
     "TbTag": {

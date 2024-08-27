@@ -7,24 +7,30 @@ from db_utils.storage import upload_file
 from utils import valida_e_constroi_insert, valida_e_constroi_update
 
 from .services import (
+    Alterar_TbProduto,
     Inserir_TbCliente,
     Inserir_TbDestinatario,
     Inserir_TbDispositivo,
     Inserir_TbImagens,
     Inserir_TbPosicao,
+    Inserir_TbProduto,
+    Inserir_TbSensor,
     Inserir_TbSensorRegistro,
+    Selecionar_HistoricoPaginaDispositivo,
     Selecionar_TbCliente,
     Selecionar_TbDestinatario,
     Selecionar_TbDispositivo,
     Selecionar_TbImagens,
     Selecionar_TbPosicao,
+    Selecionar_VwRelDadosDispositivo,
+    Selecionar_VwRelHistoricoDispositivoProduto,
+    Selecionar_VwTbPosicaoAtual,
+    Selecionar_VwTbProdutoTipo,
     Selecionar_VwTbProdutoTotalStatus,
+    deletar_TbProduto,
     get_endereco_coordenada,
     is_dentro_area,
     prepara_insert_registros,
-    Inserir_TbProduto,
-    Alterar_TbProduto,
-    deletar_TbProduto,
 )
 
 main = Blueprint("main", __name__)
@@ -289,7 +295,9 @@ def update_Produto(codigo):
     if error:
         return jsonify({"message": error}), 400
 
-    resultado = Alterar_TbProduto(Campo="cdProduto", Dado=codigo, UpData=data, db_client=supabase_client)
+    resultado = Alterar_TbProduto(
+        Campo="cdProduto", Dado=codigo, UpData=data, db_client=supabase_client
+    )
 
     return resultado
 
@@ -298,3 +306,120 @@ def update_Produto(codigo):
 def delete_Produto(codigo):
     deletar_TbProduto(codigo)
     return jsonify({"message": "Produto deletado com sucesso"})
+
+
+@main.route("/Sensor", methods=["POST"])
+def post_Sensor():
+    payload = request.get_json()
+    data, error = valida_e_constroi_insert("TbSensor", payload)
+
+    if error:
+        return jsonify({"message": error}), 400
+    resultado = Inserir_TbSensor(data)
+    return resultado
+
+
+@main.route("/TbProdutoTipo/<codigo>")
+def get_TbProdutoTipo(codigo):
+    supabase_client, error = get_supabase_client_from_request(request=request)
+
+    if error or supabase_client is None:
+        return jsonify({"message": error}), 401
+
+    resultado = Selecionar_VwTbProdutoTipo(codigo=codigo, db_client=supabase_client)
+    return resultado
+
+
+# endpoint usado para Pagina de Dispositivo. Mesmo do que o VwRelHistoricoDispositivoProduto,
+# mas com produtos sendo retornados como colunas.
+@main.route("/HistoricoPaginaDispositivo/<codigo>")
+def get_HistoricoPaginaDispositivo(codigo):
+    supabase_client, error = get_supabase_client_from_request(request=request)
+
+    if error or supabase_client is None:
+        return jsonify({"message": error}), 401
+
+    filtros = {
+        "dtRegistro": request.args.get("dtRegistro"),
+    }
+
+    # Remove filtros que nao tem valor
+    filtros = {k: v for k, v in filtros.items() if v is not None}
+
+    # Adiciona o codigo como um filtro se for diferente de 0
+    if codigo != "0":
+        filtros["cdDispositivo"] = codigo
+
+    resultado = Selecionar_HistoricoPaginaDispositivo(
+        filtros=filtros, db_client=supabase_client
+    )
+    return resultado
+
+
+@main.route("/VwRelHistoricoDispositivoProduto/<codigo>")
+def get_RelHistoricoDispositivoProduto(codigo):
+    supabase_client, error = get_supabase_client_from_request(request=request)
+
+    if error or supabase_client is None:
+        return jsonify({"message": error}), 401
+
+    filtros = {
+        "dtRegistro": request.args.get("dtRegistro"),
+    }
+
+    # Remove filtros que nao tem valor
+    filtros = {k: v for k, v in filtros.items() if v is not None}
+
+    # Adiciona o codigo como um filtro se for diferente de 0
+    if codigo != "0":
+        filtros["cdDispositivo"] = codigo
+
+    resultado = Selecionar_VwRelHistoricoDispositivoProduto(
+        filtros=filtros, db_client=supabase_client
+    )
+    return resultado
+
+
+@main.route("/VwRelDadosDispositivo/<codigo>")
+def get_RelVwRelDadosDispositivo(codigo):
+    supabase_client, error = get_supabase_client_from_request(request=request)
+
+    if error or supabase_client is None:
+        return jsonify({"message": error}), 401
+
+    filtros = {
+        "dtRegistro": request.args.get("dtRegistro"),
+    }
+
+    # Remove filtros que nao tem valor
+    filtros = {k: v for k, v in filtros.items() if v is not None}
+
+    # Adiciona o codigo como um filtro se for diferente de 0
+    if codigo != "0":
+        filtros["cdDispositivo"] = codigo
+
+    resultado = Selecionar_VwRelDadosDispositivo(
+        filtros=filtros, db_client=supabase_client
+    )
+    return resultado
+
+
+# Selecionar registros no EndPoint TbPosicaoAtual
+@main.route("/TbPosicaoAtual/<codigo>")
+def get_TbPosicaoAtual(codigo):
+    supabase_client, error = get_supabase_client_from_request(request=request)
+
+    if error or supabase_client is None:
+        return jsonify({"message": error}), 401
+
+    filtros = {"cdProduto": request.args.get("cdProduto")}
+
+    # Remove filtros que nao tem valor
+    filtros = {k: v for k, v in filtros.items() if v is not None}
+
+    # Adiciona o codigo como um filtro se for diferente de 0
+    if codigo != "0":
+        filtros["cdDispositivo"] = codigo
+
+    resultado = Selecionar_VwTbPosicaoAtual(filtros=filtros, db_client=supabase_client)
+    return resultado

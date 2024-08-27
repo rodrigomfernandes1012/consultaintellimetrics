@@ -1,11 +1,11 @@
 from collections import defaultdict
 from typing import Any, Dict, List
 
+import pandas as pd
 import requests
 from flask import jsonify
 
 from db_utils import supabase_api
-
 from utils import calcular_distancia, valida_e_constroi_insert
 
 
@@ -303,4 +303,114 @@ def deletar_TbProduto(cdProduto):
     resultado = (
         supabase_api.table("TbProduto").delete().eq("cdProduto", cdProduto).execute()
     )
+    return resultado.data
+
+
+def Inserir_TbSensor(data):
+    resultado = supabase_api.table("TbSensor").insert(data).execute()
+    return resultado.data
+
+
+def Selecionar_VwTbProdutoTipo(codigo, db_client=supabase_api):
+    query = db_client.table("VwTbProdutoTipo").select("*")
+
+    if codigo != "0":
+        query.eq("cdProduto", codigo)
+
+    resultado = query.execute()
+
+    return resultado.data
+
+
+def Selecionar_VwTbProdutoTotal(codigo, db_client=supabase_api):
+    query = db_client.table("VwTbProdutoTotal").select("*")
+
+    if codigo != "0":
+        query.eq("cdProduto", codigo)
+
+    resultado = query.execute()
+
+    return resultado.data
+
+
+def Selecionar_VwRelHistoricoDispositivoProduto(filtros, db_client=supabase_api):
+    query = db_client.table("VwRelHistoricoDispositivoProduto").select("*")
+
+    # aplica filtros
+    for campo, valor in filtros.items():
+        if campo == "dtRegistro":
+            # Format date as YYYY-MM-DD
+            valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
+            query = query.gte(campo, f'{valor + " 00:00:00"}')
+            query = query.lte(campo, f'{valor + " 23:59:59"}')
+        else:
+            query = query.eq(campo, valor)
+
+    resultado = query.execute()
+
+    return resultado.data
+
+
+# busca dados de VwRelHistoricoDispositivoProduto, mas retorna cada produtoItem como uma coluna.
+def Selecionar_HistoricoPaginaDispositivo(filtros, db_client=supabase_api):
+    resultado = Selecionar_VwRelHistoricoDispositivoProduto(filtros, db_client)
+
+    if len(resultado) == 0:
+        return resultado
+
+    # converte em pandas dataframe
+    df = pd.DataFrame(resultado)
+
+    # mantem os dados originais para serem mergidos depois
+    original_df = df.drop(
+        columns=["nrQtdItens", "dsProdutoItem", "cdSensor"]
+    ).drop_duplicates()
+
+    # Pivot the data
+    pivot_df = df.pivot_table(
+        index="dtRegistro",
+        columns=["dsProdutoItem", "cdSensor"],
+        values="nrQtdItens",
+        fill_value=0,
+    )
+
+    # Flatten the multi-index columns
+    pivot_df.columns = [f"{item[0]}_{item[1]}" for item in pivot_df.columns]
+
+    # Reset index to have dtRegistro as a column again
+    pivot_df = pivot_df.reset_index()
+
+    # Merge the pivoted data with the original data
+    final_df = pd.merge(original_df, pivot_df, on="dtRegistro", how="left")
+
+    result_json = final_df.to_json(orient="records", date_format="iso")
+
+    return result_json
+
+
+def Selecionar_VwRelDadosDispositivo(filtros, db_client=supabase_api):
+    query = db_client.table("VwRelDadosDispositivo").select("*")
+
+    # Apply filters
+    for campo, valor in filtros.items():
+        if campo == "dtRegistro":
+            # Format date as YYYY-MM-DD
+            valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
+            query = query.gte(campo, f'{valor + " 00:00:00"}')
+            query = query.lte(campo, f'{valor + " 23:59:59"}')
+        else:
+            query = query.eq(campo, valor)
+
+    resultado = query.execute()
+
+    return resultado.data
+
+
+def Selecionar_VwTbPosicaoAtual(filtros, db_client=supabase_api):
+    query = db_client.table("VwTbPosicaoAtual").select("*")
+
+    for campo, valor in filtros.items():
+        query = query.eq(campo, valor)
+
+    resultado = query.execute()
     return resultado.data

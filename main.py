@@ -90,9 +90,6 @@ def assinar_arquivo(arquivo):
     return url
 
 
-
-
-
 def guarda_medidas(altura, largura, comprimento, pesoreal, cubado):
     with open("cubagem.txt", "w") as arquivo:
         altura = str(altura).ljust(10)
@@ -150,9 +147,6 @@ def Selecionar_TbPonto():
     cursor.close()
     conexao.close()
     return resultado
-
-
-
 
 
 # Inserir registros da tabela public.TbAcessoIntelBras
@@ -243,40 +237,6 @@ def Inserir_TbPonto(dsCardNo, dsUtc):
     conexao.close()
 
 
-
-
-
-# Selecionar registros da tabela public.VwTbPosicaoAtual
-def Selecionar_VwTbPosicaoAtual(filtros):
-    query = supabase_api.table("VwTbPosicaoAtual").select(
-        "cdPosicao",
-        "dtRegistro",
-        "cdDispositivo",
-        "dsLat",
-        "dsLong",
-        "dsEndereco",
-        "dsNum",
-        "dsCep",
-        "dsBairro",
-        "dsCidade",
-        "dsUF",
-        "dsPais",
-        "nrBat",
-        "nrCodigo",
-        "cdProduto",
-        "dsProduto",
-        "dsDescricao",
-        "dsStatus",
-        "blArea",
-    )
-
-    for campo, valor in filtros.items():
-        query = query.eq(campo, valor)
-
-    resultado = query.execute()
-    return resultado.data
-
-
 # Selecionar registros da tabela public.TbChamados
 def Selecionar_TbChamados():
     resultado = (
@@ -302,15 +262,6 @@ def Inserir_TbChamados(data):
     return resultado.data
 
 
-
-
-
-
-
-
-
-
-
 def Alterar_StatusTbPosicao(codigo, status):
     response = (
         supabase_api.table("TbDispositivo")
@@ -319,65 +270,6 @@ def Alterar_StatusTbPosicao(codigo, status):
         .execute()
     )
     return response.data
-
-
-
-
-
-
-
-
-# Selecionar registros da tabela public.TbRelacionamento
-def Selecionar_TbRelacionamento():
-    resultado = (
-        supabase_api.table("TbRelacionamento")
-        .select(
-            "cdRelacionamento",
-            "cdPai",
-            "cdFilho",
-            "cdTipo",
-            "dsDescricao",
-            "cdStatus",
-            "dsUser",
-            "dtRegistro",
-        )
-        .execute()
-    )
-
-    return resultado.data
-
-
-# Inserir registros da tabela public.TbRelacionamento
-def Inserir_TbRelacionamento(data):
-    resultado = supabase_api.table("TbRelacionamento").insert(data).execute()
-    return resultado.data
-
-
-# Selecionar registros da tabela public.TbSensor
-def Selecionar_TbSensor():
-    resultado = (
-        supabase_api.table("TbSensor")
-        .select(
-            "cdSensor",
-            "dsNome",
-            "cdTipo",
-            "dsDescricao",
-            "cdUnidade",
-            "nrUnidadeIni",
-            "nrUnidadeFim",
-            "dsUser",
-            "dtRegistro",
-        )
-        .execute()
-    )
-
-    return resultado.data
-
-
-# Inserir registros da tabela public.TbSensor
-def Inserir_TbSensor(data):
-    resultado = supabase_api.table("TbSensor").insert(data).execute()
-    return resultado.data
 
 
 # Selecionar registros da tabela public.TbStatus
@@ -570,181 +462,6 @@ def Inserir_TbVisitante(data):
     return resultado.data
 
 
-
-def Selecionar_VwRelHistoricoDispositivoProduto(filtros):
-    query = supabase_api.table("VwRelHistoricoDispositivoProduto").select(
-        "cdProduto",
-        "nrCodigo",
-        "dsDescricao",
-        "dtRegistro",
-        "cdDispositivo",
-        "dsNome",
-        "dsEndereco",
-        "nrBatPercentual",
-        "nrPorta",
-        "nrTemperatura",
-        "dsProdutoItem",
-        "nrQtdItens",
-        "dsStatus",
-        "dsStatusDispositivo",
-        "cdSensor",
-    )
-
-    # Apply filters
-    for campo, valor in filtros.items():
-        if campo == "dtRegistro":
-            # Format date as YYYY-MM-DD
-            valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
-            query = query.gte(campo, f'{valor + " 00:00:00"}')
-            query = query.lte(campo, f'{valor + " 23:59:59"}')
-        else:
-            query = query.eq(campo, valor)
-
-    resultado = query.execute()
-
-    return resultado.data
-
-
-# busca dados de VwRelHistoricoDispositivoProduto, mas retorna cada produtoItem como uma coluna.
-def Selecionar_HistoricoPaginaDispositivo(filtros):
-    resultado = Selecionar_VwRelHistoricoDispositivoProduto(filtros)
-
-    if len(resultado) == 0:
-        return resultado
-
-    # Convert the result to a pandas DataFrame
-    df = pd.DataFrame(resultado)
-
-    # Retain the original data for merging later
-    original_df = df.drop(
-        columns=["nrQtdItens", "dsProdutoItem", "cdSensor"]
-    ).drop_duplicates()
-
-    # Pivot the data
-    pivot_df = df.pivot_table(
-        index="dtRegistro",
-        columns=["dsProdutoItem", "cdSensor"],
-        values="nrQtdItens",
-        fill_value=0,
-    )
-
-    # Flatten the multi-index columns
-    pivot_df.columns = [f"{item[0]}_{item[1]}" for item in pivot_df.columns]
-
-    # Reset index to have dtRegistro as a column again
-    pivot_df = pivot_df.reset_index()
-
-    # Merge the pivoted data with the original data
-    final_df = pd.merge(original_df, pivot_df, on="dtRegistro", how="left")
-
-    result_json = final_df.to_json(orient="records", date_format="iso")
-
-    return result_json
-
-
-def Selecionar_VwRelDadosDispositivo(filtros, token):
-    supabase_client = get_supabase_client(token)
-    query = supabase_client.table("VwRelDadosDispositivo").select(
-        "cdProduto",
-        "dsNome",
-        "cdDispositivo",
-        "nrBat",
-        "dsNomeDest",
-        "dsEnderecoDest",
-        "nrNumeroDest",
-        "dsBairroDest",
-        "dsCidadeDest",
-        "dsUfDest",
-        "dsCepDest",
-        "dsLatDest",
-        "dsLongDest",
-        "dsRaio",
-        "dsEnderecoAtual",
-        "dsNumeroAtual",
-        "dsBairroAtual",
-        "dsCidadeAtual",
-        "dsUFAtual",
-        "dsCEPAtual",
-        "dsLatAtual",
-        "dsLongAtual",
-        "blArea",
-        "dtRegistro",
-        "dtCadastro",
-    )
-
-    # Apply filters
-    for campo, valor in filtros.items():
-        if campo == "dtRegistro":
-            # Format date as YYYY-MM-DD
-            valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
-            query = query.gte(campo, f'{valor + " 00:00:00"}')
-            query = query.lte(campo, f'{valor + " 23:59:59"}')
-        else:
-            query = query.eq(campo, valor)
-
-    resultado = query.execute()
-
-    return resultado.data
-
-
-# Selecionar registros da tabela public.TbProdutoTipo
-def Selecionar_VwTbProdutoTipo(codigo):
-    query = supabase_api.table("VwTbProdutoTipo").select(
-        "cdProduto",
-        "dsNome",
-        "dsDescricao",
-        "nrCodigo",
-        "nrLarg",
-        "nrComp",
-        "nrAlt",
-        "cdStatus",
-        "cdDispositivo",
-        "dsDispositivo",
-        "dsModelo",
-        "DescDispositivo",
-        "dsObs",
-        "dsLayout",
-        "nrChip",
-        "StatusDispositivo",
-    )
-
-    if codigo != "0":
-        query.eq("cdProduto", codigo)
-
-    resultado = query.execute()
-
-    return resultado.data
-
-
-def Selecionar_VwTbProdutoTotal(codigo):
-    query = supabase_api.table("VwTbProdutoTotal").select(
-        "cdProduto",
-        "dsNome",
-        "dsDescricao",
-        "nrCodigo",
-        "nrLarg",
-        "nrComp",
-        "nrAlt",
-        "cdStatus",
-        "cdDispositivo",
-        "dsDispositivo",
-        "dsModelo",
-        "DescDispositivo",
-        "dsObs",
-        "dsLayout",
-        "nrChip",
-        "StatusDispositivo",
-        "nrQtde",
-    )
-
-    if codigo != "0":
-        query.eq("cdProduto", codigo)
-
-    resultado = query.execute()
-
-    return resultado.data
-
-
 # Selecionar registros da tabela public.TbFuncionario
 def Selecionar_TbFuncionario():
     resultado = (
@@ -829,8 +546,6 @@ def post_Chamados():
     return "Cadastramento realizado com sucesso"
 
 
-
-
 @app.route("/Etiqueta/<dsEtiqueta>", methods=["GET"])
 def get_Etiqueta(dsEtiqueta):
     resultado = Selecionar_TbEtiqueta(dsEtiqueta)
@@ -845,25 +560,6 @@ def post_Etiqueta():
     if error:
         return jsonify({"message": error}), 400
     resultado = Inserir_TbEtiqueta(data)
-    return resultado
-
-
-# Selecionar registros no EndPoint Sensor
-@app.route("/Sensor")
-def get_Sensor():
-    resultado = Selecionar_TbSensor()
-    return resultado
-
-
-# Inserir registros no EndPoint Sensor
-@app.route("/Sensor", methods=["POST"])
-def post_Sensor():
-    payload = request.get_json()
-    data, error = valida_e_constroi_insert("TbSensor", payload)
-
-    if error:
-        return jsonify({"message": error}), 400
-    resultado = Inserir_TbSensor(data)
     return resultado
 
 
@@ -922,50 +618,6 @@ def post_TicketResumo():
         return jsonify({"message": error}), 400
     resultado = Inserir_TbTicketResumo(data)
     return resultado
-
-
-# Selecionar registros no EndPoint Tipo
-@app.route("/Tipo")
-def get_Tipo():
-    resultado = Selecionar_TbTipo()
-    return resultado
-
-
-# Inserir registros no EndPoint Tipo
-@app.route("/Tipo", methods=["POST"])
-def post_Tipo():
-    payload = request.get_json()
-    data, error = valida_e_constroi_insert("TbTipo", payload)
-
-    if error:
-        return jsonify({"message": error}), 400
-    resultado = Inserir_TbTipo(data)
-    return resultado
-
-
-# https://replit.taxidigital.net/Unidade
-
-
-# Selecionar registros no EndPoint Unidade
-@app.route("/Unidade")
-def get_Unidade():
-    resultado = Selecionar_TbUnidade()
-    return resultado
-
-
-# Inserir registros no EndPoint Unidade
-@app.route("/Unidade", methods=["POST"])
-def post_Unidade():
-    payload = request.get_json()
-    data, error = valida_e_constroi_insert("TbUnidade", payload)
-
-    if error:
-        return jsonify({"message": error}), 400
-    resultado = Inserir_TbUnidade(data)
-    return resultado
-
-
-# https://replit.taxidigital.net/Usuario
 
 
 # Selecionar registros no EndPoint Usuario
@@ -1032,92 +684,6 @@ def post_Visitante():
 
 
 # Selecionar registros no EndPoint TbProdutoTipo
-@app.route("/TbProdutoTipo/<codigo>")
-def get_TbProdutoTipo(codigo):
-    resultado = Selecionar_VwTbProdutoTipo(codigo)
-    return resultado
-
-
-# endpoint usado para Pagina de Dispositivo. Mesmo do que o VwRelHistoricoDispositivoProduto,
-# mas com produtos sendo retornados como colunas.
-@app.route("/HistoricoPaginaDispositivo/<codigo>")
-def get_HistoricoPaginaDispositivo(codigo):
-    filtros = {
-        "dtRegistro": request.args.get("dtRegistro"),
-    }
-
-    # Remove filtros que nao tem valor
-    filtros = {k: v for k, v in filtros.items() if v is not None}
-
-    # Adiciona o codigo como um filtro se for diferente de 0
-    if codigo != "0":
-        filtros["cdDispositivo"] = codigo
-
-    resultado = Selecionar_HistoricoPaginaDispositivo(filtros)
-    return resultado
-
-
-@app.route("/VwRelHistoricoDispositivoProduto/<codigo>")
-def get_RelHistoricoDispositivoProduto(codigo):
-    filtros = {
-        "dtRegistro": request.args.get("dtRegistro"),
-    }
-
-    # Remove filtros que nao tem valor
-    filtros = {k: v for k, v in filtros.items() if v is not None}
-
-    # Adiciona o codigo como um filtro se for diferente de 0
-    if codigo != "0":
-        filtros["cdDispositivo"] = codigo
-
-    resultado = Selecionar_VwRelHistoricoDispositivoProduto(filtros)
-    return resultado
-
-
-@app.route("/VwRelDadosDispositivo/<codigo>")
-def get_RelVwRelDadosDispositivo(codigo):
-    auth_header = request.headers.get("Authorization", None)
-    if auth_header is None or not auth_header.startswith("Bearer "):
-        return jsonify({"error": "Unauthorized"}), 401
-
-    token = auth_header.split("Bearer ")[1]
-    user_info = verify_token(token)
-    if user_info is None:
-        return jsonify({"error": "Invalid token"}), 401
-
-    user_id = user_info.get("sub")
-    if not user_id:
-        return jsonify({"error": "User ID not found in token"}), 401
-
-    filtros = {
-        "dtRegistro": request.args.get("dtRegistro"),
-    }
-
-    # Remove filtros que nao tem valor
-    filtros = {k: v for k, v in filtros.items() if v is not None}
-
-    # Adiciona o codigo como um filtro se for diferente de 0
-    if codigo != "0":
-        filtros["cdDispositivo"] = codigo
-
-    resultado = Selecionar_VwRelDadosDispositivo(filtros, token)
-    return resultado
-
-
-# Selecionar registros no EndPoint TbPosicaoAtual
-@app.route("/TbPosicaoAtual/<codigo>")
-def get_TbPosicaoAtual(codigo):
-    filtros = {"cdProduto": request.args.get("cdProduto")}
-
-    # Remove filtros que nao tem valor
-    filtros = {k: v for k, v in filtros.items() if v is not None}
-
-    # Adiciona o codigo como um filtro se for diferente de 0
-    if codigo != "0":
-        filtros["cdDispositivo"] = codigo
-
-    resultado = Selecionar_VwTbPosicaoAtual(filtros)
-    return resultado
 
 
 # Selecionar registros no EndPoint Funcionario
@@ -1165,9 +731,6 @@ def verify_token(token):
         return None
     except jwt.InvalidTokenError:
         return None
-
-
-
 
 
 @app.route("/upload", methods=["POST"])
