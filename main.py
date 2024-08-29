@@ -180,7 +180,17 @@ def Selecionar_VwTbDestinatarioDispositivo(codigoDisp):
 
 
 # FIM DA FUNÇÃO
+def obter_ip_publico():
+    # Verifica o cabeçalho X-Forwarded-For
+    ip = request.headers.get('X-Forwarded-For')
+    if ip:
+        # O X-Forwarded-For pode retornar uma lista de IPs; pegamos o primeiro
+        ip = ip.split(',')[0]
+    else:
+        # Se não houver X-Forwarded-For, pega o remote_addr
+        ip = request.remote_addr
 
+    return ip
 
 # Inserir registros da tabela DbIntelliMetrics.TbAcessoIntelBras
 def Inserir_TbAcessoIntelBras(
@@ -198,9 +208,11 @@ def Inserir_TbAcessoIntelBras(
     dsUserType,
     dsUtc,
 ):
+    dsIp = obter_ip_publico()
+    print(dsIp)
     conexao = conecta_bd()
     cursor = conexao.cursor(dictionary=True)
-    comando = f'insert into DbIntelliMetrics.TbAcessoIntelBras ( dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc ) values ("{dsCardName}", "{dsCardNo}", "{dsDoor}", "{dsEntry}", "{dsErrorCode}", "{dsMethod}", "{dsPassword}", "{dsReaderID}", "{dsStatus}", "{dsType}", "{dsUserId}", "{dsUserType}", "{dsUtc}")'
+    comando = f'insert into DbIntelliMetrics.TbAcessoIntelBras ( dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc, dsIp ) values ("{dsCardName}", "{dsCardNo}", "{dsDoor}", "{dsEntry}", "{dsErrorCode}", "{dsMethod}", "{dsPassword}", "{dsReaderID}", "{dsStatus}", "{dsType}", "{dsUserId}", "{dsUserType}", "{dsUtc}", "{dsIp}")'
     cursor.execute(comando)
     conexao.commit()
     cursor.close()
