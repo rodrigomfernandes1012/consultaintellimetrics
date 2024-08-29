@@ -4,24 +4,19 @@ import base64
 import json
 import os
 import time
-from collections import defaultdict
 from datetime import datetime
 from typing import Any, Dict, List
 
 import boto3
-import jwt
-import pandas as pd
 import psycopg2
 import psycopg2.extras
-
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-
-from db_utils import Client, create_client
 from supabase.client import ClientOptions
 
-from utils import valida_e_constroi_insert, valida_e_constroi_update
+from db_utils import Client, create_client
+from utils import valida_e_constroi_insert
 
 # possibilita pegar variaveis do .env
 load_dotenv()
@@ -721,16 +716,6 @@ def post_Foto():
     with open(dsFoto, "wb") as fh:
         fh.write(photo_data)
     return payload
-
-
-def verify_token(token):
-    try:
-        decoded_token = jwt.decode(token, options={"verify_signature": False})
-        return decoded_token
-    except jwt.ExpiredSignatureError:
-        return None
-    except jwt.InvalidTokenError:
-        return None
 
 
 @app.route("/upload", methods=["POST"])
