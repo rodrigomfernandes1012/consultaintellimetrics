@@ -202,13 +202,18 @@ def Inserir_TbAcessoIntelBras(
     cursor = conexao.cursor(dictionary=True)
     comando = f'insert into DbIntelliMetrics.TbAcessoIntelBras ( dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc ) values ("{dsCardName}", "{dsCardNo}", "{dsDoor}", "{dsEntry}", "{dsErrorCode}", "{dsMethod}", "{dsPassword}", "{dsReaderID}", "{dsStatus}", "{dsType}", "{dsUserId}", "{dsUserType}", "{dsUtc}")'
     cursor.execute(comando)
-    data = str(datetime.utcfromtimestamp(int(dsUtc)).strftime('%Y-%m-%d %H:%M:%S'))
-    #print(dsCardNo,data)
-    Inserir_TbPonto(dsCardNo,dsCardName, data)
     conexao.commit()
     cursor.close()
     conexao.close()
+    datacompleta = (int(dsUtc)) - 10800
+    data = (datetime.utcfromtimestamp(datacompleta).strftime('%Y-%m-%d %H:%M:%S'))
+    print("cheguei em gravar no banco tabela intelbras")
+    Inserir_TbPonto(dsCardNo,dsCardName, data)
     return resultado
+
+
+
+
 
 def Alterar_TbPonto(cdPonto, dsRegistro01, dsRegistro02, dsRegistro03,dsRegistro04):
     conexao = conecta_bd()
@@ -221,47 +226,13 @@ def Alterar_TbPonto(cdPonto, dsRegistro01, dsRegistro02, dsRegistro03,dsRegistro
 
 def Inserir_TbPonto(dsCardNo, dsCardName, dsUtc):
     conexao = conecta_bd()
-    cursor = conexao.cursor(dictionary=True)
-    comando = f"select * from DbIntelliMetrics.TbPonto where dsCardNo = '{dsCardNo}' and DATE(dsRegistro01) = DATE('{dsUtc}') order by cdAcessoIntelBras asc"
+    cursor = conexao.cursor()
+    comando = f"insert into DbIntelliMetrics.TbPonto ( dsCardNo, dsCardName, dsRegistro01, dsTipoRegistro, dsObservacao ) values ('{dsCardNo}', '{dsCardName}', '{dsUtc}','','')"
+    print(comando)
     cursor.execute(comando)
-    #print(comando)
-    resultado = cursor.fetchall()
-    #print(resultado)
-    if resultado == []:
-        print("vazio")
-    else:
-        print(resultado)
-
-        for dtregistro in resultado:
-
-            if dtregistro['dsRegistro04']==None:
-                comando = f"update DbIntelliMetrics.TbPonto set dsRegistro04 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro04 is null and dsRegistro01 = '{data1}'"
-                cursor.execute(comando)
-                conexao.commit()
-                cursor.close()
-                conexao.close()
-
-            if dtregistro['dsRegistro03']==None:
-                comando = f"update DbIntelliMetrics.TbPonto set dsRegistro03 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro03 is null and dsRegistro01 = '{data1}'"
-                cursor.execute(comando)
-                conexao.commit()
-                cursor.close()
-                conexao.close()
-
-            if dtregistro['dsRegistro02']==None:
-                comando = f"update DbIntelliMetrics.TbPonto set dsRegistro02 = '{dsUtc}' where dsCardNo = '{dsCardNo}' and dsRegistro02 is null and dsRegistro01 = '{data1}' "
-                cursor.execute(comando)
-                conexao.commit()
-                cursor.close()
-                conexao.close()
-
-            if dtregistro['dsRegistro01']==None:
-                comando = f"insert into DbIntelliMetrics.TbPonto ( dsCardNo, dsCardName, dsRegistro01 ) values ('{dsCardNo}', '{dsCardName}', '{dsUtc}')"
-                cursor.execute(comando)
-                conexao.commit()
-                cursor.close()
-                conexao.close()
-
+    conexao.commit()
+    cursor.close()
+    conexao.close()
 
 
 
@@ -3338,6 +3309,7 @@ def post_AcessoIntelBras():
    # TbAcessoIntelBrascol = payload ['TbAcessoIntelBrascol']
     if dsStatus == "1":
         Inserir_TbAcessoIntelBras(dsCardName, dsCardNo, dsDoor, dsEntry, dsErrorCode, dsMethod, dsPassword, dsReaderID, dsStatus, dsType, dsUserId, dsUserType, dsUtc)
+        print("cheguei no endpoint")
     return "Cadastramento realizado com sucesso"
 #FIM DA FUNÇÃO
 
@@ -3348,24 +3320,7 @@ def get_Ponto():
 
 
 dic_dados = []
-@app.route('/AlteraPonto', methods=['PUT'])
-def AlteraPonto():
-    payload = request.get_json()
-    #dic_dados.append(payload)
-    print(payload)
 
-
-    for dados in payload:
-        cdPonto = int(dados['cdPonto'])
-        dsRegistro01 = dados['dsRegistro01']
-        dsRegistro02 = dados['dsRegistro02']
-        dsRegistro03 = dados['dsRegistro03']
-        dsRegistro04 = dados['dsRegistro04']
-        Alterar_TbPonto(cdPonto, dsRegistro01, dsRegistro02, dsRegistro03, dsRegistro04 )
-    return "Alterado com sucesso"
-
-
-# FIM DA FUNÇÃO
 
 
 @app.route("/notification", methods=["POST"])
