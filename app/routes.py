@@ -31,6 +31,8 @@ from .services import (
     get_endereco_coordenada,
     is_dentro_area,
     prepara_insert_registros,
+    Selecionar_TbChamados,
+    Inserir_TbChamados
 )
 
 main = Blueprint("main", __name__)
@@ -423,3 +425,29 @@ def get_TbPosicaoAtual(codigo):
 
     resultado = Selecionar_VwTbPosicaoAtual(filtros=filtros, db_client=supabase_client)
     return resultado
+
+@main.route("/Chamados")
+def get_Chamados():
+    supabase_client, error = get_supabase_client_from_request(request=request)
+
+    if error or supabase_client is None:
+        return jsonify({"message": error}), 401
+    
+    resultado = Selecionar_TbChamados(db_client=supabase_client)
+    return resultado
+
+@main.route("/Chamados", methods=["POST"])
+def post_Chamados():
+    supabase_client, error = get_supabase_client_from_request(request=request)
+
+    if error or supabase_client is None:
+        return jsonify({"message": error}), 401
+    
+    payload = request.get_json()
+    data, error = valida_e_constroi_insert("TbChamados", payload)
+
+    if error:
+        return jsonify({"message": error}), 400
+
+    Inserir_TbChamados(data=data, db_client=supabase_client)
+    return "Cadastramento realizado com sucesso"
