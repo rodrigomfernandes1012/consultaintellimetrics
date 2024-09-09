@@ -404,7 +404,6 @@ def get_RelVwRelDadosDispositivo(codigo):
     return resultado
 
 
-# Selecionar registros no EndPoint TbPosicaoAtual
 @main.route("/TbPosicaoAtual/<codigo>")
 def get_TbPosicaoAtual(codigo):
     supabase_client, error = get_supabase_client_from_request(request=request)

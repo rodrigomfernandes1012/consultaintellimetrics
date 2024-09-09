@@ -185,6 +185,7 @@ def get_endereco_coordenada(lat, long):
     for campos in adress:
         dados = campos["properties"]
         dsLogradouro = dados.get("street")
+        dsEndereco = dados.get("street")
         dsNum = dados.get("housenumber")
         dsBairro = dados.get("neighbourhood")
         dsCidade = dados.get("locality")
@@ -194,6 +195,7 @@ def get_endereco_coordenada(lat, long):
 
     return {
         "dsLogradouro": dsLogradouro,
+        "dsEndereco": dsEndereco,
         "dsNum": dsNum,
         "dsBairro": dsBairro,
         "dsCidade": dsCidade,
