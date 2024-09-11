@@ -180,29 +180,29 @@ def get_endereco_coordenada(lat, long):
     payload = f"http://osm.taxidigital.net:4000/v1/reverse?point.lon={long}&point.lat={lat}&layers=address&sources=oa&size=1&cdFilial=0&cdTipoOrigem=0"
     requisicao = requests.get(payload)
     dic = requisicao.json()
-    adress = dic["features"]
+    address = dic["features"]
 
-    for campos in adress:
+    resultado = {}
+
+    for campos in address:
         dados = campos["properties"]
-        dsLogradouro = dados.get("street")
-        dsEndereco = dados.get("street")
-        dsNum = dados.get("housenumber")
-        dsBairro = dados.get("neighbourhood")
-        dsCidade = dados.get("locality")
-        dsUF = dados.get("region_a")
-        dsCep = dados.get("postalcode")
-        dsPais = dados.get("country_code")
+        if dados.get("street"):
+            resultado["dsLogradouro"] = dados.get("street")
+            resultado["dsEndereco"] = dados.get("street")
+        if dados.get("housenumber"):
+            resultado["dsNum"] = dados.get("housenumber")
+        if dados.get("neighbourhood"):
+            resultado["dsBairro"] = dados.get("neighbourhood")
+        if dados.get("locality"):
+            resultado["dsCidade"] = dados.get("locality")
+        if dados.get("region_a"):
+            resultado["dsUF"] = dados.get("region_a")
+        if dados.get("postalcode"):
+            resultado["dsCep"] = dados.get("postalcode")
+        if dados.get("country_code"):
+            resultado["dsPais"] = dados.get("country_code")
 
-    return {
-        "dsLogradouro": dsLogradouro,
-        "dsEndereco": dsEndereco,
-        "dsNum": dsNum,
-        "dsBairro": dsBairro,
-        "dsCidade": dsCidade,
-        "dsUF": dsUF,
-        "dsCep": dsCep,
-        "dsPais": dsPais,
-    }
+    return resultado
 
 
 def is_dentro_area(cdDispositivo, dsLat, dsLong):
