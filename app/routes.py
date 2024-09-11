@@ -202,6 +202,8 @@ def get_Posicao(codigo):
 @main.route("/Posicao", methods=["POST"])
 def post_Posicao():
     payload = request.get_json()
+    
+    print(payload)
 
     dsLat = payload["dsLat"]
     dsLong = payload["dsLong"]
