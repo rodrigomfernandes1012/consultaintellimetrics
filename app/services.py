@@ -347,6 +347,9 @@ def Selecionar_VwRelHistoricoDispositivoProduto(filtros, db_client=supabase_api)
             query = query.lte(campo, f'{valor + " 23:59:59"}')
         else:
             query = query.eq(campo, valor)
+         
+    # TODO: trocar quando tivermos paginaçao no server
+    query.limit(500)
 
     resultado = query.execute()
 
