@@ -51,28 +51,6 @@ def obter_ip_publico():
 
     return ip
 
-def envia_whatstexto(msg):
-    import requests
-    import json
-
-    url = "https://app.whatsgw.com.br/api/WhatsGw/Send"
-
-    payload = json.dumps(
-        {
-            "apikey": "fea4fe42-3cd6-4002-bd33-31badb5074dc",
-            "phone_number": "5511945480370",
-            "contact_phone_number": "5511987674750",
-            "message_custom_id": "yoursoftwareid",
-            "message_type": "text",
-            "message_body": msg,
-            "check_status": "1",
-        }
-    )
-    headers = {"Content-Type": "application/json"}
-
-    response = requests.request("POST", url, headers=headers, data=payload)
-
-    print(response.text)
 
 
 def assinar_arquivo(arquivo):
@@ -3538,7 +3516,7 @@ def whats_post():
                             + " Valor "
                             + (campos["valor"])
                         )
-                        envia_whatstexto("Olá eu quero essa viagem ! " + msg)
+                        #envia_whatstexto("Olá eu quero essa viagem ! " + msg)
 
             # Converter a lista de dados JSON em uma string JSON formatada
             json_str = json.dumps(dados_json, indent=4)
