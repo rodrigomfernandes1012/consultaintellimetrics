@@ -69,6 +69,16 @@ def Selecionar_VwTbProdutoTotalStatus(cdProdutoFiltro, db_client=supabase_api):
             produtos_dict[cdProduto]["status"].append(
                 {"cdStatus": produto["StatusDispositivo"], "nrQtde": produto["nrQtde"]}
             )
+    
+    # lista de cdProdutos
+    cdProdutos = [item['cdProduto'] for item in resultado.data]
+    
+    # busca quantidade de dispositivos fora de area por produto
+    prodForaRes = supabase_api.table("VwProdutosFora").select("*").in_("cdProduto", cdProdutos).execute()
+
+    # adiciona no dicionario de produtos a ser retornado
+    for item in prodForaRes.data:
+        produtos_dict[item["cdProduto"]]["nrFora"] = item["dispositivo_count"]
 
     # Converte para lista para poder serializar como json
     produtos_list: List[Dict[str, Any]] = list(produtos_dict.values())
