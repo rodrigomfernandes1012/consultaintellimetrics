@@ -3340,6 +3340,7 @@ def event_receiver():
     if request.method == "POST":
         print(obter_ip_publico())
         res = request.data
+        print(res)
         data_list = res.split(b"--myboundary\r\n")
 
         if data_list:
