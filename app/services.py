@@ -9,7 +9,7 @@ from db_utils import supabase_api
 from utils import calcular_distancia, valida_e_constroi_insert
 
 
-def Selecionar_VwTbProdutoTotalStatus(cdProdutoFiltro, db_client=supabase_api):
+def Selecionar_VwTbProdutoTotalStatus(filtros, db_client=supabase_api):
     query = db_client.table("VwTbProdutoTotalStatus").select(
         "cdProduto",
         "dsDescricao",
@@ -25,8 +25,14 @@ def Selecionar_VwTbProdutoTotalStatus(cdProdutoFiltro, db_client=supabase_api):
         "imagens:TbImagens(cdCodigo, dsCaminho)",
     )
 
-    if cdProdutoFiltro != "0":
-        query.eq("cdProduto", cdProdutoFiltro)
+    # aplica filtros
+    for campo, valor in filtros.items():
+        if campo == "dtRegistro":
+            valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
+            query = query.gte(campo, f'{valor + " 00:00:00"}')
+            query = query.lte(campo, f'{valor + " 23:59:59"}')
+        else:
+            query = query.eq(campo, valor)
 
     resultado = query.execute()
 

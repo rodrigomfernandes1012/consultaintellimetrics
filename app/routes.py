@@ -43,8 +43,30 @@ def get_TbProdutoTotalStatus(codigo):
     if error or supabase_client is None:
         return jsonify({"message": error}), 401
 
+    filtros = {
+        "cdCliente": request.args.get("cdCliente"),
+    }
+    
+    # Adiciona o codigo como um filtro se for diferente de 0
+    if codigo != "0":
+        filtros["cdProduto"] = codigo
+
+    # Remove filtros que nao tem valor
+    filtros = {k: v for k, v in filtros.items() if v is not None}
+
+    if ("cdCliente" not in filtros or len(filtros["cdCliente"]) == 0) and codigo == "0":
+        print("cdCliente deve ser incluido quando buscando todos os produtos")
+        return (
+            jsonify(
+                {
+                    "message": "cdCliente deve ser incluido quando buscando todos os produtos"
+                }
+            ),
+            400,
+        )
+
     resultado = Selecionar_VwTbProdutoTotalStatus(
-        cdProdutoFiltro=codigo, db_client=supabase_client
+        filtros=filtros, db_client=supabase_client
     )
     return resultado
 
@@ -202,7 +224,7 @@ def get_Posicao(codigo):
 @main.route("/Posicao", methods=["POST"])
 def post_Posicao():
     payload = request.get_json()
-    
+
     print(payload)
 
     dsLat = payload["dsLat"]
