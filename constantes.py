@@ -93,7 +93,7 @@ campos_tabelas = {
     },
     "TbPosicao": {
         "dsModelo": {"type": "text", "required": False},
-        "dtData": {"type": "integer", "required": False},
+        "dtData": {"type": "text", "required": False},
         "dtHora": {"type": "text", "required": False},
         "dsLat": {"type": "text", "required": False},
         "dsLong": {"type": "text", "required": False},
