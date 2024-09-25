@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import datetime, timedelta
 from typing import Any, Dict, List
 
 import pandas as pd
@@ -6,7 +7,11 @@ import requests
 from flask import jsonify
 
 from db_utils import supabase_api
-from utils import calcular_distancia, valida_e_constroi_insert
+from utils import (
+    calcular_distancia,
+    valida_e_constroi_insert,
+    convert_sao_paulo_date_to_utc_range,
+)
 
 
 def Selecionar_VwTbProdutoTotalStatus(filtros, db_client=supabase_api):
@@ -28,9 +33,9 @@ def Selecionar_VwTbProdutoTotalStatus(filtros, db_client=supabase_api):
     # aplica filtros
     for campo, valor in filtros.items():
         if campo == "dtRegistro":
-            valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
-            query = query.gte(campo, f'{valor + " 00:00:00"}')
-            query = query.lte(campo, f'{valor + " 23:59:59"}')
+            start_dt, end_dt = convert_sao_paulo_date_to_utc_range(valor)
+            query = query.gte(campo, start_dt)
+            query = query.lte(campo, end_dt)
         else:
             query = query.eq(campo, valor)
 
@@ -75,12 +80,17 @@ def Selecionar_VwTbProdutoTotalStatus(filtros, db_client=supabase_api):
             produtos_dict[cdProduto]["status"].append(
                 {"cdStatus": produto["StatusDispositivo"], "nrQtde": produto["nrQtde"]}
             )
-    
+
     # lista de cdProdutos
-    cdProdutos = [item['cdProduto'] for item in resultado.data]
-    
+    cdProdutos = [item["cdProduto"] for item in resultado.data]
+
     # busca quantidade de dispositivos fora de area por produto
-    prodForaRes = supabase_api.table("VwProdutosFora").select("*").in_("cdProduto", cdProdutos).execute()
+    prodForaRes = (
+        supabase_api.table("VwProdutosFora")
+        .select("*")
+        .in_("cdProduto", cdProdutos)
+        .execute()
+    )
 
     # adiciona no dicionario de produtos a ser retornado
     for item in prodForaRes.data:
@@ -181,9 +191,9 @@ def Selecionar_TbPosicao(filtros, db_client=supabase_api):
     # aplica filtros
     for campo, valor in filtros.items():
         if campo == "dtRegistro":
-            valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
-            query = query.gte(campo, f'{valor + " 00:00:00"}')
-            query = query.lte(campo, f'{valor + " 23:59:59"}')
+            start_dt, end_dt = convert_sao_paulo_date_to_utc_range(valor)
+            query = query.gte(campo, start_dt)
+            query = query.lte(campo, end_dt)
         else:
             query = query.eq(campo, valor)
 
@@ -357,14 +367,13 @@ def Selecionar_VwRelHistoricoDispositivoProduto(filtros, db_client=supabase_api)
     # aplica filtros
     for campo, valor in filtros.items():
         if campo == "dtRegistro":
-            # Format date as YYYY-MM-DD
-            valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
-            query = query.gte(campo, f'{valor + " 00:00:00"}')
-            query = query.lte(campo, f'{valor + " 23:59:59"}')
+            start_dt, end_dt = convert_sao_paulo_date_to_utc_range(valor)
+            query = query.gte(campo, start_dt)
+            query = query.lte(campo, end_dt)
         else:
             query = query.eq(campo, valor)
-         
-    # TODO: trocar quando tivermos paginaçao no server
+
+    # TODO: trocar quando tivermos paginação no server
     query.limit(500)
 
     resultado = query.execute()
@@ -415,10 +424,9 @@ def Selecionar_VwRelDadosDispositivo(filtros, db_client=supabase_api):
     # Apply filters
     for campo, valor in filtros.items():
         if campo == "dtRegistro":
-            # Format date as YYYY-MM-DD
-            valor = f"{valor[:4]}-{valor[4:6]}-{valor[6:]}"
-            query = query.gte(campo, f'{valor + " 00:00:00"}')
-            query = query.lte(campo, f'{valor + " 23:59:59"}')
+            start_dt, end_dt = convert_sao_paulo_date_to_utc_range(valor)
+            query = query.gte(campo, start_dt)
+            query = query.lte(campo, end_dt)
         else:
             query = query.eq(campo, valor)
 

@@ -535,6 +535,7 @@ def post_Chamados():
     data, error = valida_e_constroi_insert("TbChamados", payload)
 
     if error:
+        print(error)
         return jsonify({"message": error}), 400
 
     Inserir_TbChamados(data)
@@ -553,6 +554,7 @@ def post_Etiqueta():
     data, error = valida_e_constroi_insert("TbEtiqueta", payload)
 
     if error:
+        print(error)
         return jsonify({"message": error}), 400
     resultado = Inserir_TbEtiqueta(data)
     return resultado
@@ -572,6 +574,7 @@ def post_Tag():
     data, error = valida_e_constroi_insert("TbTag", payload)
 
     if error:
+        print(error)
         return jsonify({"message": error}), 400
     resultado = Inserir_TbTag(data)
     return resultado
@@ -591,6 +594,7 @@ def post_Ticket():
     data, error = valida_e_constroi_insert("TbTicket", payload)
 
     if error:
+        print(error)
         return jsonify({"message": error}), 400
     resultado = Inserir_TbTicket(data)
     return resultado
@@ -610,6 +614,7 @@ def post_TicketResumo():
     data, error = valida_e_constroi_insert("TbTicketResumo", payload)
 
     if error:
+        print(error)
         return jsonify({"message": error}), 400
     resultado = Inserir_TbTicketResumo(data)
     return resultado
@@ -629,6 +634,7 @@ def post_Usuario():
     data, error = valida_e_constroi_insert("TbUsuario", payload)
 
     if error:
+        print(error)
         return jsonify({"message": error}), 400
     resultado = Inserir_TbUsuario(data)
     return resultado
@@ -651,6 +657,7 @@ def post_Visita():
     data, error = valida_e_constroi_insert("TbVisita", payload)
 
     if error:
+        print(error)
         return jsonify({"message": error}), 400
     resultado = Inserir_TbVisita(data)
     return resultado
@@ -673,6 +680,7 @@ def post_Visitante():
     data, error = valida_e_constroi_insert("TbVisitante", payload)
 
     if error:
+        print(error)
         return jsonify({"message": error}), 400
     resultado = Inserir_TbVisitante(data)
     return resultado
@@ -695,6 +703,7 @@ def post_Funcionario():
     data, error = valida_e_constroi_insert("TbFuncionario", payload)
 
     if error:
+        print(error)
         return jsonify({"message": error}), 400
 
     resultado = Inserir_TbFuncionario(data)

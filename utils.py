@@ -1,3 +1,6 @@
+from datetime import datetime, timedelta
+
+import pytz
 from geopy.distance import geodesic
 from geopy.geocoders import Nominatim
 
@@ -133,3 +136,36 @@ def calcular_distancia(lat1, lon1, lat2, lon2):
     geolocator = Nominatim(user_agent="my_app")
     distancia = geodesic((lat1, lon1), (lat2, lon2)).kilometers
     return distancia
+
+
+
+def convert_sao_paulo_date_to_utc_range(date_str: str):
+    """
+    Converts a date string in the format YYYYMMDD from São Paulo timezone
+    to a UTC datetime range (start and end of the day).
+
+    Args:
+        date_str (str): Date in the format YYYYMMDD representing the date in São Paulo timezone.
+
+    Returns:
+        tuple: A tuple containing two strings:
+            - start_of_day_utc (str): Start of the day in UTC (YYYY-MM-DD HH:MM:SS).
+            - end_of_day_utc (str): End of the day in UTC (YYYY-MM-DD HH:MM:SS).
+    """
+    # São Paulo timezone
+    saopaulo_tz = pytz.timezone('America/Sao_Paulo')
+
+    # Convert string to a datetime object
+    date_obj = datetime.strptime(date_str, '%Y%m%d')
+
+    # Define start and end of the day in São Paulo timezone
+    start_of_day = saopaulo_tz.localize(datetime(date_obj.year, date_obj.month, date_obj.day, 0, 0, 0))
+    end_of_day = saopaulo_tz.localize(datetime(date_obj.year, date_obj.month, date_obj.day, 23, 59, 59))
+
+    # Convert to UTC
+    start_of_day_utc = start_of_day.astimezone(pytz.utc)
+    end_of_day_utc = end_of_day.astimezone(pytz.utc)
+
+    # Return as formatted strings
+    return (start_of_day_utc.strftime('%Y-%m-%d %H:%M:%S'),
+            end_of_day_utc.strftime('%Y-%m-%d %H:%M:%S'))
