@@ -16,7 +16,8 @@ import re
 import pandas as pd
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
-from datetime import datetime
+from datetime import datetime, timedelta
+
 
 
 # Amazon
@@ -198,7 +199,7 @@ def Inserir_TbAcessoIntelBras(
     datacompleta = (int(dsUtc)) - 10800
     data = (datetime.utcfromtimestamp(datacompleta).strftime('%Y-%m-%d %H:%M:%S'))
     print("cheguei em gravar no banco tabela intelbras")
-    Inserir_TbPonto(dsCardNo,dsCardName, data)
+    Inserir_TbPonto(dsCardNo,dsCardName, data,dsUtc)
     return resultado
 
 
@@ -214,16 +215,82 @@ def Alterar_TbPonto(cdPonto, dsRegistro01, dsRegistro02, dsRegistro03,dsRegistro
     cursor.close()
     conexao.close()
 
-def Inserir_TbPonto(dsCardNo, dsCardName, dsUtc):
+#def Inserir_TbPonto(dsCardNo, dsCardName, dsUtc):
+#    conexao = conecta_bd()
+#    cursor = conexao.cursor()
+#    comando = f"insert into DbIntelliMetrics.TbPonto ( dsCardNo, dsCardName, dsRegistro01, dsTipoRegistro, dsObservacao ) values ('{dsCardNo}', '{dsCardName}', '{dsUtc}','','')"
+#    print(comando)
+#    cursor.execute(comando)
+#    conexao.commit()
+#    cursor.close()
+#    conexao.close()
+def Inserir_TbPonto(dsCardNo, dsCardName, dsData, cdAcesso):
     conexao = conecta_bd()
-    cursor = conexao.cursor()
-    comando = f"insert into DbIntelliMetrics.TbPonto ( dsCardNo, dsCardName, dsRegistro01, dsTipoRegistro, dsObservacao ) values ('{dsCardNo}', '{dsCardName}', '{dsUtc}','','')"
-    print(comando)
-    cursor.execute(comando)
-    conexao.commit()
-    cursor.close()
-    conexao.close()
+    cursor = conexao.cursor(dictionary=True)
 
+    if isinstance(dsData, str):  # Convert to datetime if dsData is a string
+        dsDataHora = datetime.strptime(dsData, "%Y-%m-%d %H:%M:%S")
+        dsData = datetime.strptime(dsData, "%Y-%m-%d %H:%M:%S").date()
+        print(dsData)
+
+    # Primeiro, consultar registros existentes para o dsCardNo na mesma data
+    consulta = f"""
+        SELECT dsRegistro01, dsRegistro02, dsRegistro03, dsRegistro04, dsRegistroAut
+        FROM DbIntelliMetrics.TbPonto
+        WHERE    dsCardNo = '{dsCardNo}' AND DATE(dsRegistroAut) = DATE('{dsData}')
+        """
+    print(consulta)
+    cursor.execute(consulta)
+    resultado = cursor.fetchone()
+    # cursor.close()
+    # conexao.close()
+    if resultado:
+        slots = ['dsRegistro01', 'dsRegistro02', 'dsRegistro03', 'dsRegistro04']
+        for slot in slots:
+            if resultado[slot]:
+                registro_existente_horario = resultado[slot]
+                print(registro_existente_horario)
+                #print(dsDataHora)
+                # Verifique se a diferença é menor que 6 minutos
+                if abs(dsDataHora - registro_existente_horario) < timedelta(minutes=6):
+                    print(f"Registro ignorado: diferença de horário menor que 6 minutos para {slot}.")
+
+                    return
+            else:
+                # Se o slot está vazio, insere aqui
+
+                conexao = conecta_bd()
+                cursor = conexao.cursor()
+                update_comando = f"""
+                    UPDATE DbIntelliMetrics.TbPonto
+                    SET {slot} = '{dsDataHora.strftime("%Y-%m-%d %H:%M:%S")}'
+                    WHERE   dsCardNo = '{dsCardNo}' AND dsRegistroAut = '{resultado['dsRegistroAut']}'
+                    """
+                print(update_comando)
+                print("primeiro update")
+
+                cursor.execute(update_comando)
+
+                conexao.commit()
+                cursor.close()
+                conexao.close()
+                return
+
+        print("Todos os horários de registro estão ocupados para hoje ou a diferença de tempo é menor que 6 minutos.")
+    else:
+        # Se não houver registros ou todos são inválidos, inserir um novo
+        conexao = conecta_bd()
+        cursor = conexao.cursor()
+        comando = f"""
+            INSERT INTO DbIntelliMetrics.TbPonto (dsCardNo, dsCardName, dsRegistro01, dsTipoRegistro, dsObservacao, cdAcessoIntelBras, stStatus, dsRegistroAut)
+            VALUES ('{dsCardNo}', '{dsCardName}', '{dsDataHora.strftime("%Y-%m-%d %H:%M:%S")}', '', '', '{cdAcesso}',3,DATE('{dsData}'))
+            """
+        print(comando)
+        print("fiz insert")
+        cursor.execute(comando)
+        conexao.commit()
+        cursor.close()
+        conexao.close()
 
 
 #Inserir_TbAcessoIntelBras("rodrigo","17439772801","1","",0,25,"",1,'1',"Entry","17439772806",0,"1722531607")
