@@ -283,7 +283,7 @@ def Inserir_TbPonto(dsCardNo, dsCardName, dsData, cdAcesso):
         cursor = conexao.cursor()
         comando = f"""
             INSERT INTO DbIntelliMetrics.TbPonto (dsCardNo, dsCardName, dsRegistro01, dsTipoRegistro, dsObservacao, cdAcessoIntelBras, stStatus, dsRegistroAut)
-            VALUES ('{dsCardNo}', '{dsCardName}', '{dsDataHora.strftime("%Y-%m-%d %H:%M:%S")}', '', '', '{cdAcesso}',3,DATE('{dsData}'))
+            VALUES ('{dsCardNo}', '{dsCardName}', '{dsDataHora.strftime("%Y-%m-%d %H:%M:%S")}', '', '', '{cdAcesso}',1,DATE('{dsData}'))
             """
         print(comando)
         print("fiz insert")
