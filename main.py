@@ -52,6 +52,17 @@ def obter_ip_publico():
 
     return ip
 
+def Inserir_TbLog(dsTbAcesso, dsAcao, dsIp,  dsLogin):
+    conexao = conecta_bd()
+    cursor = conexao.cursor(dictionary=True)
+    comando = f'insert into DbIntelliMetrics.TbLog (dsTbAcesso, dsAcao, dsIp, dsLogin) values ("{dsTbAcesso}", "{dsAcao}", "{dsIp}", "{dsLogin}")'
+    cursor.execute(comando)
+    conexao.commit()
+    cursor.close()
+    conexao.close()
+    username = dsLogin
+    return username
+
 
 
 def assinar_arquivo(arquivo):
@@ -3462,20 +3473,23 @@ def event_receiver():
 
             # Exemplo de regras que podem ser implementadas
             time.sleep(1)
-            if user_id == 19:
+            if user_id == 41205257837:
+                Inserir_TbLog('userid', '41205257837', '10.0.0.1', 'system')
                 return jsonify(
                     {
-                        "message": "Pagamento não realizado!",
+                        "message": "Ponto Registrado",
                         "code": "200",
                         "auth": "true",
                     }
                 )
             elif card_no in [
-                "EC56D271",
+                "41205257837",
                 "09201802",
             ]:  # Caso o código do cartão esteja listado libera o acesso
+                Inserir_TbLog('cartao', '41205257837', '10.0.0.1', 'system')
+
                 return jsonify(
-                    {"message": "Bem vindo !", "code": "200", "auth": "true"}
+                    {"message": "Ponto Registrado !", "code": "200", "auth": "true"}
                 )
             elif pwd != None:
                 if int(pwd) == 222333:
