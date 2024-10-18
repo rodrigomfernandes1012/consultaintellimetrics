@@ -376,7 +376,15 @@ def Selecionar_VwRelHistoricoDispositivoProduto(filtros, db_client=supabase_api)
     # TODO: trocar quando tivermos paginação no server
     query.limit(500)
 
-    resultado = query.execute()
+    # se o cliente nao tem acesso a nenhuma informaçao, o supabase retorna um erro 400. Esse try
+    # previne um erro 500 a ser enviado ao cliente
+    # TODO: rever isso. Idealmente o supabase so retornaria um []
+    try:
+        resultado = query.execute()
+    except Exception as e:
+        print("Erro buscando VwRelHistoricoDispositivoProduto")
+        print(e)
+        return []
 
     return resultado.data
 
