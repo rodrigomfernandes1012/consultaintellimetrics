@@ -257,6 +257,7 @@ def Inserir_TbPonto(dsCardNo, dsCardName, dsData, cdAcesso):
     # conexao.close()
     if resultado:
         slots = ['dsRegistro01', 'dsRegistro02', 'dsRegistro03', 'dsRegistro04']
+        slots.sort()
         for slot in slots:
             if resultado[slot]:
                 registro_existente_horario = resultado[slot]
