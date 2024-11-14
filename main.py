@@ -210,7 +210,8 @@ def Inserir_TbAcessoIntelBras(
     datacompleta = (int(dsUtc)) - 10800
     data = (datetime.utcfromtimestamp(datacompleta).strftime('%Y-%m-%d %H:%M:%S'))
     print("cheguei em gravar no banco tabela intelbras")
-    Inserir_TbPonto(dsCardNo,dsCardName, data,dsUtc)
+    if dsStatus == 1:
+        Inserir_TbPonto(dsCardNo,dsCardName, data,dsUtc)
     return resultado
 
 
@@ -257,7 +258,7 @@ def Inserir_TbPonto(dsCardNo, dsCardName, dsData, cdAcesso):
     # conexao.close()
     if resultado:
         slots = ['dsRegistro01', 'dsRegistro02', 'dsRegistro03', 'dsRegistro04']
-        slots.sort()
+        slots.sort()''
         for slot in slots:
             if resultado[slot]:
                 registro_existente_horario = resultado[slot]
