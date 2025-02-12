@@ -128,6 +128,7 @@ campos_tabelas = {
         "dsDescricao": {"type": "text", "required": False},
         "dtRegistro": {"type": "timestamp", "required": False},
         "cdUser": {"type": "uuid", "required": True},
+        "dsUnidade": {"type": "text", "required": True},
     },
     "TbProduto": {
         "dsNome": {"type": "text", "required": False},

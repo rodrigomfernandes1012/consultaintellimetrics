@@ -396,15 +396,41 @@ def Selecionar_HistoricoPaginaDispositivo(filtros, db_client=supabase_api):
     if len(resultado) == 0:
         return resultado
 
+    # Process each row to calculate nrQtdItens and nrTemperatura based on sensor type
+    for row in resultado:
+        if row['dsUnidadeMedida'] == 'celcius':
+            row['nrTemperatura'] = row['nrLeituraSensor']
+            row['nrQtdItens'] = 0  # Set to 0 for temperature sensors
+        elif row['dsUnidadeMedida'] == 'abertura':
+            row['nrQtdItens'] = 0
+            row['nrPorta'] = row['nrLeituraSensor']
+        else:
+            # Calculate nrQtdItens based on unit type
+            if row['dsUnidadeMedida'] == 'gramas':
+                row['nrQtdItens'] = row['nrLeituraSensor'] / row['nrPesoUnitario'] if row['nrPesoUnitario'] else 0
+            elif row['dsUnidadeMedida'] == 'milimetros':
+                row['nrQtdItens'] = row['nrLeituraSensor'] / row['nrAlt'] if row['nrAlt'] else 0
+            elif row['dsUnidadeMedida'] == 'unidade':
+                row['nrQtdItens'] = row['nrLeituraSensor']
+            row['nrTemperatura'] = 0  # Set to 0 for non-temperature sensors
+
     # converte em pandas dataframe
     df = pd.DataFrame(resultado)
 
-    # mantem os dados originais para serem mergidos depois
-    original_df = df.drop(
-        columns=["nrQtdItens", "dsProdutoItem", "cdSensor"]
-    ).drop_duplicates()
+    # Create base dataframe with non-sensor specific columns
+    base_columns = [
+        "cdProduto", "nrCodigo", "dsDescricao", "dtRegistro", 
+        "cdDispositivo", "dsNome", "dsEndereco", "nrBatPercentual",
+        "dsStatus", "dsStatusDispositivo", "nrPessoas"
+    ]
+    
+    base_df = df[base_columns].drop_duplicates()
 
-    # Pivot the data
+    # Add sensor-specific aggregated columns
+    temp_df = df[df['dsUnidadeMedida'] == 'celcius'].groupby('dtRegistro')['nrTemperatura'].first().reset_index()
+    porta_df = df[df['dsUnidadeMedida'] == 'abertura'].groupby('dtRegistro')['nrPorta'].first().reset_index()
+
+    # Pivot the quantities
     pivot_df = df.pivot_table(
         index="dtRegistro",
         columns=["dsProdutoItem", "cdSensor"],
@@ -414,12 +440,12 @@ def Selecionar_HistoricoPaginaDispositivo(filtros, db_client=supabase_api):
 
     # Flatten the multi-index columns
     pivot_df.columns = [f"{item[0]}_{item[1]}" for item in pivot_df.columns]
-
-    # Reset index to have dtRegistro as a column again
     pivot_df = pivot_df.reset_index()
 
-    # Merge the pivoted data with the original data
-    final_df = pd.merge(original_df, pivot_df, on="dtRegistro", how="left")
+    # Merge all the dataframes
+    final_df = base_df.merge(temp_df, on="dtRegistro", how="left")
+    final_df = final_df.merge(porta_df, on="dtRegistro", how="left")
+    final_df = final_df.merge(pivot_df, on="dtRegistro", how="left")
 
     result_json = final_df.to_json(orient="records", date_format="iso")
 
