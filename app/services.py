@@ -396,7 +396,7 @@ def Selecionar_HistoricoPaginaDispositivo(filtros, db_client=supabase_api):
     if len(resultado) == 0:
         return resultado
 
-    # Process each row to calculate nrQtdItens and nrTemperatura based on sensor type
+    # processa cada linha para calcular nrQtdItens e nrTemperatura baseado no tipo de sensor
     for row in resultado:
         if row['dsUnidadeMedida'] == 'celcius':
             row['nrTemperatura'] = row['nrLeituraSensor']
@@ -405,11 +405,12 @@ def Selecionar_HistoricoPaginaDispositivo(filtros, db_client=supabase_api):
             row['nrQtdItens'] = 0
             row['nrPorta'] = row['nrLeituraSensor']
         else:
-            # Calculate nrQtdItens based on unit type
-            if row['dsUnidadeMedida'] == 'gramas':
-                row['nrQtdItens'] = row['nrLeituraSensor'] / row['nrPesoUnitario'] if row['nrPesoUnitario'] else 0
-            elif row['dsUnidadeMedida'] == 'milimetros':
-                row['nrQtdItens'] = row['nrLeituraSensor'] / row['nrAlt'] if row['nrAlt'] else 0
+            # calcula nrQtdItens baseado na unidade de medida
+            if row['dsUnidadeMedida'] in ['gramas', 'milimetros']:
+                # remove tara da nrLeituraSensor
+                leitura_sem_tara = row['nrLeituraSensor'] - (row['nrUnidadeIni'] or 0)
+                divisor = row['nrPesoUnitario'] if row['dsUnidadeMedida'] == 'gramas' else row['nrAlt']
+                row['nrQtdItens'] = leitura_sem_tara / divisor if divisor else 0
             elif row['dsUnidadeMedida'] == 'unidade':
                 row['nrQtdItens'] = row['nrLeituraSensor']
             row['nrTemperatura'] = 0  # Set to 0 for non-temperature sensors
