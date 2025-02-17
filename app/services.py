@@ -422,18 +422,18 @@ def Selecionar_HistoricoPaginaDispositivo(filtros, db_client=supabase_api):
     base_columns = [
         "cdProduto", "nrCodigo", "dsDescricao", "dtRegistro", 
         "cdDispositivo", "dsNome", "dsEndereco", "nrBatPercentual",
-        "dsStatus", "dsStatusDispositivo", "nrPessoas"
+        "dsStatus", "dsStatusDispositivo", "nrPessoas", "cdPosicao"
     ]
     
     base_df = df[base_columns].drop_duplicates()
 
     # Add sensor-specific aggregated columns
-    temp_df = df[df['dsUnidadeMedida'] == 'celcius'].groupby('dtRegistro')['nrTemperatura'].first().reset_index()
-    porta_df = df[df['dsUnidadeMedida'] == 'abertura'].groupby('dtRegistro')['nrPorta'].first().reset_index()
+    temp_df = df[df['dsUnidadeMedida'] == 'celcius'].groupby('cdPosicao')['nrTemperatura'].first().reset_index()
+    porta_df = df[df['dsUnidadeMedida'] == 'abertura'].groupby('cdPosicao')['nrPorta'].first().reset_index()
 
     # Pivot the quantities
     pivot_df = df.pivot_table(
-        index="dtRegistro",
+        index="cdPosicao",
         columns=["dsProdutoItem", "cdSensor"],
         values="nrQtdItens",
         fill_value=0,
@@ -444,9 +444,9 @@ def Selecionar_HistoricoPaginaDispositivo(filtros, db_client=supabase_api):
     pivot_df = pivot_df.reset_index()
 
     # Merge all the dataframes
-    final_df = base_df.merge(temp_df, on="dtRegistro", how="left")
-    final_df = final_df.merge(porta_df, on="dtRegistro", how="left")
-    final_df = final_df.merge(pivot_df, on="dtRegistro", how="left")
+    final_df = base_df.merge(temp_df, on="cdPosicao", how="left")
+    final_df = final_df.merge(porta_df, on="cdPosicao", how="left")
+    final_df = final_df.merge(pivot_df, on="cdPosicao", how="left")
 
     result_json = final_df.to_json(orient="records", date_format="iso")
 
