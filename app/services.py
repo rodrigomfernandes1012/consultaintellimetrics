@@ -400,20 +400,20 @@ def Selecionar_HistoricoPaginaDispositivo(filtros, db_client=supabase_api):
     for row in resultado:
         if row['dsUnidadeMedida'] == 'celcius':
             row['nrTemperatura'] = row['nrLeituraSensor']
-            row['nrQtdItens'] = 0  # Set to 0 for temperature sensors
+            row['nrQtdItens'] = 0
         elif row['dsUnidadeMedida'] == 'abertura':
             row['nrQtdItens'] = 0
             row['nrPorta'] = row['nrLeituraSensor']
-        else:
-            # calcula nrQtdItens baseado na unidade de medida
-            if row['dsUnidadeMedida'] in ['gramas', 'milimetros']:
-                # remove tara da nrLeituraSensor
-                leitura_sem_tara = row['nrLeituraSensor'] - (row['nrUnidadeIni'] or 0)
-                divisor = row['nrPesoUnitario'] if row['dsUnidadeMedida'] == 'gramas' else row['nrAlt']
-                row['nrQtdItens'] = leitura_sem_tara / divisor if divisor else 0
-            elif row['dsUnidadeMedida'] == 'unidade':
-                row['nrQtdItens'] = row['nrLeituraSensor']
-            row['nrTemperatura'] = 0  # Set to 0 for non-temperature sensors
+        elif row['dsUnidadeMedida'] == 'gramas':
+            leitura_sem_tara = row['nrLeituraSensor'] - (row['nrUnidadeIni'] or 0)
+            row['nrQtdItens'] = leitura_sem_tara / row['nrPesoUnitario'] if row['nrPesoUnitario'] else 0
+            row['nrTemperatura'] = 0
+        elif row['dsUnidadeMedida'] == 'milimetros':
+            row['nrQtdItens'] = row['nrLeituraSensor'] / row['nrAlt'] if row['nrAlt'] else 0
+            row['nrTemperatura'] = 0
+        elif row['dsUnidadeMedida'] == 'unidade':
+            row['nrQtdItens'] = row['nrLeituraSensor']
+            row['nrTemperatura'] = 0
 
     # converte em pandas dataframe
     df = pd.DataFrame(resultado)
