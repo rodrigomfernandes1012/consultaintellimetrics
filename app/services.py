@@ -280,8 +280,9 @@ def prepara_insert_registros(dic_sensores, cdDispositivo):
             "cdDispositivo": cdDispositivo,
             "cdSensor": sensor["cdSensor"],
             "nrValor": sensor["nrValor"],
-            "cdProdutoItem": cdProdutoItem,
         }
+        if cdProdutoItem:
+            payload_sensor_registro["cdProdutoItem"] = cdProdutoItem
 
         data, error = valida_e_constroi_insert(
             table="TbSensorRegistro",
