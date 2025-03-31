@@ -479,3 +479,25 @@ def Selecionar_VwTbPosicaoAtual(filtros, db_client=supabase_api):
 
     resultado = query.execute()
     return resultado.data
+
+def Selecionar_TbChamados(db_client=supabase_api):
+    resultado = (
+        db_client.table("TbChamados")
+        .select(
+            "cdChamados",
+            "dtOperacao",
+            "dsTipo",
+            "dsDescricao",
+            "nrQtde",
+            "dsUser",
+            "dtRegistro",
+        )
+        .execute()
+    )
+
+    return resultado.data
+
+# Inserir registros da tabela public.TbChamados
+def Inserir_TbChamados(data, db_client=supabase_api):
+    resultado = db_client.table("TbChamados").insert(data).execute()
+    return resultado.data

@@ -232,24 +232,6 @@ def Inserir_TbPonto(dsCardNo, dsUtc):
     conexao.close()
 
 
-# Selecionar registros da tabela public.TbChamados
-def Selecionar_TbChamados():
-    resultado = (
-        supabase_api.table("TbChamados")
-        .select(
-            "cdChamados",
-            "dtOperacao",
-            "dsTipo",
-            "dsDescricao",
-            "nrQtde",
-            "dsUser",
-            "dtRegistro",
-        )
-        .execute()
-    )
-
-    return resultado.data
-
 
 # Inserir registros da tabela public.TbChamados
 def Inserir_TbChamados(data):
@@ -522,10 +504,7 @@ CORS(app, resources={r"*": {"origins": "*"}})
 
 
 # Selecionar registros no EndPoint Chamados
-@app.route("/Chamados")
-def get_Chamados():
-    resultado = Selecionar_TbChamados()
-    return resultado
+
 
 
 # Inserir registros no EndPoint Chamados
